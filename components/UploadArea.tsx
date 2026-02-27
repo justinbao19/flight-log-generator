@@ -136,142 +136,138 @@ export default function UploadArea({
       </div>
 
       {/* Screenshot Upload */}
-      {mode === "screenshot" && (
-        <>
-          <div
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(true);
+      <div className={`space-y-3 sm:space-y-4 ${mode !== "screenshot" ? "hidden" : ""}`}>
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={`flex h-[180px] sm:h-[220px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed overflow-auto transition-colors ${
+            dragOver
+              ? "border-blue-500 bg-blue-50"
+              : imagePreview
+                ? "border-gray-300 bg-gray-50"
+                : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+          }`}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFile(file);
             }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            className={`flex min-h-[150px] sm:min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${
-              dragOver
-                ? "border-blue-500 bg-blue-50"
-                : imagePreview
-                  ? "border-gray-300 bg-gray-50"
-                  : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
-            }`}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleFile(file);
-              }}
-            />
-            {imagePreview ? (
-              <div className="p-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="max-h-[200px] sm:max-h-[300px] rounded-lg object-contain"
+          />
+          {imagePreview ? (
+            <div className="p-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="max-h-[140px] sm:max-h-[180px] rounded-lg object-contain"
+              />
+              <p className="mt-2 text-center text-sm text-gray-500">
+                Click or drag to replace
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-2 p-4 sm:p-8">
+              <svg
+                className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
-                <p className="mt-2 text-center text-sm text-gray-500">
-                  Click or drag to replace
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-2 p-4 sm:p-8">
-                <svg
-                  className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                <p className="text-sm font-medium text-gray-700">
-                  Drop screenshot here or click to upload
-                </p>
-                <p className="text-xs text-gray-500">JPG, PNG up to 5MB</p>
-              </div>
-            )}
-          </div>
+              </svg>
+              <p className="text-sm font-medium text-gray-700">
+                Drop screenshot here or click to upload
+              </p>
+              <p className="text-xs text-gray-500">JPG, PNG up to 5MB</p>
+            </div>
+          )}
+        </div>
 
-          <button
-            onClick={handleRecognize}
-            disabled={loading || !imageFile}
-            className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-                Recognizing...
-              </span>
-            ) : (
-              "Recognize Flight Data"
-            )}
-          </button>
-        </>
-      )}
+        <button
+          onClick={handleRecognize}
+          disabled={loading || !imageFile}
+          className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              Recognizing...
+            </span>
+          ) : (
+            "Recognize Flight Data"
+          )}
+        </button>
+      </div>
 
       {/* Text Input */}
-      {mode === "text" && (
-        <>
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Paste your flight note here..."
-            className="min-h-[150px] sm:min-h-[200px] w-full rounded-xl border border-gray-300 p-3 sm:p-4 text-sm font-mono text-black focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+      <div className={`space-y-3 sm:space-y-4 ${mode !== "text" ? "hidden" : ""}`}>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Paste your flight note here..."
+          className="h-[180px] sm:h-[220px] w-full rounded-xl border border-gray-300 p-3 sm:p-4 text-base sm:text-sm font-mono text-black resize-none focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        />
 
-          <button
-            onClick={handleRecognize}
-            disabled={loading || !text.trim()}
-            className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-                Recognizing...
-              </span>
-            ) : (
-              "Recognize Flight Data"
-            )}
-          </button>
-        </>
-      )}
+        <button
+          onClick={handleRecognize}
+          disabled={loading || !text.trim()}
+          className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              Recognizing...
+            </span>
+          ) : (
+            "Recognize Flight Data"
+          )}
+        </button>
+      </div>
 
       {/* Manual Form */}
       {mode === "manual" && (
