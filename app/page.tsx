@@ -155,28 +155,28 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="border-b bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <svg
-              className="h-7 w-7 text-blue-600"
+              className="h-6 w-6 sm:h-7 sm:w-7 text-blue-600 shrink-0"
               viewBox="0 0 24 24"
               fill="currentColor"
             >
               <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
             </svg>
-            <h1 className="text-lg font-bold text-gray-900">
+            <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">
               Flight Log Generator
             </h1>
           </div>
           <button
             onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-            className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 transition-colors shrink-0"
           >
             API Settings
           </button>
         </div>
         {showApiKeyInput && (
-          <div className="border-t bg-gray-50 px-4 py-3">
+          <div className="border-t bg-gray-50 px-3 py-3 sm:px-4">
             <div className="mx-auto max-w-7xl">
               <label className="block text-xs font-medium text-gray-500 mb-1">
                 Anthropic API Key (optional if set in .env.local)
@@ -186,7 +186,7 @@ export default function Home() {
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder="sk-ant-..."
-                className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full sm:max-w-md rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -194,8 +194,8 @@ export default function Home() {
       </header>
 
       {/* Step Indicator */}
-      <div className="mx-auto max-w-7xl px-4 pt-6">
-        <div className="flex items-center gap-2 text-sm mb-6">
+      <div className="mx-auto max-w-7xl px-3 pt-4 sm:px-4 sm:pt-6">
+        <div className="flex flex-wrap items-center gap-2 text-sm mb-4 sm:mb-6">
           {(["input", "preview"] as Step[]).map((s, i) => (
             <div key={s} className="flex items-center gap-2">
               {i > 0 && (
@@ -247,11 +247,11 @@ export default function Home() {
         </div>
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 pb-12">
+      <main className="mx-auto max-w-7xl px-3 pb-8 sm:px-4 sm:pb-12">
         {/* Step 1: Input */}
         {step === "input" && (
           <div className="mx-auto max-w-2xl">
-            <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
+            <div className="rounded-2xl bg-white p-4 sm:p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-base font-semibold text-gray-900">
@@ -310,26 +310,26 @@ export default function Home() {
         {/* Step 2: Preview */}
         {step === "preview" && flightData && (
           <div>
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
+              <div className="flex gap-2 sm:gap-3">
                 <button
                   onClick={() => setStep("input")}
-                  className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="rounded-xl border border-gray-300 px-3 py-2 text-xs sm:text-sm sm:px-4 font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Back to Edit
                 </button>
                 <button
                   onClick={handleNewFlight}
-                  className="rounded-xl border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="rounded-xl border border-gray-300 px-3 py-2 text-xs sm:text-sm sm:px-4 font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   New Flight
                 </button>
               </div>
-              <div className="relative" ref={exportMenuRef}>
+              <div className="relative self-end sm:self-auto" ref={exportMenuRef}>
                 <button
                   onClick={() => setShowExportMenu((v) => !v)}
                   disabled={generating}
-                  className="rounded-xl bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+                  className="rounded-xl bg-blue-600 px-4 py-2 sm:px-6 text-xs sm:text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
                 >
                   {generating ? (
                     <>
@@ -421,8 +421,8 @@ export default function Home() {
             </div>
 
             {/* PDF Preview Container */}
-            <div className="flex justify-center">
-              <div className="shadow-2xl border border-gray-200 bg-white overflow-auto">
+            <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex sm:justify-center pb-4">
+              <div className="shadow-2xl border border-gray-200 bg-white overflow-auto max-w-full">
                 <PDFTemplate data={flightData} airline={airline} />
               </div>
             </div>

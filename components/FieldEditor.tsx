@@ -73,13 +73,13 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* General Flight Info */}
       <section>
         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2 mb-3">
           General Flight Info
         </h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <InputField
             label="Flight No."
             value={data.flightNumber}
@@ -138,7 +138,7 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2 mb-3">
           Departure Info
         </h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <AirportInput
             name={data.departure?.airport?.name || ""}
             iata={data.departure?.airport?.iata || ""}
@@ -176,12 +176,12 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
             value={data.departure?.offChocks || ""}
             onChange={(v) => update("departure.offChocks", v)}
           />
-          <div />
+          <div className="hidden sm:block" />
           <InputField
             label="METAR"
             value={data.departure?.metar || ""}
             onChange={(v) => update("departure.metar", v)}
-            className="col-span-2"
+            className="col-span-1 sm:col-span-2"
           />
         </div>
       </section>
@@ -191,7 +191,7 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2 mb-3">
           Arrival Info
         </h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <AirportInput
             name={data.arrival?.airport?.name || ""}
             iata={data.arrival?.airport?.iata || ""}
@@ -229,12 +229,12 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
             value={data.arrival?.onChocks || ""}
             onChange={(v) => update("arrival.onChocks", v)}
           />
-          <div />
+          <div className="hidden sm:block" />
           <InputField
             label="METAR"
             value={data.arrival?.metar || ""}
             onChange={(v) => update("arrival.metar", v)}
-            className="col-span-2"
+            className="col-span-1 sm:col-span-2"
           />
         </div>
       </section>
@@ -244,7 +244,7 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2 mb-3">
           Passenger Info
         </h3>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <InputField
             label="Seat No."
             value={data.seatNumber || ""}

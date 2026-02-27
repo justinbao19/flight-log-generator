@@ -111,20 +111,20 @@ export default function UploadArea({
     flightData.flightNumber.trim() !== "" && flightData.date.trim() !== "";
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-3 sm:space-y-4">
       {/* Three-tab Switcher */}
       <div className="flex rounded-lg bg-gray-100 p-1">
         {(
           [
             { key: "screenshot", label: "Screenshot" },
             { key: "text", label: "Paste Text" },
-            { key: "manual", label: "Manual Form" },
+            { key: "manual", label: "Manual" },
           ] as { key: InputMode; label: string }[]
         ).map((tab) => (
           <button
             key={tab.key}
             onClick={() => setMode(tab.key)}
-            className={`flex-1 rounded-md py-2 text-sm font-medium transition-colors ${
+            className={`flex-1 rounded-md py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
               mode === tab.key
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
@@ -146,7 +146,7 @@ export default function UploadArea({
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className={`flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${
+            className={`flex min-h-[150px] sm:min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${
               dragOver
                 ? "border-blue-500 bg-blue-50"
                 : imagePreview
@@ -170,16 +170,16 @@ export default function UploadArea({
                 <img
                   src={imagePreview}
                   alt="Preview"
-                  className="max-h-[300px] rounded-lg object-contain"
+                  className="max-h-[200px] sm:max-h-[300px] rounded-lg object-contain"
                 />
                 <p className="mt-2 text-center text-sm text-gray-500">
                   Click or drag to replace
                 </p>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2 p-8">
+              <div className="flex flex-col items-center gap-2 p-4 sm:p-8">
                 <svg
-                  className="h-10 w-10 text-gray-400"
+                  className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -238,7 +238,7 @@ export default function UploadArea({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Paste your flight note here..."
-            className="min-h-[200px] w-full rounded-xl border border-gray-300 p-4 text-sm font-mono text-black focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="min-h-[150px] sm:min-h-[200px] w-full rounded-xl border border-gray-300 p-3 sm:p-4 text-sm font-mono text-black focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
 
           <button

@@ -118,7 +118,7 @@ export default function AirportInput({
 
   return (
     <>
-      <div className="col-span-2 relative" ref={wrapperRef}>
+      <div className="col-span-1 sm:col-span-2 relative" ref={wrapperRef}>
         <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
           Airport Name
         </label>
