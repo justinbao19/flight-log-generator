@@ -443,8 +443,8 @@ export default function Home() {
             </div>
 
             {/* PDF Preview Container */}
-            <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex sm:justify-center pb-4">
-              <div className="shadow-2xl border border-gray-200 bg-white overflow-auto max-w-full">
+            <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex sm:justify-center pb-8">
+              <div className="shadow-2xl border border-gray-200 bg-white overflow-auto max-w-full mb-2">
                 <PDFTemplate
                   data={flightData}
                   airline={airline}
