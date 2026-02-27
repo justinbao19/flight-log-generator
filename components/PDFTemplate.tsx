@@ -113,7 +113,7 @@ export default function PDFTemplate({
             <img
               src={airline.allianceLogoUrl}
               alt={airline.alliance || ""}
-              className="h-8 object-contain"
+              className="h-12 object-contain"
             />
           )}
         </div>
