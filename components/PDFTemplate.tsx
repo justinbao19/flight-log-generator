@@ -65,16 +65,7 @@ export default function PDFTemplate({ data, airline }: PDFTemplateProps) {
         </div>
         {airline?.alliance && (
           <div className="flex flex-col items-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`https://content.airhex.com/content/logos/alliances_${airline.alliance.toLowerCase().replace(/\s+/g, "-")}_200_70_r.png`}
-              alt={airline.alliance}
-              className="h-10 object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-            <span className="text-[8pt] text-black mt-0.5">
+            <span className="text-xs font-semibold text-black">
               {airline.alliance}
             </span>
           </div>

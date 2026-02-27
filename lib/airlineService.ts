@@ -1,12 +1,20 @@
 import { AirlineInfo } from "./types";
+import { getAirline, listAirlines } from "soaring-symbols";
+import { existsSync } from "fs";
+import { join } from "path";
 
-let soaringSymbols: typeof import("soaring-symbols") | null = null;
+const ASSETS_DIR = join(
+  process.cwd(),
+  "node_modules",
+  "soaring-symbols",
+  "dist",
+  "assets"
+);
 
-async function getSoaringSymbols() {
-  if (!soaringSymbols) {
-    soaringSymbols = await import("soaring-symbols");
-  }
-  return soaringSymbols;
+function hasLocalSvg(slug: string): "logo" | "icon" | null {
+  if (existsSync(join(ASSETS_DIR, slug, "logo.svg"))) return "logo";
+  if (existsSync(join(ASSETS_DIR, slug, "icon.svg"))) return "icon";
+  return null;
 }
 
 export function extractAirlineCode(flightNumber: string): string {
@@ -17,27 +25,23 @@ export function extractAirlineCode(flightNumber: string): string {
 export async function getAirlineInfo(
   airlineCode: string
 ): Promise<AirlineInfo> {
-  const ss = await getSoaringSymbols();
-  const airline = ss.getAirline(airlineCode);
+  const airline = getAirline(airlineCode);
 
   if (airline) {
-    const assets = ss.getAssets(airlineCode);
-    let logoUrl: string | undefined;
+    const variant = hasLocalSvg(airline.slug);
+    const logoUrl = variant
+      ? `/api/airline-logo?code=${airlineCode}&variant=${variant}`
+      : `https://pics.avs.io/200/70/${airlineCode}.png`;
 
-    if (assets?.logo?.color) {
-      logoUrl = `/api/airline-logo?code=${airlineCode}&type=logo`;
-    } else if (assets?.icon?.color) {
-      logoUrl = `/api/airline-logo?code=${airlineCode}&type=icon`;
-    }
+    const alliance =
+      airline.alliance || ALLIANCE_MAP[airlineCode] || undefined;
 
     return {
       name: airline.name,
       iata: airline.iata,
       icao: airline.icao,
-      alliance: airline.alliance || undefined,
-      logoUrl:
-        logoUrl ||
-        `https://content.airhex.com/content/logos/airlines_${airlineCode}_200_70_r.png`,
+      alliance,
+      logoUrl,
       primaryColor: airline.branding?.primary_color,
     };
   }
@@ -45,8 +49,13 @@ export async function getAirlineInfo(
   return {
     name: getAirlineNameFallback(airlineCode),
     iata: airlineCode,
-    logoUrl: `https://content.airhex.com/content/logos/airlines_${airlineCode}_200_70_r.png`,
+    alliance: ALLIANCE_MAP[airlineCode] || undefined,
+    logoUrl: `https://pics.avs.io/200/70/${airlineCode}.png`,
   };
+}
+
+export function getAvailableAirlines(): string[] {
+  return listAirlines().map((a) => `${a.iata} ${a.name}`);
 }
 
 function getAirlineNameFallback(code: string): string {
@@ -88,7 +97,3 @@ const ALLIANCE_MAP: Record<string, string> = {
   HU: "Star Alliance",
   FM: "SkyTeam",
 };
-
-export function getAllianceForCode(code: string): string | undefined {
-  return ALLIANCE_MAP[code];
-}

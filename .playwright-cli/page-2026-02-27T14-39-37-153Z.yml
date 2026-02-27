@@ -1,0 +1,35 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e6]
+          - heading "Flight Log Generator" [level=1] [ref=e8]
+        - button "API Settings" [ref=e9]
+    - generic [ref=e11]:
+      - button "1 Input" [ref=e13]:
+        - generic [ref=e14]: "1"
+        - text: Input
+      - generic [ref=e15]:
+        - img [ref=e16]
+        - button "2 Edit" [ref=e18]:
+          - generic [ref=e19]: "2"
+          - text: Edit
+      - generic [ref=e20]:
+        - img [ref=e21]
+        - button "3 Preview" [ref=e23]:
+          - generic [ref=e24]: "3"
+          - text: Preview
+    - main [ref=e25]:
+      - generic [ref=e27]:
+        - heading "Upload Flight Data" [level=2] [ref=e28]
+        - paragraph [ref=e29]: Upload a screenshot or paste text from your flight notes
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - button "Upload Screenshot" [ref=e32]
+            - button "Paste Text" [ref=e33]
+          - textbox "Paste your flight note here..." [active] [ref=e51]: "ZPPP > ZSSS Flight Number: 8L9887 Call Sign: LKE9887 Date: Feb 25th Type: A330-343 Reg.: B-1004 Flight Duration: 2 h 16 min Age: 7.5 Yrs Distance: 2042km / 1102.6nm Cruising Alt: 39,100 ft Dept Airport: KMG/ZPPP Parking Bay: 129 Takeoff RWY: 22 Scheduled Dept: 8:55 Actual Dept: 9:19 Off-Chocks: 09:08 METAR: ZPPP 250100Z 22007MPS CAVOK 13/07 Q1021 NOSIG Dest Airport: SHA/ZSSS Landing RWY: 36R Scheduled arrival: 12:05 Actual Arrival: 11:35 On-Chocks: 11:43 Parking Bay: 237 METAR: ZSSS 250330Z 05002MPS 030V120 9999 BKN016 09/05 Q1022 NOSIG"
+          - button "Recognize Flight Data" [ref=e40]
+  - button "Open Next.js Dev Tools" [ref=e46] [cursor=pointer]:
+    - img [ref=e47]
+  - alert [ref=e50]
