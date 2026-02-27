@@ -19,7 +19,7 @@ export default function AirlineLogo({
   const sizeClasses = {
     sm: "h-6",
     md: "h-10",
-    lg: "h-14",
+    lg: "h-20",
   };
 
   if (!logoUrl || imgError) {

@@ -31,7 +31,7 @@ export async function getAirlineInfo(
     const variant = hasLocalSvg(airline.slug);
     const logoUrl = variant
       ? `/api/airline-logo?code=${airlineCode}&variant=${variant}`
-      : `https://pics.avs.io/200/70/${airlineCode}.png`;
+      : `https://pics.avs.io/800/280/${airlineCode}.png`;
 
     const alliance =
       airline.alliance || ALLIANCE_MAP[airlineCode] || undefined;
@@ -55,7 +55,7 @@ export async function getAirlineInfo(
     allianceLogoUrl: fallbackAlliance
       ? ALLIANCE_LOGO_MAP[fallbackAlliance]
       : undefined,
-    logoUrl: `https://pics.avs.io/200/70/${airlineCode}.png`,
+    logoUrl: `https://pics.avs.io/800/280/${airlineCode}.png`,
   };
 }
 
