@@ -31,13 +31,16 @@ export async function generatePDF(
     img.onerror = reject;
   });
 
-  const imgWidth = img.naturalWidth;
-  const imgHeight = img.naturalHeight;
-  const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-  const scaledWidth = imgWidth * ratio;
-  const scaledHeight = imgHeight * ratio;
+  const aspectRatio = img.naturalHeight / img.naturalWidth;
+  let finalWidth = pdfWidth;
+  let finalHeight = pdfWidth * aspectRatio;
 
-  pdf.addImage(dataUrl, "JPEG", 0, 0, scaledWidth, scaledHeight);
+  if (finalHeight > pdfHeight) {
+    finalHeight = pdfHeight;
+    finalWidth = pdfHeight / aspectRatio;
+  }
+
+  pdf.addImage(dataUrl, "JPEG", 0, 0, finalWidth, finalHeight);
   pdf.save(filename);
 }
 

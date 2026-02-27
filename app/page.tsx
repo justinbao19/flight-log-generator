@@ -22,7 +22,7 @@ export default function Home() {
     "idle"
   );
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const initialLoadDone = useRef(false);
+  const skipNextAutoSave = useRef(true);
 
   // Load draft on mount
   useEffect(() => {
@@ -30,13 +30,17 @@ export default function Home() {
     if (draft && draft.flightNumber) {
       setFlightData(draft);
       setDraftStatus("saved");
+    } else {
+      skipNextAutoSave.current = false;
     }
-    initialLoadDone.current = true;
   }, []);
 
   // Auto-save draft on flightData change (debounced 1s)
   useEffect(() => {
-    if (!initialLoadDone.current) return;
+    if (skipNextAutoSave.current) {
+      skipNextAutoSave.current = false;
+      return;
+    }
 
     setDraftStatus("unsaved");
 

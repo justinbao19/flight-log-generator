@@ -1,6 +1,7 @@
 "use client";
 
 import { FlightData } from "@/lib/types";
+import AirportInput from "./AirportInput";
 
 interface FieldEditorProps {
   data: FlightData;
@@ -34,18 +35,39 @@ function InputField({
 }
 
 export default function FieldEditor({ data, onChange }: FieldEditorProps) {
-  const update = (path: string, value: string) => {
-    const newData = JSON.parse(JSON.stringify(data)) as FlightData;
+  const setNestedValue = (
+    obj: Record<string, unknown>,
+    path: string,
+    value: string
+  ) => {
     const keys = path.split(".");
-    let obj: Record<string, unknown> = newData as unknown as Record<string, unknown>;
+    let target = obj;
     for (let i = 0; i < keys.length - 1; i++) {
-      obj = obj[keys[i]] as Record<string, unknown>;
+      target = target[keys[i]] as Record<string, unknown>;
     }
     const lastKey = keys[keys.length - 1];
     if (lastKey === "km" || lastKey === "nm") {
-      obj[lastKey] = parseFloat(value) || 0;
+      target[lastKey] = parseFloat(value) || 0;
     } else {
-      obj[lastKey] = value;
+      target[lastKey] = value;
+    }
+  };
+
+  const update = (path: string, value: string) => {
+    const newData = JSON.parse(JSON.stringify(data)) as FlightData;
+    setNestedValue(
+      newData as unknown as Record<string, unknown>,
+      path,
+      value
+    );
+    onChange(newData);
+  };
+
+  const updateMultiple = (updates: [string, string][]) => {
+    const newData = JSON.parse(JSON.stringify(data)) as FlightData;
+    const obj = newData as unknown as Record<string, unknown>;
+    for (const [path, value] of updates) {
+      setNestedValue(obj, path, value);
     }
     onChange(newData);
   };
@@ -117,21 +139,17 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
           Departure Info
         </h3>
         <div className="grid grid-cols-2 gap-3">
-          <InputField
-            label="Airport Name"
-            value={data.departure?.airport?.name || ""}
-            onChange={(v) => update("departure.airport.name", v)}
-            className="col-span-2"
-          />
-          <InputField
-            label="IATA"
-            value={data.departure?.airport?.iata || ""}
-            onChange={(v) => update("departure.airport.iata", v)}
-          />
-          <InputField
-            label="ICAO"
-            value={data.departure?.airport?.icao || ""}
-            onChange={(v) => update("departure.airport.icao", v)}
+          <AirportInput
+            name={data.departure?.airport?.name || ""}
+            iata={data.departure?.airport?.iata || ""}
+            icao={data.departure?.airport?.icao || ""}
+            onAirportChange={(airport) => {
+              updateMultiple([
+                ["departure.airport.name", airport.name],
+                ["departure.airport.iata", airport.iata],
+                ["departure.airport.icao", airport.icao],
+              ]);
+            }}
           />
           <InputField
             label="Parking Bay"
@@ -174,21 +192,17 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
           Arrival Info
         </h3>
         <div className="grid grid-cols-2 gap-3">
-          <InputField
-            label="Airport Name"
-            value={data.arrival?.airport?.name || ""}
-            onChange={(v) => update("arrival.airport.name", v)}
-            className="col-span-2"
-          />
-          <InputField
-            label="IATA"
-            value={data.arrival?.airport?.iata || ""}
-            onChange={(v) => update("arrival.airport.iata", v)}
-          />
-          <InputField
-            label="ICAO"
-            value={data.arrival?.airport?.icao || ""}
-            onChange={(v) => update("arrival.airport.icao", v)}
+          <AirportInput
+            name={data.arrival?.airport?.name || ""}
+            iata={data.arrival?.airport?.iata || ""}
+            icao={data.arrival?.airport?.icao || ""}
+            onAirportChange={(airport) => {
+              updateMultiple([
+                ["arrival.airport.name", airport.name],
+                ["arrival.airport.iata", airport.iata],
+                ["arrival.airport.icao", airport.icao],
+              ]);
+            }}
           />
           <InputField
             label="Landing Runway"
