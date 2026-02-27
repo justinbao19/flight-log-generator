@@ -12,7 +12,13 @@ interface AirportInputProps {
   name: string;
   iata: string;
   icao: string;
-  onAirportChange: (airport: { name: string; iata: string; icao: string }) => void;
+  onAirportChange: (airport: {
+    name: string;
+    iata: string;
+    icao: string;
+    utcOffset?: number;
+  }) => void;
+  labelPrefix?: string;
 }
 
 const INPUT_CLASS =
@@ -23,6 +29,7 @@ export default function AirportInput({
   iata,
   icao,
   onAirportChange,
+  labelPrefix,
 }: AirportInputProps) {
   const [suggestions, setSuggestions] = useState<AirportResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -32,7 +39,10 @@ export default function AirportInput({
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(e.target as Node)
+      ) {
         setShowSuggestions(false);
       }
     }
@@ -46,6 +56,7 @@ export default function AirportInput({
         name: airport.name,
         iata: airport.iata,
         icao: airport.icao,
+        utcOffset: airport.utcOffset,
       });
       setSuggestions([]);
       setShowSuggestions(false);
@@ -99,7 +110,12 @@ export default function AirportInput({
     if (upper.length === 3) {
       const result = await lookupByIata(upper);
       if (result) {
-        onAirportChange({ name: result.name, iata: upper, icao: result.icao });
+        onAirportChange({
+          name: result.name,
+          iata: upper,
+          icao: result.icao,
+          utcOffset: result.utcOffset,
+        });
       }
     }
   };
@@ -111,7 +127,12 @@ export default function AirportInput({
     if (upper.length === 4) {
       const result = await lookupByIcao(upper);
       if (result) {
-        onAirportChange({ name: result.name, iata: result.iata, icao: upper });
+        onAirportChange({
+          name: result.name,
+          iata: result.iata,
+          icao: upper,
+          utcOffset: result.utcOffset,
+        });
       }
     }
   };
@@ -120,7 +141,7 @@ export default function AirportInput({
     <>
       <div className="col-span-1 sm:col-span-2 relative" ref={wrapperRef}>
         <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-          Airport Name
+          {labelPrefix ? `${labelPrefix} Name` : "Airport Name"}
         </label>
         <input
           type="text"

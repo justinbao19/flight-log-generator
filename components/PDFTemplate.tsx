@@ -1,28 +1,64 @@
 "use client";
 
-import { FlightData, AirlineInfo } from "@/lib/types";
+import { FlightData, AirlineInfo, DisplayMode } from "@/lib/types";
+import { decodeMetarSummary } from "@/lib/metarDecode";
 import AirlineLogo from "./AirlineLogo";
 
 interface PDFTemplateProps {
   data: FlightData;
   airline: AirlineInfo | null;
+  displayMode: DisplayMode;
 }
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return "N/A";
   try {
     const d = new Date(dateStr + "T00:00:00");
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).toUpperCase();
+    return d
+      .toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+      .toUpperCase();
   } catch {
     return dateStr;
   }
 }
 
-export default function PDFTemplate({ data, airline }: PDFTemplateProps) {
+function formatUtc(offset: number | undefined): string {
+  if (offset === undefined || offset === null) return "";
+  const sign = offset >= 0 ? "+" : "";
+  return `UTC ( ${sign}${offset} )`;
+}
+
+export default function PDFTemplate({
+  data,
+  airline,
+  displayMode,
+}: PDFTemplateProps) {
+  const isPro = displayMode === "professional";
+
+  const distanceDisplay = isPro
+    ? data.distance
+      ? `${data.distance.nm} nm`
+      : "N/A"
+    : data.distance
+      ? `${data.distance.km} km`
+      : "N/A";
+
+  const depMetarDisplay = data.departure?.metar
+    ? isPro
+      ? data.departure.metar
+      : decodeMetarSummary(data.departure.metar)
+    : null;
+
+  const arrMetarDisplay = data.arrival?.metar
+    ? isPro
+      ? data.arrival.metar
+      : decodeMetarSummary(data.arrival.metar)
+    : null;
+
   return (
     <div
       id="pdf-content"
@@ -37,13 +73,21 @@ export default function PDFTemplate({ data, airline }: PDFTemplateProps) {
       }}
     >
       {/* Header - Seat / Bag Tag */}
-      <div className="flex justify-between items-start mb-4" style={{ fontSize: "9pt" }}>
+      <div
+        className="flex justify-between items-start mb-4"
+        style={{ fontSize: "9pt" }}
+      >
         <span>
-          <strong>SEAT NO./CABIN CL.</strong>{" "}
+          <strong>{isPro ? "SEAT NO./CABIN CL." : "SEAT NUMBER / CABIN CLASS"}</strong>{" "}
           {data.seatNumber || "N/A"} / {data.cabinClass || "N/A"}
         </span>
-        <div className="border border-dashed border-gray-400 rounded px-4 py-2 text-center" style={{ minWidth: "100px" }}>
-          <span className="text-[7pt] text-gray-400 uppercase tracking-wider">BAG TAG</span>
+        <div
+          className="border border-dashed border-gray-400 rounded px-4 py-2 text-center"
+          style={{ minWidth: "100px" }}
+        >
+          <span className="text-[7pt] text-gray-400 uppercase tracking-wider">
+            BAG TAG
+          </span>
         </div>
       </div>
 
@@ -77,38 +121,45 @@ export default function PDFTemplate({ data, airline }: PDFTemplateProps) {
       {/* General Flight Info */}
       <section className="mb-5">
         <h3 className="text-xs font-bold tracking-widest mb-3 border-b border-black pb-1">
-          GENERAL FLT INFO
+          {isPro ? "GENERAL FLT INFO" : "GENERAL FLIGHT INFORMATION"}
         </h3>
-        <div className="grid grid-cols-3 gap-y-1.5" style={{ fontSize: "9.5pt" }}>
+        <div
+          className="grid grid-cols-3 gap-y-1.5"
+          style={{ fontSize: "9.5pt" }}
+        >
           <div className="col-span-1">
-            <strong>FLT NO.:</strong> {data.flightNumber || "N/A"}
+            <strong>{isPro ? "FLT NO.:" : "FLIGHT NO.:"}</strong>{" "}
+            {data.flightNumber || "N/A"}
           </div>
           <div className="col-span-1">
-            <strong>C/S:</strong> {data.callSign || "N/A"}
+            <strong>{isPro ? "C/S:" : "CALL SIGN:"}</strong>{" "}
+            {data.callSign || "N/A"}
           </div>
           <div className="col-span-1">
-            <strong>DT:</strong> {formatDate(data.date)}
+            <strong>{isPro ? "DT:" : "DATE:"}</strong> {formatDate(data.date)}
           </div>
           <div>
-            <strong>A/C TYPE:</strong> {data.aircraftType || "N/A"}
+            <strong>{isPro ? "A/C TYPE:" : "AIRCRAFT TYPE:"}</strong>{" "}
+            {data.aircraftType || "N/A"}
           </div>
           <div>
-            <strong>REG NO.:</strong> {data.registration || "N/A"}
+            <strong>{isPro ? "REG NO.:" : "REGISTRATION:"}</strong>{" "}
+            {data.registration || "N/A"}
           </div>
           <div>
-            <strong>FLT DUR:</strong> {data.flightDuration || "N/A"}
+            <strong>{isPro ? "FLT DUR:" : "FLIGHT DURATION:"}</strong>{" "}
+            {data.flightDuration || "N/A"}
           </div>
           <div>
-            <strong>AGE:</strong> {data.aircraftAge || "N/A"}
+            <strong>{isPro ? "AGE:" : "AIRCRAFT AGE:"}</strong>{" "}
+            {data.aircraftAge || "N/A"}
           </div>
           <div className="col-span-2">
-            <strong>DIST:</strong>{" "}
-            {data.distance
-              ? `${data.distance.km}km / ${data.distance.nm}nm`
-              : "N/A"}
+            <strong>{isPro ? "DIST:" : "DISTANCE:"}</strong> {distanceDisplay}
           </div>
           <div className="col-span-3">
-            <strong>CRZ ALT:</strong> {data.cruisingAltitude || "N/A"}
+            <strong>{isPro ? "CRZ ALT:" : "CRUISING ALTITUDE:"}</strong>{" "}
+            {data.cruisingAltitude || "N/A"}
           </div>
         </div>
       </section>
@@ -116,43 +167,52 @@ export default function PDFTemplate({ data, airline }: PDFTemplateProps) {
       {/* Departure Info */}
       <section className="mb-5">
         <h3 className="text-xs font-bold tracking-widest mb-3 border-b border-black pb-1">
-          DEP INFO
+          {isPro ? "DEP INFO" : "DEPARTURE INFORMATION"}
         </h3>
         <div className="space-y-1.5" style={{ fontSize: "9.5pt" }}>
           <div>
-            <strong>DEP ARPT:</strong>{" "}
+            <strong>{isPro ? "DEP ARPT:" : "DEPARTURE AIRPORT:"}</strong>{" "}
             {data.departure?.airport?.name || "N/A"}
             <span className="ml-4">
-              <strong>ICAO:</strong> {data.departure?.airport?.icao || "N/A"}
+              <strong>ICAO:</strong>{" "}
+              {data.departure?.airport?.icao || "N/A"}
             </span>
             <span className="ml-4">
-              <strong>IATA:</strong> {data.departure?.airport?.iata || "N/A"}
+              <strong>IATA:</strong>{" "}
+              {data.departure?.airport?.iata || "N/A"}
             </span>
           </div>
           <div className="flex gap-8">
             <span>
-              <strong>P/BAY:</strong> {data.departure?.parkingBay || "N/A"}
+              <strong>{isPro ? "P/BAY:" : "PARKING BAY:"}</strong>{" "}
+              {data.departure?.parkingBay || "N/A"}
             </span>
             <span>
-              <strong>T/O RWY:</strong> {data.departure?.runway || "N/A"}
+              <strong>{isPro ? "T/O RWY:" : "TAKEOFF RUNWAY:"}</strong>{" "}
+              {data.departure?.runway || "N/A"}
             </span>
             <span>
-              <strong>SKED DEP:</strong>{" "}
+              <strong>{isPro ? "SKED DEP:" : "SCHEDULED DEP:"}</strong>{" "}
               {data.departure?.scheduledTime || "N/A"}
             </span>
           </div>
           <div className="flex gap-8">
             <span>
-              <strong>ACT DEP:</strong> {data.departure?.actualTime || "N/A"}
+              <strong>{isPro ? "ACT DEP:" : "ACTUAL DEP:"}</strong>{" "}
+              {data.departure?.actualTime || "N/A"}
             </span>
             <span>
-              <strong>OFF-CHK:</strong> {data.departure?.offChocks || "N/A"}
+              <strong>{isPro ? "OFF-CHK:" : "OFF-CHOCKS:"}</strong>{" "}
+              {data.departure?.offChocks || "N/A"}
             </span>
-            <span>UTC ( +8 )</span>
+            {data.departure?.utcOffset !== undefined && (
+              <span>{formatUtc(data.departure.utcOffset)}</span>
+            )}
           </div>
-          {data.departure?.metar && (
+          {depMetarDisplay && (
             <div className="text-[8.5pt] mt-1">
-              <strong>METAR:</strong> {data.departure.metar}
+              <strong>{isPro ? "METAR:" : "WEATHER:"}</strong>{" "}
+              {depMetarDisplay}
             </div>
           )}
         </div>
@@ -161,43 +221,52 @@ export default function PDFTemplate({ data, airline }: PDFTemplateProps) {
       {/* Arrival Info */}
       <section className="mb-5">
         <h3 className="text-xs font-bold tracking-widest mb-3 border-b border-black pb-1">
-          ARR INFO
+          {isPro ? "ARR INFO" : "ARRIVAL INFORMATION"}
         </h3>
         <div className="space-y-1.5" style={{ fontSize: "9.5pt" }}>
           <div>
-            <strong>DEST ARPT:</strong>{" "}
+            <strong>{isPro ? "DEST ARPT:" : "DESTINATION AIRPORT:"}</strong>{" "}
             {data.arrival?.airport?.name || "N/A"}
             <span className="ml-4">
-              <strong>ICAO:</strong> {data.arrival?.airport?.icao || "N/A"}
+              <strong>ICAO:</strong>{" "}
+              {data.arrival?.airport?.icao || "N/A"}
             </span>
             <span className="ml-4">
-              <strong>IATA:</strong> {data.arrival?.airport?.iata || "N/A"}
+              <strong>IATA:</strong>{" "}
+              {data.arrival?.airport?.iata || "N/A"}
             </span>
           </div>
           <div className="flex gap-8">
             <span>
-              <strong>LDG RWY:</strong> {data.arrival?.runway || "N/A"}
+              <strong>{isPro ? "LDG RWY:" : "LANDING RUNWAY:"}</strong>{" "}
+              {data.arrival?.runway || "N/A"}
             </span>
             <span>
-              <strong>SKED ARR:</strong>{" "}
+              <strong>{isPro ? "SKED ARR:" : "SCHEDULED ARR:"}</strong>{" "}
               {data.arrival?.scheduledTime || "N/A"}
             </span>
             <span>
-              <strong>ACT ARR:</strong> {data.arrival?.actualTime || "N/A"}
+              <strong>{isPro ? "ACT ARR:" : "ACTUAL ARR:"}</strong>{" "}
+              {data.arrival?.actualTime || "N/A"}
             </span>
           </div>
           <div className="flex gap-8">
             <span>
-              <strong>ON-CHK:</strong> {data.arrival?.onChocks || "N/A"}
+              <strong>{isPro ? "ON-CHK:" : "ON-CHOCKS:"}</strong>{" "}
+              {data.arrival?.onChocks || "N/A"}
             </span>
-            <span>UTC ( +8 )</span>
+            {data.arrival?.utcOffset !== undefined && (
+              <span>{formatUtc(data.arrival.utcOffset)}</span>
+            )}
             <span>
-              <strong>P/BAY:</strong> {data.arrival?.parkingBay || "N/A"}
+              <strong>{isPro ? "P/BAY:" : "PARKING BAY:"}</strong>{" "}
+              {data.arrival?.parkingBay || "N/A"}
             </span>
           </div>
-          {data.arrival?.metar && (
+          {arrMetarDisplay && (
             <div className="text-[8.5pt] mt-1">
-              <strong>METAR:</strong> {data.arrival.metar}
+              <strong>{isPro ? "METAR:" : "WEATHER:"}</strong>{" "}
+              {arrMetarDisplay}
             </div>
           )}
         </div>
@@ -210,14 +279,16 @@ export default function PDFTemplate({ data, airline }: PDFTemplateProps) {
         <div className="flex gap-8">
           <div className="flex-1">
             <h3 className="text-xs font-bold tracking-widest mb-2">
-              A/C PHOTOS / RMKS:
+              {isPro ? "A/C PHOTOS / RMKS:" : "AIRCRAFT PHOTOS / REMARKS:"}
             </h3>
             <div className="border border-dashed border-gray-300 rounded h-[100mm] flex items-center justify-center text-gray-400 text-sm">
               Aircraft photo area
             </div>
           </div>
           <div className="w-[70mm]">
-            <h3 className="text-xs font-bold tracking-widest mb-2">B/Pass:</h3>
+            <h3 className="text-xs font-bold tracking-widest mb-2">
+              {isPro ? "B/Pass:" : "Boarding Pass:"}
+            </h3>
             <div className="border border-dashed border-gray-300 rounded h-[100mm] flex items-center justify-center text-gray-400 text-sm">
               Boarding pass area
             </div>

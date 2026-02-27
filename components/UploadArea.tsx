@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { FlightData } from "@/lib/types";
+import { FlightData, DisplayMode } from "@/lib/types";
 import FieldEditor from "./FieldEditor";
 
 interface UploadAreaProps {
@@ -11,6 +11,7 @@ interface UploadAreaProps {
   apiKey: string;
   draftStatus: "saved" | "unsaved" | "idle";
   onSaveDraft: () => void;
+  displayMode: DisplayMode;
 }
 
 type InputMode = "screenshot" | "text" | "manual";
@@ -22,6 +23,7 @@ export default function UploadArea({
   apiKey,
   draftStatus,
   onSaveDraft,
+  displayMode,
 }: UploadAreaProps) {
   const [mode, setMode] = useState<InputMode>("manual");
   const [text, setText] = useState("");
@@ -291,7 +293,7 @@ export default function UploadArea({
             </button>
           </div>
 
-          <FieldEditor data={flightData} onChange={onFlightDataChange} />
+          <FieldEditor data={flightData} onChange={onFlightDataChange} displayMode={displayMode} />
 
           <button
             onClick={onPreview}

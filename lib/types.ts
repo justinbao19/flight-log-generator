@@ -1,3 +1,5 @@
+export type DisplayMode = "professional" | "standard";
+
 export interface AirportInfo {
   airport: {
     iata: string;
@@ -11,6 +13,7 @@ export interface AirportInfo {
   offChocks?: string;
   onChocks?: string;
   metar?: string;
+  utcOffset?: number;
 }
 
 export interface FlightData {
@@ -43,6 +46,7 @@ function createEmptyAirportInfo(): AirportInfo {
     offChocks: "",
     onChocks: "",
     metar: "",
+    utcOffset: undefined,
   };
 }
 
@@ -88,6 +92,7 @@ export function createSampleFlightData(): FlightData {
       actualTime: "08:12",
       offChocks: "07:55",
       metar: "METAR ZSPD 150000Z 34006KT 9999 FEW040 08/02 Q1024 NOSIG",
+      utcOffset: 8,
     },
     arrival: {
       airport: {
@@ -101,6 +106,7 @@ export function createSampleFlightData(): FlightData {
       actualTime: "10:25",
       onChocks: "10:32",
       metar: "METAR ZBAD 150200Z 02008KT CAVOK 03/M08 Q1031 NOSIG",
+      utcOffset: 8,
     },
     seatNumber: "31A",
     cabinClass: "Economy",

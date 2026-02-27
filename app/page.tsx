@@ -6,6 +6,7 @@ import PDFTemplate from "@/components/PDFTemplate";
 import {
   FlightData,
   AirlineInfo,
+  DisplayMode,
   createEmptyFlightData,
   createSampleFlightData,
 } from "@/lib/types";
@@ -25,8 +26,7 @@ export default function Home() {
     createEmptyFlightData()
   );
   const [airline, setAirline] = useState<AirlineInfo | null>(null);
-  const [apiKey, setApiKey] = useState("");
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [displayMode, setDisplayMode] = useState<DisplayMode>("professional");
   const [generating, setGenerating] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -36,7 +36,6 @@ export default function Home() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextAutoSave = useRef(true);
 
-  // Load draft on mount
   useEffect(() => {
     const draft = loadDraft();
     if (draft && draft.flightNumber) {
@@ -47,7 +46,6 @@ export default function Home() {
     }
   }, []);
 
-  // Auto-save draft on flightData change (debounced 1s)
   useEffect(() => {
     if (skipNextAutoSave.current) {
       skipNextAutoSave.current = false;
@@ -168,29 +166,52 @@ export default function Home() {
               Flight Log Generator
             </h1>
           </div>
-          <button
-            onClick={() => setShowApiKeyInput(!showApiKeyInput)}
-            className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 transition-colors shrink-0"
-          >
-            API Settings
-          </button>
-        </div>
-        {showApiKeyInput && (
-          <div className="border-t bg-gray-50 px-3 py-3 sm:px-4">
-            <div className="mx-auto max-w-7xl">
-              <label className="block text-xs font-medium text-gray-500 mb-1">
-                Anthropic API Key (optional if set in .env.local)
-              </label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="sk-ant-..."
-                className="w-full sm:max-w-md rounded-lg border border-gray-300 px-3 py-2 sm:py-1.5 text-base sm:text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+
+          {/* Mode Toggle */}
+          <div className="flex items-center gap-2 shrink-0">
+            <span
+              className={`text-xs font-medium transition-colors ${
+                displayMode === "standard"
+                  ? "text-blue-600"
+                  : "text-gray-400"
+              }`}
+            >
+              STD
+            </span>
+            <button
+              onClick={() =>
+                setDisplayMode((m) =>
+                  m === "professional" ? "standard" : "professional"
+                )
+              }
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                displayMode === "professional"
+                  ? "bg-blue-600"
+                  : "bg-gray-300"
+              }`}
+              role="switch"
+              aria-checked={displayMode === "professional"}
+              aria-label="Toggle display mode"
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
+                  displayMode === "professional"
+                    ? "translate-x-6"
+                    : "translate-x-1"
+                }`}
               />
-            </div>
+            </button>
+            <span
+              className={`text-xs font-medium transition-colors ${
+                displayMode === "professional"
+                  ? "text-blue-600"
+                  : "text-gray-400"
+              }`}
+            >
+              PRO
+            </span>
           </div>
-        )}
+        </div>
       </header>
 
       {/* Step Indicator */}
@@ -299,9 +320,10 @@ export default function Home() {
                 flightData={flightData}
                 onFlightDataChange={setFlightData}
                 onPreview={() => setStep("preview")}
-                apiKey={apiKey}
+                apiKey=""
                 draftStatus={draftStatus}
                 onSaveDraft={handleSaveDraft}
+                displayMode={displayMode}
               />
             </div>
           </div>
@@ -423,7 +445,11 @@ export default function Home() {
             {/* PDF Preview Container */}
             <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex sm:justify-center pb-4">
               <div className="shadow-2xl border border-gray-200 bg-white overflow-auto max-w-full">
-                <PDFTemplate data={flightData} airline={airline} />
+                <PDFTemplate
+                  data={flightData}
+                  airline={airline}
+                  displayMode={displayMode}
+                />
               </div>
             </div>
           </div>

@@ -8,6 +8,7 @@ export interface AirportResult {
   iata: string;
   icao: string;
   name: string;
+  utcOffset?: number;
 }
 
 type AirportDataModule = typeof import("airport-data-js");
@@ -31,7 +32,12 @@ export async function lookupByIata(
     const results = await mod.getAirportByIata(code.toUpperCase());
     if (results && results.length > 0) {
       const a = results[0];
-      return { iata: a.iata || "", icao: a.icao || "", name: a.airport || "" };
+      return {
+        iata: a.iata || "",
+        icao: a.icao || "",
+        name: a.airport || "",
+        utcOffset: typeof a.utc === "number" ? a.utc : undefined,
+      };
     }
   } catch {
     // code not found
@@ -50,7 +56,12 @@ export async function lookupByIcao(
     const results = await mod.getAirportByIcao(code.toUpperCase());
     if (results && results.length > 0) {
       const a = results[0];
-      return { iata: a.iata || "", icao: a.icao || "", name: a.airport || "" };
+      return {
+        iata: a.iata || "",
+        icao: a.icao || "",
+        name: a.airport || "",
+        utcOffset: typeof a.utc === "number" ? a.utc : undefined,
+      };
     }
   } catch {
     // code not found
@@ -76,6 +87,7 @@ export async function searchByName(
           iata: a.iata || "",
           icao: a.icao || "",
           name: a.airport || "",
+          utcOffset: typeof a.utc === "number" ? a.utc : undefined,
         }));
     }
   } catch {

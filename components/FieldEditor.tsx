@@ -1,11 +1,14 @@
 "use client";
 
-import { FlightData } from "@/lib/types";
+import { FlightData, DisplayMode } from "@/lib/types";
+import { decodeMetar, DecodedMetar } from "@/lib/metarDecode";
 import AirportInput from "./AirportInput";
+import { useMemo } from "react";
 
 interface FieldEditorProps {
   data: FlightData;
   onChange: (data: FlightData) => void;
+  displayMode: DisplayMode;
 }
 
 function InputField({
@@ -13,11 +16,13 @@ function InputField({
   value,
   onChange,
   className,
+  readOnly,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   className?: string;
+  readOnly?: boolean;
 }) {
   return (
     <div className={className}>
@@ -28,13 +33,87 @@ function InputField({
         type="text"
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-gray-200 px-3 py-2 sm:py-1.5 text-base sm:text-sm text-black focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        readOnly={readOnly}
+        className={`w-full rounded-lg border border-gray-200 px-3 py-2 sm:py-1.5 text-base sm:text-sm text-black focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+          readOnly ? "bg-gray-50 text-gray-600" : ""
+        }`}
       />
     </div>
   );
 }
 
-export default function FieldEditor({ data, onChange }: FieldEditorProps) {
+function MetarDecodedCard({ decoded }: { decoded: DecodedMetar }) {
+  const categoryColor =
+    decoded.flightCategory === "VFR"
+      ? "text-green-700 bg-green-50"
+      : decoded.flightCategory === "MVFR"
+        ? "text-blue-700 bg-blue-50"
+        : decoded.flightCategory === "IFR"
+          ? "text-red-700 bg-red-50"
+          : "text-purple-700 bg-purple-50";
+
+  return (
+    <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5">
+        <div>
+          <span className="text-gray-400">Wind</span>{" "}
+          <span className="font-medium">{decoded.wind}</span>
+        </div>
+        <div>
+          <span className="text-gray-400">Visibility</span>{" "}
+          <span className="font-medium">{decoded.visibility}</span>
+        </div>
+        <div>
+          <span
+            className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${categoryColor}`}
+          >
+            {decoded.flightCategory}
+          </span>
+        </div>
+        <div>
+          <span className="text-gray-400">Clouds</span>{" "}
+          <span className="font-medium">{decoded.clouds}</span>
+        </div>
+        <div>
+          <span className="text-gray-400">Temp</span>{" "}
+          <span className="font-medium">{decoded.temperature}</span>
+        </div>
+        <div>
+          <span className="text-gray-400">Dewpoint</span>{" "}
+          <span className="font-medium">{decoded.dewpoint}</span>
+        </div>
+        <div>
+          <span className="text-gray-400">QNH</span>{" "}
+          <span className="font-medium">{decoded.pressure}</span>
+        </div>
+        <div>
+          <span className="text-gray-400">Humidity</span>{" "}
+          <span className="font-medium">{decoded.humidity}</span>
+        </div>
+        {decoded.weather !== "None" && (
+          <div>
+            <span className="text-gray-400">Weather</span>{" "}
+            <span className="font-medium">{decoded.weather}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function formatUtcOffset(offset: number | undefined): string {
+  if (offset === undefined || offset === null) return "";
+  const sign = offset >= 0 ? "+" : "";
+  return `UTC${sign}${offset}`;
+}
+
+export default function FieldEditor({
+  data,
+  onChange,
+  displayMode,
+}: FieldEditorProps) {
+  const isPro = displayMode === "professional";
+
   const setNestedValue = (
     obj: Record<string, unknown>,
     path: string,
@@ -48,6 +127,9 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
     const lastKey = keys[keys.length - 1];
     if (lastKey === "km" || lastKey === "nm") {
       target[lastKey] = parseFloat(value) || 0;
+    } else if (lastKey === "utcOffset") {
+      const num = parseFloat(value);
+      target[lastKey] = isNaN(num) ? undefined : num;
     } else {
       target[lastKey] = value;
     }
@@ -72,16 +154,62 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
     onChange(newData);
   };
 
+  const handleDistanceChange = (value: string) => {
+    const num = parseFloat(value) || 0;
+    if (isPro) {
+      const km = Math.round(num * 1.852);
+      updateMultiple([
+        ["distance.nm", String(num)],
+        ["distance.km", String(km)],
+      ]);
+    } else {
+      const nm = Math.round(num / 1.852);
+      updateMultiple([
+        ["distance.km", String(num)],
+        ["distance.nm", String(nm)],
+      ]);
+    }
+  };
+
+  const handleAirportChange = (
+    prefix: "departure" | "arrival",
+    airport: {
+      name: string;
+      iata: string;
+      icao: string;
+      utcOffset?: number;
+    }
+  ) => {
+    const updates: [string, string][] = [
+      [`${prefix}.airport.name`, airport.name],
+      [`${prefix}.airport.iata`, airport.iata],
+      [`${prefix}.airport.icao`, airport.icao],
+    ];
+    if (airport.utcOffset !== undefined) {
+      updates.push([`${prefix}.utcOffset`, String(airport.utcOffset)]);
+    }
+    updateMultiple(updates);
+  };
+
+  const depDecoded = useMemo(
+    () => (data.departure?.metar ? decodeMetar(data.departure.metar) : null),
+    [data.departure?.metar]
+  );
+  const arrDecoded = useMemo(
+    () => (data.arrival?.metar ? decodeMetar(data.arrival.metar) : null),
+    [data.arrival?.metar]
+  );
+
   return (
     <div className="space-y-5 sm:space-y-6">
       {/* General Flight Info */}
       <section>
         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2 mb-3">
-          General Flight Info
+          {isPro ? "General Flight Info" : "General Flight Information"}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <InputField
-            label="Flight No."
+            label={isPro ? "Flight No." : "Flight Number"}
             value={data.flightNumber}
             onChange={(v) => update("flightNumber", v)}
           />
@@ -96,12 +224,12 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
             onChange={(v) => update("date", v)}
           />
           <InputField
-            label="A/C Type"
+            label={isPro ? "A/C Type" : "Aircraft Type"}
             value={data.aircraftType}
             onChange={(v) => update("aircraftType", v)}
           />
           <InputField
-            label="Reg. No."
+            label={isPro ? "Reg. No." : "Registration"}
             value={data.registration}
             onChange={(v) => update("registration", v)}
           />
@@ -111,24 +239,21 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
             onChange={(v) => update("flightDuration", v)}
           />
           <InputField
-            label="Age"
+            label={isPro ? "Age" : "Aircraft Age"}
             value={data.aircraftAge || ""}
             onChange={(v) => update("aircraftAge", v)}
           />
           <InputField
-            label="Cruising Alt."
+            label={isPro ? "CRZ ALT" : "Cruising Altitude"}
             value={data.cruisingAltitude}
             onChange={(v) => update("cruisingAltitude", v)}
           />
           <InputField
-            label="Distance (km)"
-            value={String(data.distance?.km || "")}
-            onChange={(v) => update("distance.km", v)}
-          />
-          <InputField
-            label="Distance (nm)"
-            value={String(data.distance?.nm || "")}
-            onChange={(v) => update("distance.nm", v)}
+            label={isPro ? "Distance (nm)" : "Distance (km)"}
+            value={String(
+              isPro ? data.distance?.nm || "" : data.distance?.km || ""
+            )}
+            onChange={handleDistanceChange}
           />
         </div>
       </section>
@@ -136,117 +261,131 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
       {/* Departure Info */}
       <section>
         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2 mb-3">
-          Departure Info
+          {isPro ? "Departure Info" : "Departure Information"}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <AirportInput
             name={data.departure?.airport?.name || ""}
             iata={data.departure?.airport?.iata || ""}
             icao={data.departure?.airport?.icao || ""}
-            onAirportChange={(airport) => {
-              updateMultiple([
-                ["departure.airport.name", airport.name],
-                ["departure.airport.iata", airport.iata],
-                ["departure.airport.icao", airport.icao],
-              ]);
-            }}
+            onAirportChange={(airport) =>
+              handleAirportChange("departure", airport)
+            }
+            labelPrefix={isPro ? "Airport" : "Departure Airport"}
           />
+          {data.departure?.utcOffset !== undefined && (
+            <InputField
+              label={isPro ? "UTC" : "UTC Timezone"}
+              value={formatUtcOffset(data.departure.utcOffset)}
+              onChange={() => {}}
+              readOnly
+            />
+          )}
           <InputField
-            label="Parking Bay"
+            label={isPro ? "P/Bay" : "Parking Bay"}
             value={data.departure?.parkingBay || ""}
             onChange={(v) => update("departure.parkingBay", v)}
           />
           <InputField
-            label="T/O Runway"
+            label={isPro ? "T/O RWY" : "Takeoff Runway"}
             value={data.departure?.runway || ""}
             onChange={(v) => update("departure.runway", v)}
           />
           <InputField
-            label="Sched. Dept."
+            label={isPro ? "SKED DEP" : "Scheduled Departure"}
             value={data.departure?.scheduledTime || ""}
             onChange={(v) => update("departure.scheduledTime", v)}
           />
           <InputField
-            label="Actual Dept."
+            label={isPro ? "ACT DEP" : "Actual Departure"}
             value={data.departure?.actualTime || ""}
             onChange={(v) => update("departure.actualTime", v)}
           />
           <InputField
-            label="Off-Chocks"
+            label={isPro ? "OFF-CHK" : "Off-Chocks Time"}
             value={data.departure?.offChocks || ""}
             onChange={(v) => update("departure.offChocks", v)}
           />
           <div className="hidden sm:block" />
-          <InputField
-            label="METAR"
-            value={data.departure?.metar || ""}
-            onChange={(v) => update("departure.metar", v)}
-            className="col-span-1 sm:col-span-2"
-          />
+          <div className="col-span-1 sm:col-span-2">
+            <InputField
+              label={isPro ? "METAR" : "Weather (paste METAR)"}
+              value={data.departure?.metar || ""}
+              onChange={(v) => update("departure.metar", v)}
+            />
+            {!isPro && depDecoded && <MetarDecodedCard decoded={depDecoded} />}
+          </div>
         </div>
       </section>
 
       {/* Arrival Info */}
       <section>
         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2 mb-3">
-          Arrival Info
+          {isPro ? "Arrival Info" : "Arrival Information"}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <AirportInput
             name={data.arrival?.airport?.name || ""}
             iata={data.arrival?.airport?.iata || ""}
             icao={data.arrival?.airport?.icao || ""}
-            onAirportChange={(airport) => {
-              updateMultiple([
-                ["arrival.airport.name", airport.name],
-                ["arrival.airport.iata", airport.iata],
-                ["arrival.airport.icao", airport.icao],
-              ]);
-            }}
+            onAirportChange={(airport) =>
+              handleAirportChange("arrival", airport)
+            }
+            labelPrefix={isPro ? "Airport" : "Arrival Airport"}
           />
+          {data.arrival?.utcOffset !== undefined && (
+            <InputField
+              label={isPro ? "UTC" : "UTC Timezone"}
+              value={formatUtcOffset(data.arrival.utcOffset)}
+              onChange={() => {}}
+              readOnly
+            />
+          )}
           <InputField
-            label="Landing Runway"
+            label={isPro ? "LDG RWY" : "Landing Runway"}
             value={data.arrival?.runway || ""}
             onChange={(v) => update("arrival.runway", v)}
           />
           <InputField
-            label="Parking Bay"
+            label={isPro ? "P/Bay" : "Parking Bay"}
             value={data.arrival?.parkingBay || ""}
             onChange={(v) => update("arrival.parkingBay", v)}
           />
           <InputField
-            label="Sched. Arrival"
+            label={isPro ? "SKED ARR" : "Scheduled Arrival"}
             value={data.arrival?.scheduledTime || ""}
             onChange={(v) => update("arrival.scheduledTime", v)}
           />
           <InputField
-            label="Actual Arrival"
+            label={isPro ? "ACT ARR" : "Actual Arrival"}
             value={data.arrival?.actualTime || ""}
             onChange={(v) => update("arrival.actualTime", v)}
           />
           <InputField
-            label="On-Chocks"
+            label={isPro ? "ON-CHK" : "On-Chocks Time"}
             value={data.arrival?.onChocks || ""}
             onChange={(v) => update("arrival.onChocks", v)}
           />
           <div className="hidden sm:block" />
-          <InputField
-            label="METAR"
-            value={data.arrival?.metar || ""}
-            onChange={(v) => update("arrival.metar", v)}
-            className="col-span-1 sm:col-span-2"
-          />
+          <div className="col-span-1 sm:col-span-2">
+            <InputField
+              label={isPro ? "METAR" : "Weather (paste METAR)"}
+              value={data.arrival?.metar || ""}
+              onChange={(v) => update("arrival.metar", v)}
+            />
+            {!isPro && arrDecoded && <MetarDecodedCard decoded={arrDecoded} />}
+          </div>
         </div>
       </section>
 
-      {/* Optional Fields */}
+      {/* Passenger Info */}
       <section>
         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2 mb-3">
-          Passenger Info
+          {isPro ? "Passenger Info" : "Passenger Information"}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <InputField
-            label="Seat No."
+            label={isPro ? "Seat No." : "Seat Number"}
             value={data.seatNumber || ""}
             onChange={(v) => update("seatNumber", v)}
           />
@@ -258,7 +397,11 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
               value={data.cabinClass || ""}
               onChange={(e) => update("cabinClass", e.target.value)}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 sm:py-1.5 text-base sm:text-sm text-black bg-white appearance-none focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.75rem center' }}
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 0.75rem center",
+              }}
             >
               <option value="">Select...</option>
               <option value="First">First</option>
