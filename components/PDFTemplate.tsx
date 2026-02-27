@@ -72,15 +72,21 @@ export default function PDFTemplate({
         lineHeight: "1.4",
       }}
     >
-      {/* Header - Seat / Bag Tag */}
+      {/* Header - Seat / Cabin / Bag Tag */}
       <div
         className="flex justify-between items-start mb-4"
         style={{ fontSize: "9pt" }}
       >
-        <span>
-          <strong>{isPro ? "SEAT NO./CABIN CL." : "SEAT NUMBER / CABIN CLASS"}</strong>{" "}
-          {data.seatNumber || "N/A"} / {data.cabinClass || "N/A"}
-        </span>
+        <div className="flex gap-8">
+          <span>
+            <strong>{isPro ? "SEAT NO." : "SEAT NUMBER"}</strong>{" "}
+            {data.seatNumber || "N/A"}
+          </span>
+          <span>
+            <strong>{isPro ? "CABIN CL." : "CABIN CLASS"}</strong>{" "}
+            {data.cabinClass || "N/A"}
+          </span>
+        </div>
         <div
           className="border border-dashed border-gray-400 rounded px-4 py-2 text-center"
           style={{ minWidth: "100px" }}
@@ -92,28 +98,28 @@ export default function PDFTemplate({
       </div>
 
       {/* Airline Logo Section */}
-      <div className="flex items-center justify-center gap-6 my-6">
-        {airline && (
-          <AirlineLogo
-            airlineCode={airline.iata}
-            airlineName={airline.name}
-            logoUrl={airline.logoUrl}
-            size="lg"
-          />
-        )}
-        <div className="text-center">
-          <div className="text-lg font-bold tracking-wide">
-            {airline?.name?.toUpperCase() || "AIRLINE"}
-          </div>
-          <div className="text-xs text-black mt-0.5">(FLT LOG)</div>
+      <div className="flex flex-col items-center my-6">
+        <div className="flex items-center gap-3">
+          {airline && (
+            <AirlineLogo
+              airlineCode={airline.iata}
+              airlineName={airline.name}
+              logoUrl={airline.logoUrl}
+              size="lg"
+            />
+          )}
+          {airline?.allianceLogoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={airline.allianceLogoUrl}
+              alt={airline.alliance || ""}
+              className="h-5 object-contain"
+            />
+          )}
         </div>
-        {airline?.alliance && (
-          <div className="flex flex-col items-center">
-            <span className="text-xs font-semibold text-black">
-              {airline.alliance}
-            </span>
-          </div>
-        )}
+        <div className="text-xs text-black mt-1.5 tracking-widest font-semibold">
+          FLT-LOG
+        </div>
       </div>
 
       <hr className="border-gray-300 my-4" />

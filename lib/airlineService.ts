@@ -42,14 +42,19 @@ export async function getAirlineInfo(
       icao: airline.icao,
       alliance,
       logoUrl,
+      allianceLogoUrl: alliance ? ALLIANCE_LOGO_MAP[alliance] : undefined,
       primaryColor: airline.branding?.primary_color,
     };
   }
 
+  const fallbackAlliance = ALLIANCE_MAP[airlineCode] || undefined;
   return {
     name: getAirlineNameFallback(airlineCode),
     iata: airlineCode,
-    alliance: ALLIANCE_MAP[airlineCode] || undefined,
+    alliance: fallbackAlliance,
+    allianceLogoUrl: fallbackAlliance
+      ? ALLIANCE_LOGO_MAP[fallbackAlliance]
+      : undefined,
     logoUrl: `https://pics.avs.io/200/70/${airlineCode}.png`,
   };
 }
@@ -96,4 +101,10 @@ const ALLIANCE_MAP: Record<string, string> = {
   CZ: "SkyTeam",
   HU: "Star Alliance",
   FM: "SkyTeam",
+};
+
+const ALLIANCE_LOGO_MAP: Record<string, string> = {
+  "Star Alliance": "/alliances/star-alliance.svg",
+  SkyTeam: "/alliances/skyteam.svg",
+  oneworld: "/alliances/oneworld.svg",
 };
