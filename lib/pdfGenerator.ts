@@ -1,5 +1,7 @@
-import { toJpeg } from "html-to-image";
+import { toJpeg, toPng } from "html-to-image";
 import jsPDF from "jspdf";
+
+const PIXEL_RATIO = 2;
 
 export async function generatePDF(
   elementId: string,
@@ -8,10 +10,9 @@ export async function generatePDF(
   const element = document.getElementById(elementId);
   if (!element) throw new Error("PDF content element not found");
 
-  const pixelRatio = 2;
   const dataUrl = await toJpeg(element, {
     quality: 0.95,
-    pixelRatio,
+    pixelRatio: PIXEL_RATIO,
     backgroundColor: "#ffffff",
   });
 
@@ -44,8 +45,32 @@ export async function generatePDF(
   pdf.save(filename);
 }
 
-export function generateFilename(flightNumber: string, date: string): string {
+export async function generatePNG(
+  elementId: string,
+  filename: string
+): Promise<void> {
+  const element = document.getElementById(elementId);
+  if (!element) throw new Error("Content element not found");
+
+  const dataUrl = await toPng(element, {
+    pixelRatio: PIXEL_RATIO,
+    backgroundColor: "#ffffff",
+  });
+
+  const link = document.createElement("a");
+  link.download = filename;
+  link.href = dataUrl;
+  link.click();
+}
+
+export type ExportFormat = "pdf" | "png";
+
+export function generateFilename(
+  flightNumber: string,
+  date: string,
+  format: ExportFormat = "pdf"
+): string {
   const cleanDate = date.replace(/-/g, "");
   const cleanFlight = flightNumber.replace(/\s+/g, "");
-  return `FlightLog_${cleanFlight}_${cleanDate}.pdf`;
+  return `FlightLog_${cleanFlight}_${cleanDate}.${format}`;
 }

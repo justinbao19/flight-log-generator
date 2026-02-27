@@ -9,7 +9,12 @@ import {
   createEmptyFlightData,
   createSampleFlightData,
 } from "@/lib/types";
-import { generatePDF, generateFilename } from "@/lib/pdfGenerator";
+import {
+  generatePDF,
+  generatePNG,
+  generateFilename,
+  ExportFormat,
+} from "@/lib/pdfGenerator";
 import { saveDraft, loadDraft, clearDraft } from "@/lib/storage";
 
 type Step = "input" | "preview";
@@ -23,6 +28,8 @@ export default function Home() {
   const [apiKey, setApiKey] = useState("");
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
   const [draftStatus, setDraftStatus] = useState<"saved" | "unsaved" | "idle">(
     "idle"
   );
@@ -107,22 +114,42 @@ export default function Home() {
     setStep("input");
   };
 
-  const handleGeneratePDF = async () => {
+  const handleExport = async (format: ExportFormat) => {
     if (!flightData) return;
+    setShowExportMenu(false);
     setGenerating(true);
     try {
       const filename = generateFilename(
         flightData.flightNumber,
-        flightData.date
+        flightData.date,
+        format
       );
-      await generatePDF("pdf-content", filename);
+      if (format === "png") {
+        await generatePNG("pdf-content", filename);
+      } else {
+        await generatePDF("pdf-content", filename);
+      }
     } catch (err) {
-      console.error("PDF generation failed:", err);
-      alert("Failed to generate PDF. Please try again.");
+      console.error("Export failed:", err);
+      alert("Failed to export. Please try again.");
     } finally {
       setGenerating(false);
     }
   };
+
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        exportMenuRef.current &&
+        !exportMenuRef.current.contains(e.target as Node)
+      ) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showExportMenu]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -298,50 +325,99 @@ export default function Home() {
                   New Flight
                 </button>
               </div>
-              <button
-                onClick={handleGeneratePDF}
-                disabled={generating}
-                className="rounded-xl bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-              >
-                {generating ? (
-                  <>
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
+              <div className="relative" ref={exportMenuRef}>
+                <button
+                  onClick={() => setShowExportMenu((v) => !v)}
+                  disabled={generating}
+                  className="rounded-xl bg-blue-600 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+                >
+                  {generating ? (
+                    <>
+                      <svg
+                        className="h-4 w-4 animate-spin"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="h-4 w-4"
                         fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      />
-                    </svg>
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
+                      </svg>
+                      Download
+                      <svg
+                        className="h-3 w-3 ml-0.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2.5}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </>
+                  )}
+                </button>
+
+                {showExportMenu && (
+                  <div className="absolute right-0 top-full mt-1.5 w-40 rounded-xl bg-white shadow-lg border border-gray-200 py-1 z-50">
+                    <button
+                      onClick={() => handleExport("pdf")}
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                      />
-                    </svg>
-                    Download PDF
-                  </>
+                      <svg
+                        className="h-4 w-4 text-red-500"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM8.5 13h1c.55 0 1 .45 1 1v.5c0 .55-.45 1-1 1h-.5v1H8v-3.5h.5zm3 0h1c.55 0 1 .45 1 1v1.5c0 .55-.45 1-1 1h-1V13zm3 0H16v.75h-1v.75h.75v.75H15V17h-.75v-4h.25z" />
+                      </svg>
+                      PDF
+                    </button>
+                    <button
+                      onClick={() => handleExport("png")}
+                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <svg
+                        className="h-4 w-4 text-green-500"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                      </svg>
+                      PNG
+                    </button>
+                  </div>
                 )}
-              </button>
+              </div>
             </div>
 
             {/* PDF Preview Container */}
