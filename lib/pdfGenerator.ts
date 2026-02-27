@@ -1,4 +1,4 @@
-import html2canvas from "html2canvas";
+import { toJpeg } from "html-to-image";
 import jsPDF from "jspdf";
 
 export async function generatePDF(
@@ -8,15 +8,13 @@ export async function generatePDF(
   const element = document.getElementById(elementId);
   if (!element) throw new Error("PDF content element not found");
 
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,
+  const pixelRatio = 2;
+  const dataUrl = await toJpeg(element, {
+    quality: 0.95,
+    pixelRatio,
     backgroundColor: "#ffffff",
-    logging: false,
   });
 
-  const imgData = canvas.toDataURL("image/jpeg", 0.95);
   const pdf = new jsPDF({
     orientation: "portrait",
     unit: "mm",
@@ -25,13 +23,21 @@ export async function generatePDF(
 
   const pdfWidth = pdf.internal.pageSize.getWidth();
   const pdfHeight = pdf.internal.pageSize.getHeight();
-  const imgWidth = canvas.width;
-  const imgHeight = canvas.height;
+
+  const img = new Image();
+  img.src = dataUrl;
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = reject;
+  });
+
+  const imgWidth = img.naturalWidth;
+  const imgHeight = img.naturalHeight;
   const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
   const scaledWidth = imgWidth * ratio;
   const scaledHeight = imgHeight * ratio;
 
-  pdf.addImage(imgData, "JPEG", 0, 0, scaledWidth, scaledHeight);
+  pdf.addImage(dataUrl, "JPEG", 0, 0, scaledWidth, scaledHeight);
   pdf.save(filename);
 }
 

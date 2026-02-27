@@ -42,9 +42,9 @@ export default function PDFTemplate({ data, airline }: PDFTemplateProps) {
           <strong>SEAT NO./CABIN CL.</strong>{" "}
           {data.seatNumber || "N/A"} / {data.cabinClass || "N/A"}
         </span>
-        <span>
-          <strong>BAG TAG</strong> {data.bagTag || "N/A"}
-        </span>
+        <div className="border border-dashed border-gray-400 rounded px-4 py-2 text-center" style={{ minWidth: "100px" }}>
+          <span className="text-[7pt] text-gray-400 uppercase tracking-wider">BAG TAG</span>
+        </div>
       </div>
 
       {/* Airline Logo Section */}

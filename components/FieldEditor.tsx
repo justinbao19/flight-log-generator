@@ -230,22 +230,28 @@ export default function FieldEditor({ data, onChange }: FieldEditorProps) {
         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider border-b border-gray-200 pb-2 mb-3">
           Passenger Info
         </h3>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <InputField
             label="Seat No."
             value={data.seatNumber || ""}
             onChange={(v) => update("seatNumber", v)}
           />
-          <InputField
-            label="Cabin Class"
-            value={data.cabinClass || ""}
-            onChange={(v) => update("cabinClass", v)}
-          />
-          <InputField
-            label="Bag Tag"
-            value={data.bagTag || ""}
-            onChange={(v) => update("bagTag", v)}
-          />
+          <div>
+            <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+              Cabin Class
+            </label>
+            <select
+              value={data.cabinClass || ""}
+              onChange={(e) => update("cabinClass", e.target.value)}
+              className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-black bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">Select...</option>
+              <option value="First">First</option>
+              <option value="Business">Business</option>
+              <option value="Premium Economy">Premium Economy</option>
+              <option value="Economy">Economy</option>
+            </select>
+          </div>
         </div>
       </section>
     </div>

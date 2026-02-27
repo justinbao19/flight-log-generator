@@ -1,0 +1,142 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e6]
+          - heading "Flight Log Generator" [level=1] [ref=e8]
+        - button "API Settings" [ref=e9]
+    - generic [ref=e11]:
+      - button "1 Input" [ref=e13]:
+        - generic [ref=e14]: "1"
+        - text: Input
+      - generic [ref=e15]:
+        - img [ref=e16]
+        - button "2 Preview" [ref=e18]:
+          - generic [ref=e19]: "2"
+          - text: Preview
+    - main [ref=e20]:
+      - generic [ref=e22]:
+        - generic [ref=e24]:
+          - heading "Flight Data" [level=2] [ref=e25]
+          - paragraph [ref=e26]: Use AI recognition or fill in manually
+        - generic [ref=e27]:
+          - generic [ref=e28]:
+            - button "Screenshot" [ref=e29]
+            - button "Paste Text" [ref=e30]
+            - button "Manual Form" [ref=e31]
+          - generic [ref=e32]:
+            - generic [ref=e33]: Unsaved changes
+            - button "Save Draft" [ref=e34]
+          - generic [ref=e35]:
+            - generic [ref=e36]:
+              - heading "General Flight Info" [level=3] [ref=e37]
+              - generic [ref=e38]:
+                - generic [ref=e39]:
+                  - generic [ref=e40]: Flight No.
+                  - textbox [ref=e41]
+                - generic [ref=e42]:
+                  - generic [ref=e43]: Call Sign
+                  - textbox [ref=e44]
+                - generic [ref=e45]:
+                  - generic [ref=e46]: Date
+                  - textbox [ref=e47]
+                - generic [ref=e48]:
+                  - generic [ref=e49]: A/C Type
+                  - textbox [ref=e50]
+                - generic [ref=e51]:
+                  - generic [ref=e52]: Reg. No.
+                  - textbox [ref=e53]
+                - generic [ref=e54]:
+                  - generic [ref=e55]: Flight Duration
+                  - textbox [ref=e56]
+                - generic [ref=e57]:
+                  - generic [ref=e58]: Age
+                  - textbox [ref=e59]
+                - generic [ref=e60]:
+                  - generic [ref=e61]: Cruising Alt.
+                  - textbox [ref=e62]
+                - generic [ref=e63]:
+                  - generic [ref=e64]: Distance (km)
+                  - textbox [ref=e65]
+                - generic [ref=e66]:
+                  - generic [ref=e67]: Distance (nm)
+                  - textbox [ref=e68]
+            - generic [ref=e69]:
+              - heading "Departure Info" [level=3] [ref=e70]
+              - generic [ref=e71]:
+                - generic [ref=e72]:
+                  - generic [ref=e73]: Airport Name
+                  - textbox [ref=e74]
+                - generic [ref=e75]:
+                  - generic [ref=e76]: IATA
+                  - textbox [ref=e77]
+                - generic [ref=e78]:
+                  - generic [ref=e79]: ICAO
+                  - textbox [ref=e80]
+                - generic [ref=e81]:
+                  - generic [ref=e82]: Parking Bay
+                  - textbox [ref=e83]
+                - generic [ref=e84]:
+                  - generic [ref=e85]: T/O Runway
+                  - textbox [ref=e86]
+                - generic [ref=e87]:
+                  - generic [ref=e88]: Sched. Dept.
+                  - textbox [ref=e89]
+                - generic [ref=e90]:
+                  - generic [ref=e91]: Actual Dept.
+                  - textbox [ref=e92]
+                - generic [ref=e93]:
+                  - generic [ref=e94]: Off-Chocks
+                  - textbox [ref=e95]
+                - generic [ref=e97]:
+                  - generic [ref=e98]: METAR
+                  - textbox [ref=e99]
+            - generic [ref=e100]:
+              - heading "Arrival Info" [level=3] [ref=e101]
+              - generic [ref=e102]:
+                - generic [ref=e103]:
+                  - generic [ref=e104]: Airport Name
+                  - textbox [ref=e105]
+                - generic [ref=e106]:
+                  - generic [ref=e107]: IATA
+                  - textbox [ref=e108]
+                - generic [ref=e109]:
+                  - generic [ref=e110]: ICAO
+                  - textbox [ref=e111]
+                - generic [ref=e112]:
+                  - generic [ref=e113]: Landing Runway
+                  - textbox [ref=e114]
+                - generic [ref=e115]:
+                  - generic [ref=e116]: Parking Bay
+                  - textbox [ref=e117]
+                - generic [ref=e118]:
+                  - generic [ref=e119]: Sched. Arrival
+                  - textbox [ref=e120]
+                - generic [ref=e121]:
+                  - generic [ref=e122]: Actual Arrival
+                  - textbox [ref=e123]
+                - generic [ref=e124]:
+                  - generic [ref=e125]: On-Chocks
+                  - textbox [ref=e126]
+                - generic [ref=e128]:
+                  - generic [ref=e129]: METAR
+                  - textbox [ref=e130]
+            - generic [ref=e131]:
+              - heading "Passenger Info" [level=3] [ref=e132]
+              - generic [ref=e133]:
+                - generic [ref=e134]:
+                  - generic [ref=e135]: Seat No.
+                  - textbox [ref=e136]
+                - generic [ref=e137]:
+                  - generic [ref=e138]: Cabin Class
+                  - combobox [ref=e139]:
+                    - option "Select..." [selected]
+                    - option "First"
+                    - option "Business"
+                    - option "Premium Economy"
+                    - option "Economy"
+          - button "Preview PDF" [disabled] [ref=e140]
+  - button "Open Next.js Dev Tools" [ref=e146] [cursor=pointer]:
+    - img [ref=e147]
+  - alert [ref=e150]

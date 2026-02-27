@@ -33,6 +33,38 @@ export interface FlightData {
   bagTag?: string;
 }
 
+function createEmptyAirportInfo(): AirportInfo {
+  return {
+    airport: { iata: "", icao: "", name: "" },
+    parkingBay: "",
+    runway: "",
+    scheduledTime: "",
+    actualTime: "",
+    offChocks: "",
+    onChocks: "",
+    metar: "",
+  };
+}
+
+export function createEmptyFlightData(): FlightData {
+  return {
+    flightNumber: "",
+    callSign: "",
+    date: "",
+    aircraftType: "",
+    registration: "",
+    flightDuration: "",
+    aircraftAge: "",
+    distance: { km: 0, nm: 0 },
+    cruisingAltitude: "",
+    departure: createEmptyAirportInfo(),
+    arrival: createEmptyAirportInfo(),
+    seatNumber: "",
+    cabinClass: "",
+    bagTag: "",
+  };
+}
+
 export interface AirlineInfo {
   name: string;
   iata: string;
