@@ -99,6 +99,10 @@ export default function Home() {
     setDraftStatus("saved");
   };
 
+  useEffect(() => {
+    localStorage.setItem("flight-log-display-mode", displayMode);
+  }, [displayMode]);
+
   const handleLoadSample = () => {
     setFlightData(createSampleFlightData());
     setStep("preview");
@@ -346,6 +350,17 @@ export default function Home() {
                 >
                   New Flight
                 </button>
+                <a
+                  href="/preview"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-xl border border-gray-300 px-3 py-2 text-xs sm:text-sm sm:px-4 font-medium text-gray-700 hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                  </svg>
+                  Preview
+                </a>
               </div>
               <div className="relative self-end sm:self-auto" ref={exportMenuRef}>
                 <button
