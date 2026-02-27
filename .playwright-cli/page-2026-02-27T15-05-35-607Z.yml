@@ -1,0 +1,144 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e6]
+          - heading "Flight Log Generator" [level=1] [ref=e8]
+        - button "API Settings" [ref=e9]
+    - generic [ref=e11]:
+      - button "1 Input" [ref=e13]:
+        - generic [ref=e14]: "1"
+        - text: Input
+      - generic [ref=e15]:
+        - img [ref=e16]
+        - button "2 Preview" [ref=e18] [cursor=pointer]:
+          - generic [ref=e19]: "2"
+          - text: Preview
+    - main [ref=e20]:
+      - generic [ref=e251]:
+        - generic [ref=e252]:
+          - generic [ref=e253]:
+            - heading "Flight Data" [level=2] [ref=e254]
+            - paragraph [ref=e255]: Use AI recognition or fill in manually
+          - img "China Eastern Airlines" [ref=e257]
+        - generic [ref=e258]:
+          - generic [ref=e259]:
+            - button "Screenshot" [ref=e260]
+            - button "Paste Text" [ref=e261]
+            - button "Manual Form" [ref=e262]
+          - generic [ref=e263]:
+            - generic [ref=e264]: Draft saved
+            - button "Save Draft" [ref=e265]
+          - generic [ref=e266]:
+            - generic [ref=e267]:
+              - heading "General Flight Info" [level=3] [ref=e268]
+              - generic [ref=e269]:
+                - generic [ref=e270]:
+                  - generic [ref=e271]: Flight No.
+                  - textbox [ref=e272]: MU5405
+                - generic [ref=e273]:
+                  - generic [ref=e274]: Call Sign
+                  - textbox [ref=e275]: CES5405
+                - generic [ref=e276]:
+                  - generic [ref=e277]: Date
+                  - textbox [ref=e278]: 2025-11-16
+                - generic [ref=e279]:
+                  - generic [ref=e280]: A/C Type
+                  - textbox [ref=e281]: B787-9
+                - generic [ref=e282]:
+                  - generic [ref=e283]: Reg. No.
+                  - textbox [ref=e284]: B-2271
+                - generic [ref=e285]:
+                  - generic [ref=e286]: Flight Duration
+                  - textbox [ref=e287]: 2h 58min
+                - generic [ref=e288]:
+                  - generic [ref=e289]: Age
+                  - textbox [ref=e290]
+                - generic [ref=e291]:
+                  - generic [ref=e292]: Cruising Alt.
+                  - textbox [ref=e293]
+                - generic [ref=e294]:
+                  - generic [ref=e295]: Distance (km)
+                  - textbox [ref=e296]
+                - generic [ref=e297]:
+                  - generic [ref=e298]: Distance (nm)
+                  - textbox [ref=e299]
+            - generic [ref=e300]:
+              - heading "Departure Info" [level=3] [ref=e301]
+              - generic [ref=e302]:
+                - generic [ref=e303]:
+                  - generic [ref=e304]: Airport Name
+                  - textbox [ref=e305]: Shanghai Pudong International Airport
+                - generic [ref=e306]:
+                  - generic [ref=e307]: IATA
+                  - textbox [ref=e308]: PVG
+                - generic [ref=e309]:
+                  - generic [ref=e310]: ICAO
+                  - textbox [ref=e311]: ZSPD
+                - generic [ref=e312]:
+                  - generic [ref=e313]: Parking Bay
+                  - textbox [ref=e314]
+                - generic [ref=e315]:
+                  - generic [ref=e316]: T/O Runway
+                  - textbox [ref=e317]
+                - generic [ref=e318]:
+                  - generic [ref=e319]: Sched. Dept.
+                  - textbox [ref=e320]
+                - generic [ref=e321]:
+                  - generic [ref=e322]: Actual Dept.
+                  - textbox [ref=e323]
+                - generic [ref=e324]:
+                  - generic [ref=e325]: Off-Chocks
+                  - textbox [ref=e326]
+                - generic [ref=e328]:
+                  - generic [ref=e329]: METAR
+                  - textbox [ref=e330]
+            - generic [ref=e331]:
+              - heading "Arrival Info" [level=3] [ref=e332]
+              - generic [ref=e333]:
+                - generic [ref=e334]:
+                  - generic [ref=e335]: Airport Name
+                  - textbox [ref=e336]
+                - generic [ref=e337]:
+                  - generic [ref=e338]: IATA
+                  - textbox [ref=e339]
+                - generic [ref=e340]:
+                  - generic [ref=e341]: ICAO
+                  - textbox [ref=e342]
+                - generic [ref=e343]:
+                  - generic [ref=e344]: Landing Runway
+                  - textbox [ref=e345]
+                - generic [ref=e346]:
+                  - generic [ref=e347]: Parking Bay
+                  - textbox [ref=e348]
+                - generic [ref=e349]:
+                  - generic [ref=e350]: Sched. Arrival
+                  - textbox [ref=e351]
+                - generic [ref=e352]:
+                  - generic [ref=e353]: Actual Arrival
+                  - textbox [ref=e354]
+                - generic [ref=e355]:
+                  - generic [ref=e356]: On-Chocks
+                  - textbox [ref=e357]
+                - generic [ref=e359]:
+                  - generic [ref=e360]: METAR
+                  - textbox [ref=e361]
+            - generic [ref=e362]:
+              - heading "Passenger Info" [level=3] [ref=e363]
+              - generic [ref=e364]:
+                - generic [ref=e365]:
+                  - generic [ref=e366]: Seat No.
+                  - textbox [ref=e367]: 68A
+                - generic [ref=e368]:
+                  - generic [ref=e369]: Cabin Class
+                  - combobox [ref=e370]:
+                    - option "Select..."
+                    - option "First"
+                    - option "Business"
+                    - option "Premium Economy"
+                    - option "Economy" [selected]
+          - button "Preview PDF" [ref=e371]
+  - button "Open Next.js Dev Tools" [ref=e146] [cursor=pointer]:
+    - img [ref=e147]
+  - alert [ref=e150]

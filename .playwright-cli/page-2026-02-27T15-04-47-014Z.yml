@@ -1,0 +1,140 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e6]
+          - heading "Flight Log Generator" [level=1] [ref=e8]
+        - button "API Settings" [ref=e9]
+    - generic [ref=e11]:
+      - button "1 Input" [ref=e13] [cursor=pointer]:
+        - generic [ref=e14]: "1"
+        - text: Input
+      - generic [ref=e15]:
+        - img [ref=e16]
+        - button "2 Preview" [ref=e18]:
+          - generic [ref=e19]: "2"
+          - text: Preview
+    - main [ref=e20]:
+      - generic [ref=e153]:
+        - generic [ref=e154]:
+          - generic [ref=e155]:
+            - button "Back to Edit" [ref=e156]
+            - button "New Flight" [ref=e157]
+          - button "Download PDF" [ref=e158]:
+            - img [ref=e159]
+            - text: Download PDF
+        - generic [ref=e163]:
+          - generic [ref=e164]:
+            - generic [ref=e165]:
+              - strong [ref=e166]: SEAT NO./CABIN CL.
+              - text: 68A / Economy
+            - generic [ref=e167]: BAG TAG
+          - generic [ref=e168]:
+            - img "China Eastern Airlines" [ref=e169]
+            - generic [ref=e170]:
+              - generic [ref=e171]: CHINA EASTERN AIRLINES
+              - generic [ref=e172]: (FLT LOG)
+            - generic [ref=e174]: SkyTeam
+          - separator [ref=e175]
+          - generic [ref=e176]:
+            - heading "GENERAL FLT INFO" [level=3] [ref=e177]
+            - generic [ref=e178]:
+              - generic [ref=e179]:
+                - strong [ref=e180]: "FLT NO.:"
+                - text: MU5405
+              - generic [ref=e181]:
+                - strong [ref=e182]: "C/S:"
+                - text: CES5405
+              - generic [ref=e183]:
+                - strong [ref=e184]: "DT:"
+                - text: NOV 16, 2025
+              - generic [ref=e185]:
+                - strong [ref=e186]: "A/C TYPE:"
+                - text: B787-9
+              - generic [ref=e187]:
+                - strong [ref=e188]: "REG NO.:"
+                - text: B-2271
+              - generic [ref=e189]:
+                - strong [ref=e190]: "FLT DUR:"
+                - text: 2h 58min
+              - generic [ref=e191]:
+                - strong [ref=e192]: "AGE:"
+                - text: N/A
+              - generic [ref=e193]:
+                - strong [ref=e194]: "DIST:"
+                - text: 0km / 0nm
+              - generic [ref=e195]:
+                - strong [ref=e196]: "CRZ ALT:"
+                - text: N/A
+          - generic [ref=e197]:
+            - heading "DEP INFO" [level=3] [ref=e198]
+            - generic [ref=e199]:
+              - generic [ref=e200]:
+                - strong [ref=e201]: "DEP ARPT:"
+                - text: Shanghai Pudong International Airport
+                - generic [ref=e202]:
+                  - strong [ref=e203]: "ICAO:"
+                  - text: ZSPD
+                - generic [ref=e204]:
+                  - strong [ref=e205]: "IATA:"
+                  - text: PVG
+              - generic [ref=e206]:
+                - generic [ref=e207]:
+                  - strong [ref=e208]: "P/BAY:"
+                  - text: N/A
+                - generic [ref=e209]:
+                  - strong [ref=e210]: "T/O RWY:"
+                  - text: N/A
+                - generic [ref=e211]:
+                  - strong [ref=e212]: "SKED DEP:"
+                  - text: N/A
+              - generic [ref=e213]:
+                - generic [ref=e214]:
+                  - strong [ref=e215]: "ACT DEP:"
+                  - text: N/A
+                - generic [ref=e216]:
+                  - strong [ref=e217]: "OFF-CHK:"
+                  - text: N/A
+                - generic [ref=e218]: UTC ( +8 )
+          - generic [ref=e219]:
+            - heading "ARR INFO" [level=3] [ref=e220]
+            - generic [ref=e221]:
+              - generic [ref=e222]:
+                - strong [ref=e223]: "DEST ARPT:"
+                - text: N/A
+                - generic [ref=e224]:
+                  - strong [ref=e225]: "ICAO:"
+                  - text: N/A
+                - generic [ref=e226]:
+                  - strong [ref=e227]: "IATA:"
+                  - text: N/A
+              - generic [ref=e228]:
+                - generic [ref=e229]:
+                  - strong [ref=e230]: "LDG RWY:"
+                  - text: N/A
+                - generic [ref=e231]:
+                  - strong [ref=e232]: "SKED ARR:"
+                  - text: N/A
+                - generic [ref=e233]:
+                  - strong [ref=e234]: "ACT ARR:"
+                  - text: N/A
+              - generic [ref=e235]:
+                - generic [ref=e236]:
+                  - strong [ref=e237]: "ON-CHK:"
+                  - text: N/A
+                - generic [ref=e238]: UTC ( +8 )
+                - generic [ref=e239]:
+                  - strong [ref=e240]: "P/BAY:"
+                  - text: N/A
+          - separator [ref=e241]
+          - generic [ref=e243]:
+            - generic [ref=e244]:
+              - heading "A/C PHOTOS / RMKS:" [level=3] [ref=e245]
+              - generic [ref=e246]: Aircraft photo area
+            - generic [ref=e247]:
+              - heading "B/Pass:" [level=3] [ref=e248]
+              - generic [ref=e249]: Boarding pass area
+  - button "Open Next.js Dev Tools" [ref=e146] [cursor=pointer]:
+    - img [ref=e147]
+  - alert [ref=e150]

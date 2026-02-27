@@ -1,0 +1,34 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e6]
+          - heading "Flight Log Generator" [level=1] [ref=e8]
+        - button "API Settings" [ref=e9]
+    - generic [ref=e11]:
+      - button "1 Input" [ref=e13]:
+        - generic [ref=e14]: "1"
+        - text: Input
+      - generic [ref=e15]:
+        - img [ref=e16]
+        - button "2 Preview" [ref=e18] [cursor=pointer]:
+          - generic [ref=e19]: "2"
+          - text: Preview
+    - main [ref=e20]:
+      - generic [ref=e251]:
+        - generic [ref=e252]:
+          - generic [ref=e253]:
+            - heading "Flight Data" [level=2] [ref=e254]
+            - paragraph [ref=e255]: Use AI recognition or fill in manually
+          - img "China Eastern Airlines" [ref=e257]
+        - generic [ref=e258]:
+          - generic [ref=e259]:
+            - button "Screenshot" [ref=e260]
+            - button "Paste Text" [ref=e261]
+            - button "Manual Form" [ref=e262]
+          - textbox "Paste your flight note here..." [ref=e372]
+          - button "Recognize Flight Data" [disabled] [ref=e373]
+  - button "Open Next.js Dev Tools" [ref=e146] [cursor=pointer]:
+    - img [ref=e147]
+  - alert [ref=e150]
