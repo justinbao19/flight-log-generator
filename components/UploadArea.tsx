@@ -300,7 +300,7 @@ export default function UploadArea({
             disabled={!hasRequiredFields}
             className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Preview PDF
+            Preview
           </button>
         </>
       )}
