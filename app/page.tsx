@@ -3,7 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import UploadArea from "@/components/UploadArea";
 import PDFTemplate from "@/components/PDFTemplate";
-import { FlightData, AirlineInfo, createEmptyFlightData } from "@/lib/types";
+import {
+  FlightData,
+  AirlineInfo,
+  createEmptyFlightData,
+  createSampleFlightData,
+} from "@/lib/types";
 import { generatePDF, generateFilename } from "@/lib/pdfGenerator";
 import { saveDraft, loadDraft, clearDraft } from "@/lib/storage";
 
@@ -87,6 +92,11 @@ export default function Home() {
   const handleSaveDraft = () => {
     saveDraft(flightData);
     setDraftStatus("saved");
+  };
+
+  const handleLoadSample = () => {
+    setFlightData(createSampleFlightData());
+    setStep("preview");
   };
 
   const handleNewFlight = () => {
@@ -222,6 +232,26 @@ export default function Home() {
                   </h2>
                   <p className="text-sm text-gray-500">
                     Use AI recognition or fill in manually
+                    <span className="mx-1.5 text-gray-300">·</span>
+                    <button
+                      onClick={handleLoadSample}
+                      className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-700 font-medium transition-colors"
+                    >
+                      <svg
+                        className="h-3.5 w-3.5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
+                      </svg>
+                      Try Sample
+                    </button>
                   </p>
                 </div>
                 {airline && (

@@ -1,3 +1,9 @@
+import {
+  overrideByIata,
+  overrideByIcao,
+  overrideSearchByName,
+} from "./airportOverrides";
+
 export interface AirportResult {
   iata: string;
   icao: string;
@@ -17,6 +23,9 @@ async function getModule(): Promise<AirportDataModule> {
 export async function lookupByIata(
   code: string
 ): Promise<AirportResult | null> {
+  const local = overrideByIata(code);
+  if (local) return local;
+
   try {
     const mod = await getModule();
     const results = await mod.getAirportByIata(code.toUpperCase());
@@ -33,6 +42,9 @@ export async function lookupByIata(
 export async function lookupByIcao(
   code: string
 ): Promise<AirportResult | null> {
+  const local = overrideByIcao(code);
+  if (local) return local;
+
   try {
     const mod = await getModule();
     const results = await mod.getAirportByIcao(code.toUpperCase());
@@ -49,18 +61,26 @@ export async function lookupByIcao(
 export async function searchByName(
   query: string
 ): Promise<AirportResult[]> {
+  const localMatches = overrideSearchByName(query);
+
+  let libResults: AirportResult[] = [];
   try {
     const mod = await getModule();
     const results = await mod.searchByName(query);
     if (results && results.length > 0) {
-      return results.slice(0, 10).map((a) => ({
-        iata: a.iata || "",
-        icao: a.icao || "",
-        name: a.airport || "",
-      }));
+      const overrideIatas = new Set(localMatches.map((a) => a.iata));
+      libResults = results
+        .filter((a) => !overrideIatas.has(a.iata || ""))
+        .slice(0, 10)
+        .map((a) => ({
+          iata: a.iata || "",
+          icao: a.icao || "",
+          name: a.airport || "",
+        }));
     }
   } catch {
     // search failed
   }
-  return [];
+
+  return [...localMatches, ...libResults].slice(0, 10);
 }
