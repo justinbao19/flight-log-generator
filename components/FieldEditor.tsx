@@ -4,7 +4,7 @@ import { FlightData, DisplayMode } from "@/lib/types";
 import { decodeMetar, DecodedMetar } from "@/lib/metarDecode";
 import AirportInput from "./AirportInput";
 import { DatePicker, TimePicker } from "./DateTimePicker";
-import { useMemo, ReactNode } from "react";
+import { useMemo, useEffect, useRef, ReactNode } from "react";
 import { Plane, Hash, Clock, CloudSun, PlaneTakeoff, PlaneLanding, Radio, Tag, Timer, Hourglass, Globe, CircleParking, AlarmClock, ClockArrowDown, UserRound } from "lucide-react";
 import { RunwayIcon } from "./icons/RunwayIcon";
 import { CabinClassIcon } from "./icons/CabinClassIcon";
@@ -208,6 +208,47 @@ export default function FieldEditor({
     updateMultiple(updates);
   };
 
+  const computedDuration = useMemo(() => {
+    const depTime = data.departure?.actualTime;
+    const arrTime = data.arrival?.actualTime;
+    if (!depTime || !arrTime) return null;
+
+    const depOffset = data.departure?.utcOffset;
+    const arrOffset = data.arrival?.utcOffset;
+    if (depOffset === undefined || arrOffset === undefined) return null;
+
+    const [dh, dm] = depTime.split(":").map(Number);
+    const [ah, am] = arrTime.split(":").map(Number);
+    if ([dh, dm, ah, am].some((n) => isNaN(n))) return null;
+
+    const depMinutesUtc = dh * 60 + dm - depOffset * 60;
+    const arrMinutesUtc = ah * 60 + am - arrOffset * 60;
+
+    let diff = arrMinutesUtc - depMinutesUtc;
+    if (diff <= 0) diff += 24 * 60;
+
+    const hours = Math.floor(diff / 60);
+    const mins = diff % 60;
+    if (hours === 0) return `${mins}min`;
+    if (mins === 0) return `${hours}h`;
+    return `${hours}h ${mins}min`;
+  }, [
+    data.departure?.actualTime,
+    data.arrival?.actualTime,
+    data.departure?.utcOffset,
+    data.arrival?.utcOffset,
+  ]);
+
+  const prevDurationRef = useRef(computedDuration);
+  useEffect(() => {
+    if (computedDuration && computedDuration !== prevDurationRef.current) {
+      prevDurationRef.current = computedDuration;
+      if (data.flightDuration !== computedDuration) {
+        update("flightDuration", computedDuration);
+      }
+    }
+  }, [computedDuration]);
+
   const depDecoded = useMemo(
     () => (data.departure?.metar ? decodeMetar(data.departure.metar) : null),
     [data.departure?.metar]
@@ -259,6 +300,7 @@ export default function FieldEditor({
             label="Flight Duration"
             value={data.flightDuration}
             onChange={(v) => update("flightDuration", v)}
+            readOnly={!!computedDuration}
             icon={<Timer className="w-4 h-4" />}
           />
           <InputField
@@ -431,6 +473,7 @@ export default function FieldEditor({
             label={isPro ? "Seat No." : "Seat Number"}
             value={data.seatNumber || ""}
             onChange={(v) => update("seatNumber", v)}
+            icon={<Hash className="w-4 h-4" />}
           />
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1.5 capitalize">
