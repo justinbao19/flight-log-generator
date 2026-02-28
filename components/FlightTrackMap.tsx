@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useCallback } from "react";
 import type { FlightTrackData } from "@/lib/types";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -147,11 +147,26 @@ export default function FlightTrackMap({
     mapRef.current.invalidateSize();
   }, [height]);
 
+  const handleRecenter = useCallback(() => {
+    mapRef.current?.fitBounds(bounds, { padding: [40, 40], animate: true });
+  }, [bounds]);
+
   return (
-    <div
-      ref={mapContainerRef}
-      className="w-full rounded-xl"
-      style={{ height, minHeight: 300 }}
-    />
+    <div className="relative">
+      <div
+        ref={mapContainerRef}
+        className="w-full rounded-xl"
+        style={{ height, minHeight: 300 }}
+      />
+      <button
+        onClick={handleRecenter}
+        title="Fit to track"
+        className="absolute top-[84px] right-[10px] z-[1000] flex h-[30px] w-[30px] items-center justify-center rounded-sm border-2 border-[rgba(0,0,0,0.2)] bg-white text-slate-600 hover:bg-slate-50 hover:text-sky-600 transition-colors"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+        </svg>
+      </button>
+    </div>
   );
 }

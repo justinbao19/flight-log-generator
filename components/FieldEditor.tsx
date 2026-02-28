@@ -5,7 +5,7 @@ import { decodeMetar, DecodedMetar } from "@/lib/metarDecode";
 import AirportInput from "./AirportInput";
 import { DatePicker, TimePicker } from "./DateTimePicker";
 import { useMemo, useEffect, useRef, useState, useCallback, ReactNode } from "react";
-import { Plane, Hash, Clock, CloudSun, PlaneTakeoff, PlaneLanding, Radio, Tag, Timer, Hourglass, Globe, CircleParking, AlarmClock, ClockArrowDown, UserRound, MapPin, Satellite, Search, Camera, ExternalLink, CloudDownload } from "lucide-react";
+import { Plane, Hash, Clock, CloudSun, PlaneTakeoff, PlaneLanding, Radio, Tag, Timer, Hourglass, Globe, CircleParking, AlarmClock, ClockArrowDown, UserRound, MapPin, Satellite, Search, Camera, ExternalLink, CloudDownload, Info } from "lucide-react";
 import { RunwayIcon } from "./icons/RunwayIcon";
 import { CabinClassIcon } from "./icons/CabinClassIcon";
 import { AltitudeIcon } from "./icons/AltitudeIcon";
@@ -383,6 +383,12 @@ export default function FieldEditor({
     }
   }, [computedDuration]);
 
+  const isDateTooOld = useMemo(() => {
+    if (!data.date) return false;
+    const diff = Date.now() - new Date(data.date + "T23:59:59").getTime();
+    return diff > 14 * 24 * 60 * 60 * 1000;
+  }, [data.date]);
+
   const depDecoded = useMemo(
     () => (data.departure?.metar ? decodeMetar(data.departure.metar) : null),
     [data.departure?.metar]
@@ -405,7 +411,7 @@ export default function FieldEditor({
             {onFlightLookup && (
               <button
                 onClick={onFlightLookup}
-                disabled={!data.flightNumber || flightLookupLoading}
+                disabled={!data.flightNumber || flightLookupLoading || isDateTooOld}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
                 {flightLookupLoading ? (
@@ -427,7 +433,7 @@ export default function FieldEditor({
             {onFetchTrack && (
               <button
                 onClick={() => onFetchTrack()}
-                disabled={!data.flightNumber || !data.date || trackLoading}
+                disabled={!data.flightNumber || !data.date || trackLoading || isDateTooOld}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-sky-50 text-sky-600 hover:bg-sky-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
                 {trackLoading ? (
@@ -445,6 +451,18 @@ export default function FieldEditor({
                   </>
                 )}
               </button>
+            )}
+            {(onFlightLookup || onFetchTrack) && (
+              <div className="group relative">
+                <Info className="w-3.5 h-3.5 text-slate-400 hover:text-sky-500 cursor-help transition-colors" />
+                <div className="absolute bottom-full right-0 mb-1.5 hidden group-hover:block z-50">
+                  <div className="whitespace-nowrap rounded-lg bg-slate-800 px-2.5 py-1.5 text-[11px] text-white shadow-lg">
+                    {isDateTooOld
+                      ? "Date is older than 2 weeks — data no longer available"
+                      : "Only flights within the last ~2 weeks are available"}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 

@@ -1,0 +1,163 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e6]
+          - heading "Flight Log Generator" [level=1] [ref=e8]
+        - generic [ref=e9]:
+          - generic [ref=e10]: STD
+          - switch "Toggle display mode" [checked] [ref=e11]
+          - generic [ref=e13]: PRO
+    - generic [ref=e15]:
+      - button "1 Input" [ref=e17] [cursor=pointer]:
+        - generic [ref=e18]: "1"
+        - text: Input
+      - generic [ref=e19]:
+        - img [ref=e20]
+        - button "2 Preview" [ref=e22]:
+          - generic [ref=e23]: "2"
+          - text: Preview
+    - main [ref=e24]:
+      - generic [ref=e249]:
+        - generic [ref=e251]:
+          - generic [ref=e252]:
+            - button "Edit" [ref=e253]
+            - button "New Flight" [ref=e254]
+          - generic [ref=e255]:
+            - button "PDF Preview" [ref=e256]
+            - button "Flight Track" [active] [ref=e257]: Flight Track
+          - generic [ref=e259]:
+            - link "Full View" [ref=e260] [cursor=pointer]:
+              - /url: /preview
+              - img [ref=e261]
+            - button "Download" [disabled] [ref=e264]:
+              - img [ref=e265]
+              - text: Download
+              - img [ref=e267]
+        - generic [ref=e367]:
+          - generic [ref=e368]:
+            - generic [ref=e369]:
+              - generic [ref=e370]:
+                - generic [ref=e371]:
+                  - generic [ref=e372]:
+                    - generic [ref=e373]: SHA
+                    - img [ref=e374]
+                    - generic [ref=e376]: PKX
+                  - generic [ref=e377]: CES5137
+                - generic [ref=e378]:
+                  - generic [ref=e379]: Shanghai Hongqiao International Airport
+                  - img [ref=e380]
+                  - generic [ref=e382]: Beijing Daxing International Airport
+              - generic [ref=e383]:
+                - img [ref=e384]
+                - text: Feb 28, 2026
+            - generic [ref=e387]:
+              - generic [ref=e388]:
+                - generic [ref=e389]:
+                  - img [ref=e390]
+                  - text: Duration
+                - generic [ref=e393]: 2h 2min
+              - generic [ref=e394]:
+                - generic [ref=e395]:
+                  - img [ref=e396]
+                  - text: Max Altitude
+                - generic [ref=e398]: FL276
+                - generic [ref=e399]: 27,598 ft
+              - generic [ref=e400]:
+                - generic [ref=e401]:
+                  - img [ref=e402]
+                  - text: Distance
+                - generic [ref=e404]: 1153 km
+                - generic [ref=e405]: 623 NM
+              - generic [ref=e406]:
+                - generic [ref=e407]:
+                  - img [ref=e408]
+                  - text: Waypoints
+                - generic [ref=e410]: "4"
+                - generic [ref=e411]: matched fixes
+          - generic [ref=e413]:
+            - generic [ref=e414]:
+              - generic:
+                - generic:
+                  - img
+                - generic:
+                  - button "POMOK":
+                    - generic:
+                      - generic: POMOK
+                  - button "PIMOL":
+                    - generic:
+                      - generic: PIMOL
+                  - button "UDINO":
+                    - generic:
+                      - generic: UDINO
+                  - button "GOLAL":
+                    - generic:
+                      - generic: GOLAL
+                  - button "SHA":
+                    - generic [ref=e416] [cursor=pointer]: SHA
+                  - button "PKX":
+                    - generic [ref=e418] [cursor=pointer]: PKX
+              - generic:
+                - generic [ref=e420]:
+                  - button "Zoom in" [ref=e421] [cursor=pointer]: +
+                  - button "Zoom out" [ref=e422] [cursor=pointer]: −
+                - generic [ref=e423]:
+                  - text: ©
+                  - link "CARTO" [ref=e424] [cursor=pointer]:
+                    - /url: https://carto.com/
+            - button "Fit to track" [ref=e425]:
+              - img [ref=e426]
+          - generic [ref=e428]:
+            - heading "Altitude Profile" [level=4] [ref=e429]:
+              - img [ref=e430]
+              - text: Altitude Profile
+            - img [ref=e432]:
+              - generic [ref=e434]: 0ft
+              - generic [ref=e436]: FL98
+              - generic [ref=e438]: FL197
+              - generic [ref=e440]: FL295
+              - generic [ref=e441]: 0m
+              - generic [ref=e442]: 20m
+              - generic [ref=e443]: 40m
+              - generic [ref=e444]: 1h01m
+              - generic [ref=e445]: 1h21m
+              - generic [ref=e446]: 1h42m
+              - generic [ref=e447]: 2h02m
+              - generic [ref=e450]: Climb
+              - generic [ref=e451]: Climb
+              - generic [ref=e452]: Cruise
+              - generic [ref=e453]: Cruise
+              - generic [ref=e454]: Climb
+              - generic [ref=e455]: Cruise
+              - generic [ref=e456]: Cruise
+              - generic [ref=e457]: Cruise
+              - generic [ref=e458]: Descent
+              - generic [ref=e459]: Cruise
+              - generic [ref=e460]: Descent
+              - generic [ref=e461]: Cruise
+              - generic [ref=e462]: Descent
+              - generic [ref=e465]: POMOK
+              - generic [ref=e468]: PIMOL
+          - generic [ref=e469]:
+            - heading "Major Waypoints" [level=4] [ref=e470]:
+              - img [ref=e471]
+              - text: Major Waypoints
+            - generic [ref=e473]:
+              - generic [ref=e474]:
+                - generic "31.450°, 121.117°" [ref=e475]: POMOK
+                - img [ref=e476]
+              - generic [ref=e478]:
+                - generic "32.247°, 119.778°" [ref=e479]: PIMOL
+                - img [ref=e480]
+              - generic [ref=e482]:
+                - generic "34.822°, 117.795°" [ref=e483]: UDINO
+                - img [ref=e484]
+              - generic "36.758°, 117.060°" [ref=e487]: GOLAL
+    - contentinfo [ref=e236]:
+      - text: Built with ❤️ by
+      - link "Justin" [ref=e237] [cursor=pointer]:
+        - /url: https://x.com/JustinBao_
+  - button "Open Next.js Dev Tools" [ref=e243] [cursor=pointer]:
+    - img [ref=e244]
+  - alert [ref=e248]
