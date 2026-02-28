@@ -23,9 +23,9 @@ interface AirportInputProps {
 }
 
 const INPUT_CLASS =
-  "w-full rounded-xl border border-gray-200 bg-gray-50/50 py-2 sm:py-2 text-base sm:text-sm text-black transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] pl-10 pr-3";
+  "w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 sm:py-2 text-base sm:text-sm text-slate-900 transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)] pl-10 pr-3";
 const IATA_ICAO_INPUT_CLASS =
-  "w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 sm:py-2 text-base sm:text-sm text-black transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)]";
+  "w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 sm:py-2 text-base sm:text-sm text-slate-900 transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)]";
 
 export default function AirportInput({
   name,
@@ -143,11 +143,11 @@ export default function AirportInput({
   return (
     <>
       <div className="col-span-1 sm:col-span-2 relative" ref={wrapperRef}>
-        <label className="block text-sm font-medium text-gray-600 mb-1.5 capitalize">
+        <label className="block text-sm font-medium text-slate-600 mb-1.5 capitalize">
           {labelPrefix ? `${labelPrefix} Name` : "Airport Name"}
         </label>
         <div className="relative flex items-center">
-          <div className="absolute left-3 text-gray-400 pointer-events-none flex items-center justify-center">
+          <div className="absolute left-3 text-slate-400 pointer-events-none flex items-center justify-center">
             <TowerControl className="w-4 h-4" />
           </div>
           <input
@@ -163,7 +163,7 @@ export default function AirportInput({
           />
         </div>
         {showSuggestions && suggestions.length > 0 && (
-          <ul className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white/90 backdrop-blur-xl shadow-lg">
+          <ul className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border border-slate-200 bg-white/90 backdrop-blur-xl shadow-lg">
             {suggestions.map((s, i) => (
               <li
                 key={`${s.iata}-${s.icao}-${i}`}
@@ -174,13 +174,13 @@ export default function AirportInput({
                 <div
                   className={`px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors ${
                     i === highlightIdx
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-800 hover:bg-gray-50/80"
+                      ? "bg-sky-50 text-sky-700"
+                      : "text-slate-800 hover:bg-slate-50/80"
                   }`}
                 >
                   <span className="font-medium">{s.name}</span>
                   {(s.iata || s.icao) && (
-                    <span className="ml-2 text-xs text-gray-400">
+                    <span className="ml-2 text-xs text-slate-400">
                       {[s.iata, s.icao].filter(Boolean).join(" / ")}
                     </span>
                   )}
@@ -191,7 +191,7 @@ export default function AirportInput({
         )}
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-600 mb-1.5 capitalize">
+        <label className="block text-sm font-medium text-slate-600 mb-1.5 capitalize">
           IATA
         </label>
         <input
@@ -203,7 +203,7 @@ export default function AirportInput({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-600 mb-1.5 capitalize">
+        <label className="block text-sm font-medium text-slate-600 mb-1.5 capitalize">
           ICAO
         </label>
         <input

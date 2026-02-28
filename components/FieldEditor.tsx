@@ -36,12 +36,12 @@ function InputField({
 }) {
   return (
     <div className={className}>
-      <label className="block text-sm font-medium text-gray-600 mb-1.5 capitalize">
+      <label className="block text-sm font-medium text-slate-600 mb-1.5 capitalize">
         {label}
       </label>
       <div className="relative flex items-center">
         {icon && (
-          <div className="absolute left-3 text-gray-400 pointer-events-none flex items-center justify-center">
+          <div className="absolute left-3 text-slate-400 pointer-events-none flex items-center justify-center">
             {icon}
           </div>
         )}
@@ -50,9 +50,9 @@ function InputField({
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
           readOnly={readOnly}
-          className={`w-full rounded-xl border border-gray-200 bg-gray-50/50 py-2 sm:py-2 text-base sm:text-sm text-black transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] ${
+          className={`w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 sm:py-2 text-base sm:text-sm text-slate-900 transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)] ${
             icon ? "pl-10 pr-3" : "px-3"
-          } ${readOnly ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""}`}
+          } ${readOnly ? "bg-slate-100 text-slate-500 cursor-not-allowed" : ""}`}
         />
       </div>
     </div>
@@ -70,14 +70,14 @@ function MetarDecodedCard({ decoded }: { decoded: DecodedMetar }) {
           : "text-purple-700 bg-purple-50";
 
   return (
-    <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
+    <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5">
         <div>
-          <span className="text-gray-400">Wind</span>{" "}
+          <span className="text-slate-400">Wind</span>{" "}
           <span className="font-medium">{decoded.wind}</span>
         </div>
         <div>
-          <span className="text-gray-400">Visibility</span>{" "}
+          <span className="text-slate-400">Visibility</span>{" "}
           <span className="font-medium">{decoded.visibility}</span>
         </div>
         <div>
@@ -88,28 +88,28 @@ function MetarDecodedCard({ decoded }: { decoded: DecodedMetar }) {
           </span>
         </div>
         <div>
-          <span className="text-gray-400">Clouds</span>{" "}
+          <span className="text-slate-400">Clouds</span>{" "}
           <span className="font-medium">{decoded.clouds}</span>
         </div>
         <div>
-          <span className="text-gray-400">Temp</span>{" "}
+          <span className="text-slate-400">Temp</span>{" "}
           <span className="font-medium">{decoded.temperature}</span>
         </div>
         <div>
-          <span className="text-gray-400">Dewpoint</span>{" "}
+          <span className="text-slate-400">Dewpoint</span>{" "}
           <span className="font-medium">{decoded.dewpoint}</span>
         </div>
         <div>
-          <span className="text-gray-400">QNH</span>{" "}
+          <span className="text-slate-400">QNH</span>{" "}
           <span className="font-medium">{decoded.pressure}</span>
         </div>
         <div>
-          <span className="text-gray-400">Humidity</span>{" "}
+          <span className="text-slate-400">Humidity</span>{" "}
           <span className="font-medium">{decoded.humidity}</span>
         </div>
         {decoded.weather !== "None" && (
           <div>
-            <span className="text-gray-400">Weather</span>{" "}
+            <span className="text-slate-400">Weather</span>{" "}
             <span className="font-medium">{decoded.weather}</span>
           </div>
         )}
@@ -262,8 +262,8 @@ export default function FieldEditor({
     <div className="space-y-5 sm:space-y-6">
       {/* General Flight Info */}
       <section>
-        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-          <Plane className="w-4 h-4 text-blue-500" />
+        <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+          <Plane className="w-4 h-4 text-sky-500" />
           {isPro ? "General Flight Info" : "General Flight Information"}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -328,8 +328,8 @@ export default function FieldEditor({
 
       {/* Departure Info */}
       <section>
-        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 mt-2">
-          <PlaneTakeoff className="w-4 h-4 text-blue-500" />
+        <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 mt-2">
+          <PlaneTakeoff className="w-4 h-4 text-sky-500" />
           {isPro ? "Departure Info" : "Departure Information"}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -396,8 +396,8 @@ export default function FieldEditor({
 
       {/* Arrival Info */}
       <section>
-        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 mt-2">
-          <PlaneLanding className="w-4 h-4 text-blue-500" />
+        <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 mt-2">
+          <PlaneLanding className="w-4 h-4 text-sky-500" />
           {isPro ? "Arrival Info" : "Arrival Information"}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -464,8 +464,8 @@ export default function FieldEditor({
 
       {/* Passenger Info */}
       <section>
-        <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2 mt-2">
-          <UserRound className="w-4 h-4 text-blue-500" />
+        <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 mt-2">
+          <UserRound className="w-4 h-4 text-sky-500" />
           {isPro ? "Passenger Info" : "Passenger Information"}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -476,17 +476,17 @@ export default function FieldEditor({
             icon={<Hash className="w-4 h-4" />}
           />
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1.5 capitalize">
+            <label className="block text-sm font-medium text-slate-600 mb-1.5 capitalize">
               Cabin Class
             </label>
             <div className="relative flex items-center">
-              <div className="absolute left-3 text-gray-400 pointer-events-none flex items-center justify-center">
+              <div className="absolute left-3 text-slate-400 pointer-events-none flex items-center justify-center">
                 <CabinClassIcon className="w-4 h-4" />
               </div>
               <select
                 value={data.cabinClass || ""}
                 onChange={(e) => update("cabinClass", e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50/50 pl-10 pr-3 py-2 sm:py-2 text-base sm:text-sm text-black appearance-none transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)]"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3 py-2 sm:py-2 text-base sm:text-sm text-slate-900 appearance-none transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)]"
                 style={{
                   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
                   backgroundRepeat: "no-repeat",

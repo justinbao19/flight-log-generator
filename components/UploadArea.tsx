@@ -116,7 +116,7 @@ export default function UploadArea({
   return (
     <div className="w-full space-y-3 sm:space-y-4">
       {/* Three-tab Switcher */}
-      <div className="relative flex rounded-xl bg-gray-100/80 p-1 backdrop-blur-sm">
+      <div className="relative flex rounded-xl bg-slate-100/80 p-1 backdrop-blur-sm">
         {(
           [
             { key: "screenshot", label: "Screenshot" },
@@ -128,7 +128,7 @@ export default function UploadArea({
             key={tab.key}
             onClick={() => setMode(tab.key)}
             className={`relative flex-1 rounded-lg py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors z-10 ${
-              mode === tab.key ? "text-gray-900" : "text-gray-500 hover:text-gray-700"
+              mode === tab.key ? "text-slate-900" : "text-slate-500 hover:text-slate-700"
             }`}
           >
             {mode === tab.key && (
@@ -160,10 +160,10 @@ export default function UploadArea({
               onClick={() => fileInputRef.current?.click()}
               className={`flex h-[180px] sm:h-[220px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed overflow-hidden transition-all ${
                 dragOver
-                  ? "border-blue-400 bg-blue-50/50 scale-[0.98]"
+                  ? "border-sky-400 bg-sky-50/50 scale-[0.98]"
                   : imagePreview
-                    ? "border-transparent bg-gray-50/50 shadow-inner"
-                    : "border-gray-200 hover:border-gray-300 hover:bg-gray-50/50"
+                    ? "border-transparent bg-slate-50/50 shadow-inner"
+                    : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50"
               }`}
             >
               <input
@@ -185,7 +185,7 @@ export default function UploadArea({
                     className="max-h-full rounded-xl object-contain shadow-sm"
                   />
                   <div className="absolute inset-0 bg-white/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <p className="text-sm font-medium text-gray-700 bg-white px-4 py-2 rounded-full shadow-sm">
+                    <p className="text-sm font-medium text-slate-700 bg-white px-4 py-2 rounded-full shadow-sm">
                       Click to replace
                     </p>
                   </div>
@@ -194,7 +194,7 @@ export default function UploadArea({
                 <div className="flex flex-col items-center gap-3 p-4 sm:p-8">
                   <div className="p-3 bg-white rounded-full shadow-sm">
                     <svg
-                      className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500"
+                      className="h-6 w-6 sm:h-8 sm:w-8 text-sky-500"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -208,10 +208,10 @@ export default function UploadArea({
                     </svg>
                   </div>
                   <div className="text-center">
-                    <p className="text-sm font-medium text-gray-700">
+                    <p className="text-sm font-medium text-slate-700">
                       Drop screenshot here or click
                     </p>
-                    <p className="text-xs text-gray-400 mt-1">JPG, PNG up to 5MB</p>
+                    <p className="text-xs text-slate-400 mt-1">JPG, PNG up to 5MB</p>
                   </div>
                 </div>
               )}
@@ -220,19 +220,19 @@ export default function UploadArea({
             <button
               onClick={handleRecognize}
               disabled={loading || !imageFile}
-              className="relative w-full overflow-hidden rounded-xl bg-gray-900 py-3.5 text-sm font-semibold text-white transition-all hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] disabled:shadow-none"
+              className="relative w-full overflow-hidden rounded-xl bg-sky-500 py-3.5 text-sm font-semibold text-white transition-all hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 shadow-[0_4px_14px_0_rgba(14,165,233,0.25)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.3)] disabled:shadow-none"
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-300 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-400"></span>
                   </span>
-                  <span className="text-gray-600 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse">
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-100 to-white animate-pulse">
                     AI Analyzing...
                   </span>
                   <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12"
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"
                     initial={{ x: "-100%" }}
                     animate={{ x: "200%" }}
                     transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
@@ -250,25 +250,25 @@ export default function UploadArea({
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Paste your flight note or raw text here..."
-              className="block h-[180px] sm:h-[220px] w-full rounded-2xl border border-gray-200 bg-gray-50/50 p-4 sm:p-5 text-base sm:text-sm font-mono text-gray-700 resize-none transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)]"
+              className="block h-[180px] sm:h-[220px] w-full rounded-2xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5 text-base sm:text-sm font-mono text-slate-700 resize-none transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)]"
             />
 
             <button
               onClick={handleRecognize}
               disabled={loading || !text.trim()}
-              className="relative w-full overflow-hidden rounded-xl bg-gray-900 py-3.5 text-sm font-semibold text-white transition-all hover:bg-black disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] disabled:shadow-none"
+              className="relative w-full overflow-hidden rounded-xl bg-sky-500 py-3.5 text-sm font-semibold text-white transition-all hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 shadow-[0_4px_14px_0_rgba(14,165,233,0.25)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.3)] disabled:shadow-none"
             >
               {loading ? (
                 <div className="flex items-center justify-center gap-2">
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-300 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-400"></span>
                   </span>
-                  <span className="text-gray-600 bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse">
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-100 to-white animate-pulse">
                     AI Analyzing...
                   </span>
                   <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12"
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"
                     initial={{ x: "-100%" }}
                     animate={{ x: "200%" }}
                     transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
@@ -287,13 +287,13 @@ export default function UploadArea({
         <>
           {/* Draft status bar */}
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-slate-400">
               {draftStatus === "saved" && "Draft saved"}
               {draftStatus === "unsaved" && "Unsaved changes"}
             </span>
             <button
               onClick={onSaveDraft}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              className="text-xs text-sky-600 hover:text-sky-700 font-medium transition-colors"
             >
               Save Draft
             </button>
@@ -304,7 +304,7 @@ export default function UploadArea({
           <button
             onClick={onPreview}
             disabled={!hasRequiredFields}
-            className="w-full rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-xl bg-sky-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-50 shadow-[0_4px_14px_0_rgba(14,165,233,0.25)]"
           >
             Preview
           </button>

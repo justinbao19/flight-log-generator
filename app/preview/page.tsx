@@ -141,7 +141,7 @@ export default function PreviewPage() {
           No flight data found. Please create a flight log first.
         </p>
         <button
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/app")}
           className="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
         >
           Go to Editor
@@ -158,7 +158,7 @@ export default function PreviewPage() {
       <div className="fixed bottom-0 left-0 right-0 sm:sticky sm:top-0 z-50 bg-white/80 backdrop-blur-xl border-t sm:border-t-0 sm:border-b border-gray-200 shadow-[0_-8px_30px_-4px_rgba(0,0,0,0.05)] sm:shadow-sm pb-safe">
         <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
           <button
-            onClick={() => router.push("/")}
+            onClick={() => router.push("/app")}
             className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

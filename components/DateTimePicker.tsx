@@ -69,7 +69,7 @@ export function DatePicker({ label, value, onChange, readOnly, className }: Date
 
   return (
     <div className={className} ref={containerRef}>
-      <label className="block text-sm font-medium text-gray-600 mb-1.5 capitalize">
+      <label className="block text-sm font-medium text-slate-600 mb-1.5 capitalize">
         {label}
       </label>
       <div className="relative">
@@ -78,7 +78,7 @@ export function DatePicker({ label, value, onChange, readOnly, className }: Date
           className="cursor-pointer"
         >
           <div className="relative flex items-center pointer-events-none">
-            <div className="absolute left-3 text-gray-400 flex items-center justify-center">
+            <div className="absolute left-3 text-slate-400 flex items-center justify-center">
               <CalendarIcon className="w-4 h-4" />
             </div>
             <input
@@ -86,8 +86,8 @@ export function DatePicker({ label, value, onChange, readOnly, className }: Date
               readOnly
               value={value || ""}
               placeholder="Select date"
-              className={`w-full rounded-xl border border-gray-200 bg-gray-50/50 py-2 sm:py-2 text-base sm:text-sm text-black transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] pl-10 pr-3 ${
-                readOnly ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "cursor-pointer"
+              className={`w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 sm:py-2 text-base sm:text-sm text-slate-900 transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)] pl-10 pr-3 ${
+                readOnly ? "bg-slate-100 text-slate-500 cursor-not-allowed" : "cursor-pointer"
               }`}
             />
           </div>
@@ -100,29 +100,29 @@ export function DatePicker({ label, value, onChange, readOnly, className }: Date
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
-              className="absolute z-50 mt-2 p-4 bg-white border border-gray-200 rounded-2xl shadow-xl w-72 origin-top"
+              className="absolute z-50 mt-2 p-4 bg-white border border-slate-200 rounded-2xl shadow-xl w-72 origin-top"
             >
               <div className="flex justify-between items-center mb-4">
                 <button
                   type="button"
                   onClick={prevMonth}
-                  className="p-1 hover:bg-gray-100 rounded-full text-gray-600 transition-colors"
+                  className="p-1 hover:bg-slate-100 rounded-full text-slate-600 transition-colors"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
-                <h2 className="font-semibold text-gray-800">
+                <h2 className="font-semibold text-slate-800">
                   {format(currentMonth, "MMMM yyyy")}
                 </h2>
                 <button
                   type="button"
                   onClick={nextMonth}
-                  className="p-1 hover:bg-gray-100 rounded-full text-gray-600 transition-colors"
+                  className="p-1 hover:bg-slate-100 rounded-full text-slate-600 transition-colors"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
               
-              <div className="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-medium text-gray-400">
+              <div className="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-medium text-slate-400">
                 {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
                   <div key={d}>{d}</div>
                 ))}
@@ -139,8 +139,8 @@ export function DatePicker({ label, value, onChange, readOnly, className }: Date
                       onClick={() => handleDateClick(day)}
                       className={`
                         h-8 w-8 rounded-full flex items-center justify-center text-sm transition-colors
-                        ${!isCurrentMonth ? "text-gray-300" : "text-gray-700 hover:bg-gray-100"}
-                        ${isSelected ? "bg-blue-500 text-white font-semibold hover:bg-blue-600 shadow-md" : ""}
+                        ${!isCurrentMonth ? "text-slate-300" : "text-slate-700 hover:bg-slate-100"}
+                        ${isSelected ? "bg-sky-500 text-white font-semibold hover:bg-sky-600 shadow-md" : ""}
                       `}
                     >
                       {format(day, "d")}
@@ -213,7 +213,7 @@ export function TimePicker({ label, value, onChange, readOnly, className, icon }
 
   return (
     <div className={className} ref={containerRef}>
-      <label className="block text-sm font-medium text-gray-600 mb-1.5 capitalize">
+      <label className="block text-sm font-medium text-slate-600 mb-1.5 capitalize">
         {label}
       </label>
       <div className="relative">
@@ -222,7 +222,7 @@ export function TimePicker({ label, value, onChange, readOnly, className, icon }
           className="cursor-pointer"
         >
           <div className="relative flex items-center pointer-events-none">
-            <div className="absolute left-3 text-gray-400 flex items-center justify-center">
+            <div className="absolute left-3 text-slate-400 flex items-center justify-center">
               {icon || <Clock className="w-4 h-4" />}
             </div>
             <input
@@ -230,8 +230,8 @@ export function TimePicker({ label, value, onChange, readOnly, className, icon }
               readOnly
               value={value || ""}
               placeholder="HH:mm"
-              className={`w-full rounded-xl border border-gray-200 bg-gray-50/50 py-2 sm:py-2 text-base sm:text-sm text-black transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] pl-10 pr-3 ${
-                readOnly ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "cursor-pointer"
+              className={`w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 sm:py-2 text-base sm:text-sm text-slate-900 transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)] pl-10 pr-3 ${
+                readOnly ? "bg-slate-100 text-slate-500 cursor-not-allowed" : "cursor-pointer"
               }`}
             />
           </div>
@@ -244,10 +244,10 @@ export function TimePicker({ label, value, onChange, readOnly, className, icon }
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
-              className="absolute z-50 mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl w-48 flex overflow-hidden origin-top"
+              className="absolute z-50 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl w-48 flex overflow-hidden origin-top"
             >
-              <div className="flex-1 flex flex-col items-center border-r border-gray-100">
-                <div className="text-xs font-semibold text-gray-400 py-2 w-full text-center bg-gray-50 border-b border-gray-100">Hour</div>
+              <div className="flex-1 flex flex-col items-center border-r border-slate-100">
+                <div className="text-xs font-semibold text-slate-400 py-2 w-full text-center bg-slate-50 border-b border-slate-100">Hour</div>
                 <div ref={hoursScrollRef} className="h-48 overflow-y-auto w-full scrollbar-hide py-2 px-1 custom-scrollbar">
                   {hoursList.map((h) => (
                     <button
@@ -257,8 +257,8 @@ export function TimePicker({ label, value, onChange, readOnly, className, icon }
                       onClick={() => handleHourSelect(h)}
                       className={`w-full py-2 text-sm rounded-lg transition-colors ${
                         h === hours
-                          ? "bg-blue-500 text-white font-semibold shadow-md"
-                          : "text-gray-600 hover:bg-gray-100"
+                          ? "bg-sky-500 text-white font-semibold shadow-md"
+                          : "text-slate-600 hover:bg-slate-100"
                       }`}
                     >
                       {h}
@@ -267,7 +267,7 @@ export function TimePicker({ label, value, onChange, readOnly, className, icon }
                 </div>
               </div>
               <div className="flex-1 flex flex-col items-center">
-                <div className="text-xs font-semibold text-gray-400 py-2 w-full text-center bg-gray-50 border-b border-gray-100">Min</div>
+                <div className="text-xs font-semibold text-slate-400 py-2 w-full text-center bg-slate-50 border-b border-slate-100">Min</div>
                 <div ref={minutesScrollRef} className="h-48 overflow-y-auto w-full scrollbar-hide py-2 px-1 custom-scrollbar">
                   {minutesList.map((m) => (
                     <button
@@ -277,8 +277,8 @@ export function TimePicker({ label, value, onChange, readOnly, className, icon }
                       onClick={() => handleMinuteSelect(m)}
                       className={`w-full py-2 text-sm rounded-lg transition-colors ${
                         m === minutes
-                          ? "bg-blue-500 text-white font-semibold shadow-md"
-                          : "text-gray-600 hover:bg-gray-100"
+                          ? "bg-sky-500 text-white font-semibold shadow-md"
+                          : "text-slate-600 hover:bg-slate-100"
                       }`}
                     >
                       {m}

@@ -32,6 +32,10 @@ function formatUtc(offset: number | undefined): string {
   return `UTC ( ${sign}${offset} )`;
 }
 
+const mono: React.CSSProperties = {
+  fontFamily: "var(--font-b612-mono), 'B612 Mono', 'Courier New', monospace",
+};
+
 export default function PDFTemplate({
   data,
   airline,
@@ -67,7 +71,7 @@ export default function PDFTemplate({
         width: "210mm",
         minHeight: "297mm",
         padding: "12mm 15mm",
-        fontFamily: "Arial, Helvetica, sans-serif",
+        fontFamily: "var(--font-b612), 'B612', Arial, Helvetica, sans-serif",
         fontSize: "10pt",
         lineHeight: "1.4",
       }}
@@ -80,11 +84,11 @@ export default function PDFTemplate({
         <div className="flex gap-8">
           <span>
             <strong>{isPro ? "SEAT NO." : "SEAT NUMBER"}</strong>{" "}
-            {data.seatNumber || "N/A"}
+            <span style={mono}>{data.seatNumber || "N/A"}</span>
           </span>
           <span>
             <strong>{isPro ? "CABIN CL." : "CABIN CLASS"}</strong>{" "}
-            {data.cabinClass || "N/A"}
+            <span style={mono}>{data.cabinClass || "N/A"}</span>
           </span>
         </div>
         <div
@@ -117,7 +121,7 @@ export default function PDFTemplate({
             />
           )}
         </div>
-        <div className="text-xs text-black mt-1.5 tracking-widest font-semibold">
+        <div className="text-xs text-black mt-1.5 tracking-widest font-semibold" style={mono}>
           FLT-LOG
         </div>
       </div>
@@ -135,37 +139,39 @@ export default function PDFTemplate({
         >
           <div className="col-span-1">
             <strong>{isPro ? "FLT NO.:" : "FLIGHT NO.:"}</strong>{" "}
-            {data.flightNumber || "N/A"}
+            <span style={mono}>{data.flightNumber || "N/A"}</span>
           </div>
           <div className="col-span-1">
             <strong>{isPro ? "C/S:" : "CALL SIGN:"}</strong>{" "}
-            {data.callSign || "N/A"}
+            <span style={mono}>{data.callSign || "N/A"}</span>
           </div>
           <div className="col-span-1">
-            <strong>{isPro ? "DT:" : "DATE:"}</strong> {formatDate(data.date)}
+            <strong>{isPro ? "DT:" : "DATE:"}</strong>{" "}
+            <span style={mono}>{formatDate(data.date)}</span>
           </div>
           <div>
             <strong>{isPro ? "A/C TYPE:" : "AIRCRAFT TYPE:"}</strong>{" "}
-            {data.aircraftType || "N/A"}
+            <span style={mono}>{data.aircraftType || "N/A"}</span>
           </div>
           <div>
             <strong>{isPro ? "REG NO.:" : "REGISTRATION:"}</strong>{" "}
-            {data.registration || "N/A"}
+            <span style={mono}>{data.registration || "N/A"}</span>
           </div>
           <div>
             <strong>{isPro ? "FLT DUR:" : "FLIGHT DURATION:"}</strong>{" "}
-            {data.flightDuration || "N/A"}
+            <span style={mono}>{data.flightDuration || "N/A"}</span>
           </div>
           <div>
             <strong>{isPro ? "AGE:" : "AIRCRAFT AGE:"}</strong>{" "}
-            {data.aircraftAge || "N/A"}
+            <span style={mono}>{data.aircraftAge || "N/A"}</span>
           </div>
           <div className="col-span-2">
-            <strong>{isPro ? "DIST:" : "DISTANCE:"}</strong> {distanceDisplay}
+            <strong>{isPro ? "DIST:" : "DISTANCE:"}</strong>{" "}
+            <span style={mono}>{distanceDisplay}</span>
           </div>
           <div className="col-span-3">
             <strong>{isPro ? "CRZ ALT:" : "CRUISING ALTITUDE:"}</strong>{" "}
-            {data.cruisingAltitude || "N/A"}
+            <span style={mono}>{data.cruisingAltitude || "N/A"}</span>
           </div>
         </div>
       </section>
@@ -178,47 +184,47 @@ export default function PDFTemplate({
         <div className="space-y-1.5" style={{ fontSize: "9.5pt" }}>
           <div>
             <strong>{isPro ? "DEP ARPT:" : "DEPARTURE AIRPORT:"}</strong>{" "}
-            {data.departure?.airport?.name || "N/A"}
+            <span style={mono}>{data.departure?.airport?.name || "N/A"}</span>
             <span className="ml-4">
               <strong>ICAO:</strong>{" "}
-              {data.departure?.airport?.icao || "N/A"}
+              <span style={mono}>{data.departure?.airport?.icao || "N/A"}</span>
             </span>
             <span className="ml-4">
               <strong>IATA:</strong>{" "}
-              {data.departure?.airport?.iata || "N/A"}
+              <span style={mono}>{data.departure?.airport?.iata || "N/A"}</span>
             </span>
           </div>
           <div className="flex gap-8">
             <span>
               <strong>{isPro ? "P/BAY:" : "PARKING BAY:"}</strong>{" "}
-              {data.departure?.parkingBay || "N/A"}
+              <span style={mono}>{data.departure?.parkingBay || "N/A"}</span>
             </span>
             <span>
               <strong>{isPro ? "T/O RWY:" : "TAKEOFF RUNWAY:"}</strong>{" "}
-              {data.departure?.runway || "N/A"}
+              <span style={mono}>{data.departure?.runway || "N/A"}</span>
             </span>
             <span>
               <strong>{isPro ? "SKED DEP:" : "SCHEDULED DEP:"}</strong>{" "}
-              {data.departure?.scheduledTime || "N/A"}
+              <span style={mono}>{data.departure?.scheduledTime || "N/A"}</span>
             </span>
           </div>
           <div className="flex gap-8">
             <span>
               <strong>{isPro ? "ACT DEP:" : "ACTUAL DEP:"}</strong>{" "}
-              {data.departure?.actualTime || "N/A"}
+              <span style={mono}>{data.departure?.actualTime || "N/A"}</span>
             </span>
             <span>
               <strong>{isPro ? "OFF-CHK:" : "OFF-CHOCKS:"}</strong>{" "}
-              {data.departure?.offChocks || "N/A"}
+              <span style={mono}>{data.departure?.offChocks || "N/A"}</span>
             </span>
             {data.departure?.utcOffset !== undefined && (
-              <span>{formatUtc(data.departure.utcOffset)}</span>
+              <span style={mono}>{formatUtc(data.departure.utcOffset)}</span>
             )}
           </div>
           {depMetarDisplay && (
             <div className="text-[8.5pt] mt-1">
               <strong>{isPro ? "METAR:" : "WEATHER:"}</strong>{" "}
-              {depMetarDisplay}
+              <span style={mono}>{depMetarDisplay}</span>
             </div>
           )}
         </div>
@@ -232,47 +238,47 @@ export default function PDFTemplate({
         <div className="space-y-1.5" style={{ fontSize: "9.5pt" }}>
           <div>
             <strong>{isPro ? "DEST ARPT:" : "DESTINATION AIRPORT:"}</strong>{" "}
-            {data.arrival?.airport?.name || "N/A"}
+            <span style={mono}>{data.arrival?.airport?.name || "N/A"}</span>
             <span className="ml-4">
               <strong>ICAO:</strong>{" "}
-              {data.arrival?.airport?.icao || "N/A"}
+              <span style={mono}>{data.arrival?.airport?.icao || "N/A"}</span>
             </span>
             <span className="ml-4">
               <strong>IATA:</strong>{" "}
-              {data.arrival?.airport?.iata || "N/A"}
+              <span style={mono}>{data.arrival?.airport?.iata || "N/A"}</span>
             </span>
           </div>
           <div className="flex gap-8">
             <span>
               <strong>{isPro ? "LDG RWY:" : "LANDING RUNWAY:"}</strong>{" "}
-              {data.arrival?.runway || "N/A"}
+              <span style={mono}>{data.arrival?.runway || "N/A"}</span>
             </span>
             <span>
               <strong>{isPro ? "SKED ARR:" : "SCHEDULED ARR:"}</strong>{" "}
-              {data.arrival?.scheduledTime || "N/A"}
+              <span style={mono}>{data.arrival?.scheduledTime || "N/A"}</span>
             </span>
             <span>
               <strong>{isPro ? "ACT ARR:" : "ACTUAL ARR:"}</strong>{" "}
-              {data.arrival?.actualTime || "N/A"}
+              <span style={mono}>{data.arrival?.actualTime || "N/A"}</span>
             </span>
           </div>
           <div className="flex gap-8">
             <span>
               <strong>{isPro ? "ON-CHK:" : "ON-CHOCKS:"}</strong>{" "}
-              {data.arrival?.onChocks || "N/A"}
+              <span style={mono}>{data.arrival?.onChocks || "N/A"}</span>
             </span>
             {data.arrival?.utcOffset !== undefined && (
-              <span>{formatUtc(data.arrival.utcOffset)}</span>
+              <span style={mono}>{formatUtc(data.arrival.utcOffset)}</span>
             )}
             <span>
               <strong>{isPro ? "P/BAY:" : "PARKING BAY:"}</strong>{" "}
-              {data.arrival?.parkingBay || "N/A"}
+              <span style={mono}>{data.arrival?.parkingBay || "N/A"}</span>
             </span>
           </div>
           {arrMetarDisplay && (
             <div className="text-[8.5pt] mt-1">
               <strong>{isPro ? "METAR:" : "WEATHER:"}</strong>{" "}
-              {arrMetarDisplay}
+              <span style={mono}>{arrMetarDisplay}</span>
             </div>
           )}
         </div>

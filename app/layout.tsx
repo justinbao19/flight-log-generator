@@ -1,9 +1,21 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, B612, B612_Mono } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
+});
+
+const b612 = B612({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-b612",
+});
+
+const b612Mono = B612_Mono({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-b612-mono",
 });
 
 export const metadata: Metadata = {
@@ -18,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} ${b612.variable} ${b612Mono.variable} antialiased`}>
         {children}
       </body>
     </html>
