@@ -169,10 +169,8 @@ export function TimePicker({ label, value, onChange, readOnly, className, icon }
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Default to current time if empty
-  const defaultDate = new Date();
-  const [hours, setHours] = useState(() => value ? value.split(":")[0] : format(defaultDate, "HH"));
-  const [minutes, setMinutes] = useState(() => value ? value.split(":")[1] : format(defaultDate, "mm"));
+  const [hours, setHours] = useState(() => value ? value.split(":")[0] : "");
+  const [minutes, setMinutes] = useState(() => value ? value.split(":")[1] : "");
 
   useClickOutside(containerRef, () => setIsOpen(false));
 
@@ -202,13 +200,17 @@ export function TimePicker({ label, value, onChange, readOnly, className, icon }
   }, [isOpen, hours, minutes]); // added hours and minutes to dependencies
 
   const handleHourSelect = (h: string) => {
+    const m = minutes || "00";
     setHours(h);
-    onChange(`${h}:${minutes}`);
+    setMinutes(m);
+    onChange(`${h}:${m}`);
   };
 
   const handleMinuteSelect = (m: string) => {
+    const h = hours || "00";
     setMinutes(m);
-    onChange(`${hours}:${m}`);
+    setHours(h);
+    onChange(`${h}:${m}`);
   };
 
   return (
@@ -229,7 +231,7 @@ export function TimePicker({ label, value, onChange, readOnly, className, icon }
               type="text"
               readOnly
               value={value || ""}
-              placeholder="HH:mm"
+              placeholder="Select time"
               className={`w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 sm:py-2 text-base sm:text-sm text-slate-900 transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)] pl-10 pr-3 ${
                 readOnly ? "bg-slate-100 text-slate-500 cursor-not-allowed" : "cursor-pointer"
               }`}

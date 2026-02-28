@@ -29,11 +29,39 @@ export interface FlightData {
     nm: number;
   };
   cruisingAltitude: string;
+  majorWaypoints?: string;
   departure: AirportInfo;
   arrival: AirportInfo;
   seatNumber?: string;
   cabinClass?: string;
   bagTag?: string;
+}
+
+export interface TrackWaypoint {
+  time: number;
+  latitude: number;
+  longitude: number;
+  altitude: number;
+  track: number;
+  onGround: boolean;
+}
+
+export interface MatchedFix {
+  name: string;
+  lat: number;
+  lon: number;
+  trackIndex: number;
+}
+
+export interface FlightTrackData {
+  icao24: string;
+  callsign: string;
+  startTime: number;
+  endTime: number;
+  path: TrackWaypoint[];
+  matchedFixes: MatchedFix[];
+  departure: { iata: string; name: string; lat: number; lon: number };
+  arrival: { iata: string; name: string; lat: number; lon: number };
 }
 
 function createEmptyAirportInfo(): AirportInfo {
@@ -61,6 +89,7 @@ export function createEmptyFlightData(): FlightData {
     aircraftAge: "",
     distance: { km: 0, nm: 0 },
     cruisingAltitude: "",
+    majorWaypoints: "",
     departure: createEmptyAirportInfo(),
     arrival: createEmptyAirportInfo(),
     seatNumber: "",
@@ -80,6 +109,7 @@ export function createSampleFlightData(): FlightData {
     aircraftAge: "3.5 years",
     distance: { km: 1075, nm: 580 },
     cruisingAltitude: "FL370",
+    majorWaypoints: "PIKAS - LAMEN - DOGAR - ELKUR - IGONO",
     departure: {
       airport: {
         iata: "PVG",
