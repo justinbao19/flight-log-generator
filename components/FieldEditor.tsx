@@ -385,7 +385,7 @@ export default function FieldEditor({
 
   const isDateTooOld = useMemo(() => {
     if (!data.date) return false;
-    const diff = Date.now() - new Date(data.date + "T23:59:59").getTime();
+    const diff = Date.now() - new Date(data.date + "T23:59:59Z").getTime();
     return diff > 14 * 24 * 60 * 60 * 1000;
   }, [data.date]);
 
