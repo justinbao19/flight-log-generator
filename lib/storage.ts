@@ -29,19 +29,38 @@ export function clearDraft(): void {
   }
 }
 
-export function saveTrackData(data: FlightTrackData): void {
+interface StoredTrack {
+  flightNumber: string;
+  date: string;
+  data: FlightTrackData;
+}
+
+export function saveTrackData(data: FlightTrackData, flightNumber: string, date: string): void {
   try {
-    localStorage.setItem(TRACK_KEY, JSON.stringify(data));
+    const stored: StoredTrack = { flightNumber, date, data };
+    localStorage.setItem(TRACK_KEY, JSON.stringify(stored));
   } catch {
     // localStorage might be full
   }
 }
 
-export function loadTrackData(): FlightTrackData | null {
+export function loadTrackData(flightNumber?: string, date?: string): FlightTrackData | null {
   try {
     const raw = localStorage.getItem(TRACK_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as FlightTrackData;
+    const parsed = JSON.parse(raw);
+
+    if (parsed && typeof parsed === "object" && "flightNumber" in parsed && "data" in parsed) {
+      const stored = parsed as StoredTrack;
+      if (flightNumber && date) {
+        if (stored.flightNumber !== flightNumber || stored.date !== date) {
+          return null;
+        }
+      }
+      return stored.data;
+    }
+
+    return parsed as FlightTrackData;
   } catch {
     return null;
   }

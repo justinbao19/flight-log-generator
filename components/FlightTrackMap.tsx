@@ -1,163 +1,157 @@
 "use client";
 
-import { useMemo } from "react";
-import {
-  ComposableMap,
-  Geographies,
-  Geography,
-  Line,
-  Marker,
-} from "react-simple-maps";
+import { useEffect, useRef, useMemo } from "react";
 import type { FlightTrackData } from "@/lib/types";
-
-const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 interface FlightTrackMapProps {
   trackData: FlightTrackData;
-  width?: number;
   height?: number;
 }
 
-function computeProjectionConfig(trackData: FlightTrackData) {
-  const lats = trackData.path.map((p) => p.latitude);
-  const lons = trackData.path.map((p) => p.longitude);
+function createAirportIcon(label: string, color: string): L.DivIcon {
+  return L.divIcon({
+    className: "",
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+    html: `
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
+        <div style="
+          font-family:var(--font-b612-mono),monospace;
+          font-size:13px;font-weight:700;color:#0f172a;
+          background:white;padding:2px 8px;border-radius:8px;
+          box-shadow:0 2px 8px rgba(0,0,0,0.15);
+          white-space:nowrap;margin-bottom:4px;
+          border:2px solid ${color};
+        ">${label}</div>
+        <div style="
+          width:14px;height:14px;border-radius:50%;
+          background:${color};border:2.5px solid white;
+          box-shadow:0 2px 6px rgba(0,0,0,0.2);
+        "></div>
+      </div>
+    `,
+  });
+}
 
-  lats.push(trackData.departure.lat, trackData.arrival.lat);
-  lons.push(trackData.departure.lon, trackData.arrival.lon);
-
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLon = Math.min(...lons);
-  const maxLon = Math.max(...lons);
-
-  const centerLat = (minLat + maxLat) / 2;
-  const centerLon = (minLon + maxLon) / 2;
-
-  const latSpan = maxLat - minLat;
-  const lonSpan = maxLon - minLon;
-  const span = Math.max(latSpan, lonSpan * 0.6);
-
-  const scale = Math.min(2400, Math.max(200, 180 / Math.max(span, 2)));
-
-  return {
-    center: [centerLon, centerLat] as [number, number],
-    scale,
-  };
+function createWaypointIcon(label: string): L.DivIcon {
+  return L.divIcon({
+    className: "",
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+    html: `
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%)">
+        <div style="
+          font-family:var(--font-b612-mono),monospace;
+          font-size:11px;font-weight:600;color:#475569;
+          background:white;padding:1px 6px;border-radius:6px;
+          box-shadow:0 1px 4px rgba(0,0,0,0.1);
+          white-space:nowrap;margin-bottom:3px;
+          border:1px solid #e2e8f0;
+        ">${label}</div>
+        <div style="
+          width:8px;height:8px;
+          background:#0ea5e9;border:2px solid white;
+          box-shadow:0 1px 3px rgba(0,0,0,0.15);
+          transform:rotate(45deg);
+        "></div>
+      </div>
+    `,
+  });
 }
 
 export default function FlightTrackMap({
   trackData,
-  width = 800,
   height = 500,
 }: FlightTrackMapProps) {
-  const projConfig = useMemo(() => computeProjectionConfig(trackData), [trackData]);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
 
-  const trackCoords: [number, number][] = useMemo(
-    () => trackData.path.map((p) => [p.longitude, p.latitude]),
+  const trackCoords = useMemo<L.LatLngTuple[]>(
+    () => trackData.path.map((p) => [p.latitude, p.longitude]),
     [trackData.path]
   );
 
+  const bounds = useMemo(() => {
+    const lats = trackData.path.map((p) => p.latitude);
+    const lons = trackData.path.map((p) => p.longitude);
+    lats.push(trackData.departure.lat, trackData.arrival.lat);
+    lons.push(trackData.departure.lon, trackData.arrival.lon);
+    const sw: L.LatLngTuple = [Math.min(...lats), Math.min(...lons)];
+    const ne: L.LatLngTuple = [Math.max(...lats), Math.max(...lons)];
+    return L.latLngBounds(sw, ne);
+  }, [trackData]);
+
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+
+    const map = L.map(mapContainerRef.current, {
+      zoomControl: false,
+      attributionControl: false,
+      scrollWheelZoom: true,
+      doubleClickZoom: true,
+      touchZoom: true,
+      dragging: true,
+    });
+
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 18,
+      subdomains: "abcd",
+    }).addTo(map);
+
+    L.control.zoom({ position: "topright" }).addTo(map);
+
+    L.control.attribution({ position: "bottomright", prefix: false })
+      .addAttribution('&copy; <a href="https://carto.com/">CARTO</a>')
+      .addTo(map);
+
+    map.fitBounds(bounds, { padding: [40, 40] });
+
+    L.polyline(trackCoords, {
+      color: "#0ea5e9",
+      weight: 3,
+      opacity: 0.9,
+      smoothFactor: 1,
+      lineCap: "round",
+      lineJoin: "round",
+    }).addTo(map);
+
+    trackData.matchedFixes.forEach((fix) => {
+      L.marker([fix.lat, fix.lon], {
+        icon: createWaypointIcon(fix.name),
+        interactive: false,
+      }).addTo(map);
+    });
+
+    L.marker([trackData.departure.lat, trackData.departure.lon], {
+      icon: createAirportIcon(trackData.departure.iata, "#22c55e"),
+      zIndexOffset: 1000,
+    }).addTo(map);
+
+    L.marker([trackData.arrival.lat, trackData.arrival.lon], {
+      icon: createAirportIcon(trackData.arrival.iata, "#ef4444"),
+      zIndexOffset: 1000,
+    }).addTo(map);
+
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [trackData, trackCoords, bounds]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    mapRef.current.invalidateSize();
+  }, [height]);
+
   return (
-    <div className="relative" style={{ width, height }}>
-      <ComposableMap
-        projection="geoMercator"
-        projectionConfig={{
-          center: projConfig.center,
-          scale: projConfig.scale,
-        }}
-        width={width}
-        height={height}
-        style={{ width: "100%", height: "100%" }}
-      >
-        <Geographies geography={GEO_URL}>
-          {({ geographies }) =>
-            geographies.map((geo) => (
-              <Geography
-                key={geo.rpiKey || geo.properties?.name || Math.random()}
-                geography={geo}
-                fill="#e2e8f0"
-                stroke="#cbd5e1"
-                strokeWidth={0.5}
-                style={{
-                  default: { outline: "none" },
-                  hover: { outline: "none" },
-                  pressed: { outline: "none" },
-                }}
-              />
-            ))
-          }
-        </Geographies>
-
-        {/* Flight track line */}
-        <Line
-          coordinates={trackCoords}
-          stroke="#0ea5e9"
-          strokeWidth={2.5}
-          strokeLinecap="round"
-          fill="none"
-        />
-
-        {/* Matched waypoint markers */}
-        {trackData.matchedFixes.map((fix) => (
-          <Marker key={`${fix.name}-${fix.trackIndex}`} coordinates={[fix.lon, fix.lat]}>
-            <g transform="translate(0, -2)">
-              <polygon
-                points="0,-5 4,0 0,5 -4,0"
-                fill="#0ea5e9"
-                stroke="#fff"
-                strokeWidth={1}
-                opacity={0.8}
-              />
-              <text
-                textAnchor="middle"
-                y={-10}
-                style={{
-                  fontFamily: "var(--font-b612-mono), monospace",
-                  fontSize: 9,
-                  fill: "#475569",
-                  fontWeight: 600,
-                }}
-              >
-                {fix.name}
-              </text>
-            </g>
-          </Marker>
-        ))}
-
-        {/* Departure airport */}
-        <Marker coordinates={[trackData.departure.lon, trackData.departure.lat]}>
-          <circle r={6} fill="#22c55e" stroke="#fff" strokeWidth={2} />
-          <text
-            textAnchor="middle"
-            y={-14}
-            style={{
-              fontFamily: "var(--font-b612), sans-serif",
-              fontSize: 12,
-              fill: "#0f172a",
-              fontWeight: 700,
-            }}
-          >
-            {trackData.departure.iata}
-          </text>
-        </Marker>
-
-        {/* Arrival airport */}
-        <Marker coordinates={[trackData.arrival.lon, trackData.arrival.lat]}>
-          <circle r={6} fill="#ef4444" stroke="#fff" strokeWidth={2} />
-          <text
-            textAnchor="middle"
-            y={-14}
-            style={{
-              fontFamily: "var(--font-b612), sans-serif",
-              fontSize: 12,
-              fill: "#0f172a",
-              fontWeight: 700,
-            }}
-          >
-            {trackData.arrival.iata}
-          </text>
-        </Marker>
-      </ComposableMap>
-    </div>
+    <div
+      ref={mapContainerRef}
+      className="w-full rounded-xl"
+      style={{ height, minHeight: 300 }}
+    />
   );
 }

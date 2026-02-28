@@ -1,0 +1,169 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e6]
+          - heading "Flight Log Generator" [level=1] [ref=e8]
+        - generic [ref=e9]:
+          - generic [ref=e10]: STD
+          - switch "Toggle display mode" [checked] [ref=e11]
+          - generic [ref=e13]: PRO
+    - generic [ref=e15]:
+      - button "1 Input" [ref=e17] [cursor=pointer]:
+        - generic [ref=e18]: "1"
+        - text: Input
+      - generic [ref=e19]:
+        - img [ref=e20]
+        - button "2 Preview" [ref=e22]:
+          - generic [ref=e23]: "2"
+          - text: Preview
+    - main [ref=e24]:
+      - generic [ref=e582]:
+        - generic [ref=e584]:
+          - generic [ref=e585]:
+            - button "Edit" [ref=e586]
+            - button "New Flight" [ref=e587]
+          - generic [ref=e588]:
+            - button "PDF Preview" [ref=e589]
+            - button "Flight Track" [ref=e590]
+          - generic [ref=e591]:
+            - link "Full View" [ref=e592] [cursor=pointer]:
+              - /url: /preview
+              - img [ref=e593]
+            - button "Download" [ref=e596]:
+              - img [ref=e597]
+              - text: Download
+              - img [ref=e599]
+        - generic [ref=e603]:
+          - generic [ref=e604]:
+            - generic [ref=e605]:
+              - generic [ref=e606]:
+                - strong [ref=e607]: SEAT NO.
+                - text: 31A
+              - generic [ref=e608]:
+                - strong [ref=e609]: CABIN CL.
+                - text: Economy
+            - generic [ref=e610]: BAG TAG
+          - generic [ref=e611]:
+            - generic [ref=e612]:
+              - img "China Eastern Airlines" [ref=e613]
+              - img "SkyTeam" [ref=e614]
+            - generic [ref=e615]: FLT-LOG
+          - separator [ref=e616]
+          - generic [ref=e617]:
+            - heading "GENERAL FLT INFO" [level=3] [ref=e618]
+            - generic [ref=e619]:
+              - generic [ref=e620]:
+                - strong [ref=e621]: "FLT NO.:"
+                - text: MU5137
+              - generic [ref=e622]:
+                - strong [ref=e623]: "C/S:"
+                - text: CES5137
+              - generic [ref=e624]:
+                - strong [ref=e625]: "DT:"
+                - text: FEB 15, 2026
+              - generic [ref=e626]:
+                - strong [ref=e627]: "A/C TYPE:"
+                - text: A320-251N
+              - generic [ref=e628]:
+                - strong [ref=e629]: "REG NO.:"
+                - text: B-30EX
+              - generic [ref=e630]:
+                - strong [ref=e631]: "FLT DUR:"
+                - text: 2h 15min
+              - generic [ref=e632]:
+                - strong [ref=e633]: "AGE:"
+                - text: 3.5 years
+              - generic [ref=e634]:
+                - strong [ref=e635]: "DIST:"
+                - text: 580 nm
+              - generic [ref=e636]:
+                - strong [ref=e637]: "CRZ ALT:"
+                - text: FL370
+              - generic [ref=e638]:
+                - strong [ref=e639]: "MJR WPTS:"
+                - text: PIKAS - LAMEN - DOGAR - ELKUR - IGONO
+          - generic [ref=e640]:
+            - heading "DEP INFO" [level=3] [ref=e641]
+            - generic [ref=e642]:
+              - generic [ref=e643]:
+                - strong [ref=e644]: "DEP ARPT:"
+                - text: Shanghai Pudong International Airport
+                - generic [ref=e645]:
+                  - strong [ref=e646]: "ICAO:"
+                  - text: ZSPD
+                - generic [ref=e647]:
+                  - strong [ref=e648]: "IATA:"
+                  - text: PVG
+              - generic [ref=e649]:
+                - generic [ref=e650]:
+                  - strong [ref=e651]: "P/BAY:"
+                  - text: D68
+                - generic [ref=e652]:
+                  - strong [ref=e653]: "T/O RWY:"
+                  - text: 35L
+                - generic [ref=e654]:
+                  - strong [ref=e655]: "SKED DEP:"
+                  - text: 08:00
+              - generic [ref=e656]:
+                - generic [ref=e657]:
+                  - strong [ref=e658]: "ACT DEP:"
+                  - text: 08:12
+                - generic [ref=e659]:
+                  - strong [ref=e660]: "OFF-CHK:"
+                  - text: 07:55
+                - generic [ref=e661]: UTC ( +8 )
+              - generic [ref=e662]:
+                - strong [ref=e663]: "METAR:"
+                - text: METAR ZSPD 150000Z 34006KT 9999 FEW040 08/02 Q1024 NOSIG
+          - generic [ref=e664]:
+            - heading "ARR INFO" [level=3] [ref=e665]
+            - generic [ref=e666]:
+              - generic [ref=e667]:
+                - strong [ref=e668]: "DEST ARPT:"
+                - text: Beijing Daxing International Airport
+                - generic [ref=e669]:
+                  - strong [ref=e670]: "ICAO:"
+                  - text: ZBAD
+                - generic [ref=e671]:
+                  - strong [ref=e672]: "IATA:"
+                  - text: PKX
+              - generic [ref=e673]:
+                - generic [ref=e674]:
+                  - strong [ref=e675]: "LDG RWY:"
+                  - text: 11R
+                - generic [ref=e676]:
+                  - strong [ref=e677]: "SKED ARR:"
+                  - text: 10:30
+                - generic [ref=e678]:
+                  - strong [ref=e679]: "ACT ARR:"
+                  - text: 10:25
+              - generic [ref=e680]:
+                - generic [ref=e681]:
+                  - strong [ref=e682]: "ON-CHK:"
+                  - text: 10:32
+                - generic [ref=e683]: UTC ( +8 )
+                - generic [ref=e684]:
+                  - strong [ref=e685]: "P/BAY:"
+                  - text: B21
+              - generic [ref=e686]:
+                - strong [ref=e687]: "METAR:"
+                - text: METAR ZBAD 150200Z 02008KT CAVOK 03/M08 Q1031 NOSIG
+          - separator [ref=e688]
+          - generic [ref=e690]:
+            - generic [ref=e691]:
+              - heading "A/C PHOTOS / RMKS:" [level=3] [ref=e692]
+              - generic [ref=e693]:
+                - img "Aircraft" [ref=e694]
+                - generic [ref=e695]: "Photo: XINYU"
+            - generic [ref=e696]:
+              - heading "B/Pass:" [level=3] [ref=e697]
+              - generic [ref=e698]: Boarding pass area
+    - contentinfo [ref=e227]:
+      - text: Built with ❤️ by
+      - link "Justin" [ref=e228] [cursor=pointer]:
+        - /url: https://x.com/JustinBao_
+  - button "Open Next.js Dev Tools" [ref=e234] [cursor=pointer]:
+    - img [ref=e235]
+  - alert [ref=e238]

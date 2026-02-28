@@ -1,243 +1,187 @@
 import { FlightTrackData, TrackWaypoint } from "./types";
 import { matchWaypoints } from "./navdata";
-import { getAirline } from "soaring-symbols";
 
-function iataToIcaoCallsign(flightNumber: string): string | null {
-  const match = flightNumber.match(/^([A-Z0-9]{2})(\d+)/i);
-  if (!match) return null;
+const UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
-  const iataCode = match[1].toUpperCase();
-  const flightNum = match[2];
-
-  const airline = getAirline(iataCode);
-  if (airline?.icao) {
-    return `${airline.icao}${flightNum}`;
-  }
-
-  return null;
-}
-
-interface AdsbdbRoute {
-  callsign: string;
-  origin: {
-    iata_code: string;
-    icao_code: string;
-    name: string;
-    latitude: number;
-    longitude: number;
+interface FR24FlightEntry {
+  identification?: {
+    id?: string | null;
+    number?: { default?: string };
+    callsign?: string | null;
   };
-  destination: {
-    iata_code: string;
-    icao_code: string;
-    name: string;
-    latitude: number;
-    longitude: number;
+  status?: { text?: string; live?: boolean };
+  aircraft?: {
+    registration?: string | null;
+    hex?: string | null;
+    model?: { code?: string; text?: string | null };
   };
+  airport?: {
+    origin?: {
+      name?: string;
+      code?: { iata?: string; icao?: string };
+      position?: { latitude?: number; longitude?: number };
+    } | null;
+    destination?: {
+      name?: string;
+      code?: { iata?: string; icao?: string };
+      position?: { latitude?: number; longitude?: number };
+    } | null;
+  } | null;
+  time?: {
+    scheduled?: { departure?: number | null; arrival?: number | null } | null;
+    real?: { departure?: number | null; arrival?: number | null } | null;
+  } | null;
 }
 
-async function fetchRouteFromAdsbdb(
-  callsign: string
-): Promise<AdsbdbRoute | null> {
-  try {
-    const res = await fetch(
-      `https://api.adsbdb.com/v0/callsign/${callsign}`,
-      { signal: AbortSignal.timeout(8000) }
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.response?.flightroute || null;
-  } catch {
-    return null;
-  }
+interface FR24TrailPoint {
+  lat: number;
+  lng: number;
+  alt: number;
+  spd: number;
+  ts: number;
+  hd: number;
 }
 
-interface OpenSkyFlight {
-  icao24: string;
-  callsign: string;
-  firstSeen: number;
-  lastSeen: number;
-  estDepartureAirport: string | null;
-  estArrivalAirport: string | null;
-}
-
-let cachedToken: { token: string; expiresAt: number } | null = null;
-
-async function getOpenSkyAuthHeaders(): Promise<Record<string, string>> {
-  const clientId = process.env.OPENSKY_CLIENT_ID;
-  const clientSecret = process.env.OPENSKY_CLIENT_SECRET;
-
-  if (clientId && clientSecret) {
-    if (cachedToken && Date.now() < cachedToken.expiresAt) {
-      return { Authorization: `Bearer ${cachedToken.token}` };
-    }
-
-    const res = await fetch(
-      "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          grant_type: "client_credentials",
-          client_id: clientId,
-          client_secret: clientSecret,
-        }),
-        signal: AbortSignal.timeout(10000),
-      }
-    );
-
-    if (!res.ok) {
-      throw new Error(`OpenSky OAuth2 token request failed: ${res.status}`);
-    }
-
-    const data = await res.json();
-    cachedToken = {
-      token: data.access_token,
-      expiresAt: Date.now() + (data.expires_in - 60) * 1000,
+interface FR24DetailData {
+  identification?: { callsign?: string; number?: { default?: string } };
+  aircraft?: { registration?: string; hex?: string };
+  airport?: {
+    origin?: {
+      name?: string;
+      code?: { iata?: string; icao?: string };
+      position?: { latitude?: number; longitude?: number };
     };
-    return { Authorization: `Bearer ${cachedToken.token}` };
-  }
-
-  const username = process.env.OPENSKY_USERNAME;
-  const password = process.env.OPENSKY_PASSWORD;
-  if (username && password) {
-    const auth = Buffer.from(`${username}:${password}`).toString("base64");
-    return { Authorization: `Basic ${auth}` };
-  }
-
-  throw new Error(
-    "OpenSky credentials not configured. " +
-    "Set OPENSKY_CLIENT_ID + OPENSKY_CLIENT_SECRET (OAuth2, recommended for new accounts), " +
-    "or OPENSKY_USERNAME + OPENSKY_PASSWORD (Basic Auth, legacy accounts only)."
-  );
+    destination?: {
+      name?: string;
+      code?: { iata?: string; icao?: string };
+      position?: { latitude?: number; longitude?: number };
+    };
+  };
+  trail?: FR24TrailPoint[];
+  firstTimestamp?: number;
 }
 
-async function findFlightOnOpenSky(
-  depIcao: string,
-  arrIcao: string,
+function tsToDateStr(ts: number): string {
+  return new Date(ts * 1000).toISOString().slice(0, 10);
+}
+
+async function fetchFlightList(
+  flightNumber: string
+): Promise<FR24FlightEntry[]> {
+  const url = `https://api.flightradar24.com/common/v1/flight/list.json?query=${encodeURIComponent(flightNumber)}&fetchBy=flight&page=1&limit=25`;
+  const res = await fetch(url, {
+    headers: { "User-Agent": UA, Accept: "application/json" },
+    signal: AbortSignal.timeout(12000),
+  });
+  if (!res.ok) {
+    throw new Error(`FlightRadar24 list API returned ${res.status}`);
+  }
+  const body = await res.json();
+  return body?.result?.response?.data ?? [];
+}
+
+function findFlightForDate(
+  flights: FR24FlightEntry[],
   dateStr: string
-): Promise<OpenSkyFlight | null> {
-  const dayStart = Math.floor(new Date(`${dateStr}T00:00:00Z`).getTime() / 1000);
-  const dayEnd = dayStart + 86400;
+): FR24FlightEntry | null {
+  const withId = flights.filter(
+    (f) => f.identification?.id
+  );
 
-  const headers = await getOpenSkyAuthHeaders();
+  const dateMatch = withId.find((f) => {
+    const depTs =
+      f.time?.real?.departure ?? f.time?.scheduled?.departure;
+    if (!depTs) return false;
+    return tsToDateStr(depTs) === dateStr;
+  });
+  if (dateMatch) return dateMatch;
 
-  try {
-    const url = `https://opensky-network.org/api/flights/arrival?airport=${arrIcao}&begin=${dayStart}&end=${dayEnd}`;
-    const res = await fetch(url, { headers, signal: AbortSignal.timeout(15000) });
-    if (!res.ok) return null;
-
-    const flights: OpenSkyFlight[] = await res.json();
-    const match = flights.find(
-      (f) =>
-        f.estDepartureAirport === depIcao && f.estArrivalAirport === arrIcao
-    );
-    return match || flights[0] || null;
-  } catch {
-    return null;
-  }
+  const withReg = withId.filter((f) => f.aircraft?.registration);
+  return withReg[0] ?? withId[0] ?? null;
 }
 
-interface OpenSkyTrack {
-  icao24: string;
-  startTime: number;
-  endTime: number;
-  callsign: string;
-  path: [number, number | null, number | null, number | null, number | null, boolean][];
-}
-
-async function fetchTrackFromOpenSky(
-  icao24: string,
-  time: number
-): Promise<OpenSkyTrack | null> {
-  const headers = await getOpenSkyAuthHeaders();
-  try {
-    const url = `https://opensky-network.org/api/tracks/all?icao24=${icao24}&time=${time}`;
-    const res = await fetch(url, {
-      headers,
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
+async function fetchFlightDetail(
+  flightId: string
+): Promise<FR24DetailData | null> {
+  const url = `https://data-live.flightradar24.com/clickhandler/?version=1.5&flight=${flightId}`;
+  const res = await fetch(url, {
+    headers: { "User-Agent": UA, Accept: "application/json" },
+    signal: AbortSignal.timeout(12000),
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  if (Array.isArray(data) && data.length === 0) return null;
+  return data;
 }
 
 export async function getFlightTrack(
   flightNumber: string,
   dateStr: string
 ): Promise<FlightTrackData> {
-  await getOpenSkyAuthHeaders();
+  const flights = await fetchFlightList(flightNumber);
 
-  const callsign = iataToIcaoCallsign(flightNumber);
-  if (!callsign) {
-    throw new Error(`Cannot resolve ICAO callsign for ${flightNumber}`);
-  }
-
-  const route = await fetchRouteFromAdsbdb(callsign);
-  if (!route) {
+  if (flights.length === 0) {
     throw new Error(
-      `No route data found for callsign ${callsign}. The flight may not exist in the database.`
+      `No flights found for ${flightNumber} on FlightRadar24.`
     );
   }
 
-  const depIcao = route.origin.icao_code;
-  const arrIcao = route.destination.icao_code;
-
-  const flight = await findFlightOnOpenSky(
-    depIcao,
-    arrIcao,
-    dateStr
-  );
-  if (!flight) {
+  const entry = findFlightForDate(flights, dateStr);
+  if (!entry?.identification?.id) {
     throw new Error(
-      `No flight found on OpenSky for ${depIcao}->${arrIcao} on ${dateStr}. ` +
-      `Track data is typically available the day after the flight.`
+      `No flight with track data found for ${flightNumber} on ${dateStr}. ` +
+        `Only recent flights (within ~2 weeks) have track data available.`
     );
   }
 
-  const midTime = Math.floor((flight.firstSeen + flight.lastSeen) / 2);
-  const track = await fetchTrackFromOpenSky(
-    flight.icao24,
-    midTime
-  );
-  if (!track || !track.path || track.path.length === 0) {
+  const detail = await fetchFlightDetail(entry.identification.id);
+  if (!detail?.trail || detail.trail.length === 0) {
     throw new Error(
-      `Track data not yet available for this flight. Please try again later.`
+      `Track data not available for ${flightNumber} on ${dateStr}. ` +
+        `The flight may be too old or data has expired.`
     );
   }
 
-  const path: TrackWaypoint[] = track.path
-    .filter((wp) => wp[1] != null && wp[2] != null)
-    .map((wp) => ({
-      time: wp[0],
-      latitude: wp[1]!,
-      longitude: wp[2]!,
-      altitude: wp[3] ?? 0,
-      track: wp[4] ?? 0,
-      onGround: wp[5],
-    }));
+  const sortedTrail = [...detail.trail].sort((a, b) => a.ts - b.ts);
+
+  const path: TrackWaypoint[] = sortedTrail.map((p) => ({
+    time: p.ts,
+    latitude: p.lat,
+    longitude: p.lng,
+    altitude: Math.round(p.alt * 0.3048),
+    track: p.hd,
+    onGround: p.alt === 0 && p.spd < 50,
+  }));
 
   const matchedFixes = await matchWaypoints(path);
 
+  const callsign =
+    detail.identification?.callsign ??
+    entry.identification?.callsign ??
+    flightNumber;
+
+  const orig = detail.airport?.origin ?? entry.airport?.origin;
+  const dest = detail.airport?.destination ?? entry.airport?.destination;
+
   return {
-    icao24: flight.icao24,
-    callsign: callsign,
-    startTime: track.startTime,
-    endTime: track.endTime,
+    icao24: detail.aircraft?.hex ?? entry.aircraft?.hex ?? "",
+    callsign,
+    startTime: sortedTrail[0].ts,
+    endTime: sortedTrail[sortedTrail.length - 1].ts,
     path,
     matchedFixes,
     departure: {
-      iata: route.origin.iata_code,
-      name: route.origin.name,
-      lat: route.origin.latitude,
-      lon: route.origin.longitude,
+      iata: orig?.code?.iata ?? "",
+      name: orig?.name ?? "",
+      lat: orig?.position?.latitude ?? 0,
+      lon: orig?.position?.longitude ?? 0,
     },
     arrival: {
-      iata: route.destination.iata_code,
-      name: route.destination.name,
-      lat: route.destination.latitude,
-      lon: route.destination.longitude,
+      iata: dest?.code?.iata ?? "",
+      name: dest?.name ?? "",
+      lat: dest?.position?.latitude ?? 0,
+      lon: dest?.position?.longitude ?? 0,
     },
   };
 }

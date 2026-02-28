@@ -34,17 +34,15 @@ function haversineNm(
   return 2 * EARTH_RADIUS_NM * Math.asin(Math.sqrt(a));
 }
 
-const MATCH_THRESHOLD_NM = 5;
-const MIN_FIX_SEPARATION_NM = 10;
+const MATCH_THRESHOLD_NM = 8;
+const TARGET_WAYPOINTS = 6;
+const CRUISE_ALT_THRESHOLD_M = 1524; // ~5000ft
 
 export async function matchWaypoints(
-  path: { latitude: number; longitude: number }[],
+  path: { latitude: number; longitude: number; altitude?: number }[],
   trackIndices?: number[]
 ): Promise<MatchedFix[]> {
   const fixes = await loadFixes();
-  const matched: MatchedFix[] = [];
-  let lastMatchedLat = -999;
-  let lastMatchedLon = -999;
 
   const latMin = Math.min(...path.map((p) => p.latitude)) - 1;
   const latMax = Math.max(...path.map((p) => p.latitude)) + 1;
@@ -55,8 +53,32 @@ export async function matchWaypoints(
     (f) => f.la >= latMin && f.la <= latMax && f.lo >= lonMin && f.lo <= lonMax
   );
 
-  for (let i = 0; i < path.length; i++) {
-    const pt = path[i];
+  const airborne = path.filter(
+    (p) => (p.altitude ?? 0) > CRUISE_ALT_THRESHOLD_M
+  );
+  const pts = airborne.length >= 10 ? airborne : path;
+
+  let totalDist = 0;
+  for (let i = 1; i < pts.length; i++) {
+    totalDist += haversineNm(
+      pts[i - 1].latitude,
+      pts[i - 1].longitude,
+      pts[i].latitude,
+      pts[i].longitude
+    );
+  }
+
+  const minSeparation = Math.max(
+    30,
+    totalDist / (TARGET_WAYPOINTS + 1)
+  );
+
+  const matched: MatchedFix[] = [];
+  let lastMatchedLat = -999;
+  let lastMatchedLon = -999;
+
+  for (let i = 0; i < pts.length; i++) {
+    const pt = pts[i];
     if (!pt.latitude || !pt.longitude) continue;
 
     let bestDist = Infinity;
@@ -80,12 +102,17 @@ export async function matchWaypoints(
       const isDuplicate =
         matched.length > 0 && matched[matched.length - 1].name === bestFix.n;
 
-      if (!isDuplicate && sepFromLast > MIN_FIX_SEPARATION_NM) {
+      if (!isDuplicate && sepFromLast > minSeparation) {
+        const origIdx = trackIndices
+          ? trackIndices[i]
+          : path.indexOf(pt) >= 0
+            ? path.indexOf(pt)
+            : i;
         matched.push({
           name: bestFix.n,
           lat: bestFix.la,
           lon: bestFix.lo,
-          trackIndex: trackIndices ? trackIndices[i] : i,
+          trackIndex: origIdx,
         });
         lastMatchedLat = bestFix.la;
         lastMatchedLon = bestFix.lo;

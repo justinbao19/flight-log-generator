@@ -16,6 +16,12 @@ export interface AirportInfo {
   utcOffset?: number;
 }
 
+export interface SelectedPhoto {
+  dataUrl: string;
+  photographer: string;
+  link: string;
+}
+
 export interface FlightData {
   flightNumber: string;
   callSign?: string;
@@ -35,6 +41,7 @@ export interface FlightData {
   seatNumber?: string;
   cabinClass?: string;
   bagTag?: string;
+  selectedPhoto?: SelectedPhoto;
 }
 
 export interface TrackWaypoint {
@@ -142,6 +149,22 @@ export function createSampleFlightData(): FlightData {
     cabinClass: "Economy",
     bagTag: "MU 782156",
   };
+}
+
+export interface FlightLookupResult {
+  registration?: string;
+  aircraftType?: string;
+  callSign?: string;
+  airline?: string;
+  origin?: { iata: string; name: string };
+  destination?: { iata: string; name: string };
+}
+
+export interface AircraftPhoto {
+  url: string;
+  thumbnailUrl: string;
+  photographer: string;
+  link: string;
 }
 
 export interface AirlineInfo {

@@ -1,0 +1,274 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e6]
+          - heading "Flight Log Generator" [level=1] [ref=e8]
+        - generic [ref=e9]:
+          - generic [ref=e10]: STD
+          - switch "Toggle display mode" [checked] [ref=e11]
+          - generic [ref=e13]: PRO
+    - generic [ref=e15]:
+      - button "1 Input" [ref=e17]:
+        - generic [ref=e18]: "1"
+        - text: Input
+      - generic [ref=e19]:
+        - img [ref=e20]
+        - button "2 Preview" [ref=e22]:
+          - generic [ref=e23]: "2"
+          - text: Preview
+    - main [ref=e24]:
+      - generic [ref=e26]:
+        - generic [ref=e28]:
+          - heading "Flight Data" [level=2] [ref=e29]
+          - paragraph [ref=e30]:
+            - text: Use AI recognition or fill in manually·
+            - button "Try Sample" [ref=e31]:
+              - img [ref=e32]
+              - text: Try Sample
+        - generic [ref=e34]:
+          - generic [ref=e35]:
+            - button "Screenshot" [ref=e36]
+            - button "Paste Text" [ref=e37]
+            - button "Manual" [ref=e38]: Manual
+          - generic [ref=e40]:
+            - generic [ref=e41]: Unsaved changes
+            - button "Save Draft" [ref=e42]
+          - generic [ref=e43]:
+            - generic [ref=e44]:
+              - generic [ref=e45]:
+                - heading "General Flight Info" [level=3] [ref=e46]:
+                  - img [ref=e47]
+                  - text: General Flight Info
+                - generic [ref=e49]:
+                  - button "Lookup" [disabled] [ref=e50]:
+                    - img [ref=e51]
+                    - text: Lookup
+                  - button "Fetch Track" [disabled] [ref=e54]:
+                    - img [ref=e55]
+                    - text: Fetch Track
+              - generic [ref=e61]:
+                - generic [ref=e62]:
+                  - generic [ref=e63]: Flight No.
+                  - generic [ref=e64]:
+                    - generic:
+                      - img
+                    - textbox [ref=e65]
+                - generic [ref=e66]:
+                  - generic [ref=e67]: Call Sign
+                  - generic [ref=e68]:
+                    - generic:
+                      - img
+                    - textbox [ref=e69]
+                - generic [ref=e70]:
+                  - generic [ref=e71]: Date
+                  - generic [ref=e73] [cursor=pointer]:
+                    - generic:
+                      - generic:
+                        - img
+                      - textbox "Select date"
+                - generic [ref=e74]:
+                  - generic [ref=e75]: A/C Type
+                  - generic [ref=e76]:
+                    - generic:
+                      - img
+                    - textbox [ref=e77]
+                - generic [ref=e78]:
+                  - generic [ref=e79]: Reg. No.
+                  - generic [ref=e80]:
+                    - generic:
+                      - img
+                    - textbox [ref=e81]
+                - generic [ref=e82]:
+                  - generic [ref=e83]: Flight Duration
+                  - generic [ref=e84]:
+                    - generic:
+                      - img
+                    - textbox [ref=e85]
+                - generic [ref=e86]:
+                  - generic [ref=e87]: Age
+                  - generic [ref=e88]:
+                    - generic:
+                      - img
+                    - textbox [ref=e89]
+                - generic [ref=e90]:
+                  - generic [ref=e91]: CRZ ALT
+                  - generic [ref=e92]:
+                    - generic:
+                      - img
+                    - textbox [ref=e93]
+                - generic [ref=e94]:
+                  - generic [ref=e95]: Distance (nm)
+                  - generic [ref=e96]:
+                    - generic:
+                      - img
+                    - textbox [ref=e97]
+                - generic [ref=e99]:
+                  - generic [ref=e100]: MJR WPTS
+                  - generic [ref=e101]:
+                    - generic:
+                      - img
+                    - textbox [ref=e102]
+            - generic [ref=e103]:
+              - heading "Departure Info" [level=3] [ref=e104]:
+                - img [ref=e105]
+                - text: Departure Info
+              - generic [ref=e107]:
+                - generic [ref=e108]:
+                  - generic [ref=e109]: Airport Name
+                  - generic [ref=e110]:
+                    - generic:
+                      - img
+                    - textbox [ref=e111]
+                - generic [ref=e112]:
+                  - generic [ref=e113]: IATA
+                  - textbox [ref=e114]
+                - generic [ref=e115]:
+                  - generic [ref=e116]: ICAO
+                  - textbox [ref=e117]
+                - generic [ref=e118]:
+                  - generic [ref=e119]: P/Bay
+                  - generic [ref=e120]:
+                    - generic:
+                      - img
+                    - textbox [ref=e121]
+                - generic [ref=e122]:
+                  - generic [ref=e123]: T/O RWY
+                  - generic [ref=e124]:
+                    - generic:
+                      - img
+                    - textbox [ref=e125]
+                - generic [ref=e126]:
+                  - generic [ref=e127]: SKED DEP
+                  - generic [ref=e129] [cursor=pointer]:
+                    - generic:
+                      - generic:
+                        - img
+                      - textbox "Select time"
+                - generic [ref=e130]:
+                  - generic [ref=e131]: ACT DEP
+                  - generic [ref=e133] [cursor=pointer]:
+                    - generic:
+                      - generic:
+                        - img
+                      - textbox "Select time"
+                - generic [ref=e134]:
+                  - generic [ref=e135]: OFF-CHK
+                  - generic [ref=e137] [cursor=pointer]:
+                    - generic:
+                      - generic:
+                        - img
+                      - textbox "Select time"
+                - generic [ref=e140]:
+                  - generic [ref=e142]:
+                    - generic [ref=e143]: METAR
+                    - generic [ref=e144]:
+                      - generic:
+                        - img
+                      - textbox [ref=e145]
+                  - button "Fetch" [disabled] [ref=e146]:
+                    - img [ref=e147]
+                    - text: Fetch
+            - generic [ref=e151]:
+              - heading "Arrival Info" [level=3] [ref=e152]:
+                - img [ref=e153]
+                - text: Arrival Info
+              - generic [ref=e155]:
+                - generic [ref=e156]:
+                  - generic [ref=e157]: Airport Name
+                  - generic [ref=e158]:
+                    - generic:
+                      - img
+                    - textbox [ref=e159]
+                - generic [ref=e160]:
+                  - generic [ref=e161]: IATA
+                  - textbox [ref=e162]
+                - generic [ref=e163]:
+                  - generic [ref=e164]: ICAO
+                  - textbox [ref=e165]
+                - generic [ref=e166]:
+                  - generic [ref=e167]: LDG RWY
+                  - generic [ref=e168]:
+                    - generic:
+                      - img
+                    - textbox [ref=e169]
+                - generic [ref=e170]:
+                  - generic [ref=e171]: P/Bay
+                  - generic [ref=e172]:
+                    - generic:
+                      - img
+                    - textbox [ref=e173]
+                - generic [ref=e174]:
+                  - generic [ref=e175]: SKED ARR
+                  - generic [ref=e177] [cursor=pointer]:
+                    - generic:
+                      - generic:
+                        - img
+                      - textbox "Select time"
+                - generic [ref=e178]:
+                  - generic [ref=e179]: ACT ARR
+                  - generic [ref=e181] [cursor=pointer]:
+                    - generic:
+                      - generic:
+                        - img
+                      - textbox "Select time"
+                - generic [ref=e182]:
+                  - generic [ref=e183]: ON-CHK
+                  - generic [ref=e185] [cursor=pointer]:
+                    - generic:
+                      - generic:
+                        - img
+                      - textbox "Select time"
+                - generic [ref=e188]:
+                  - generic [ref=e190]:
+                    - generic [ref=e191]: METAR
+                    - generic [ref=e192]:
+                      - generic:
+                        - img
+                      - textbox [ref=e193]
+                  - button "Fetch" [disabled] [ref=e194]:
+                    - img [ref=e195]
+                    - text: Fetch
+            - generic [ref=e199]:
+              - heading "Passenger Info" [level=3] [ref=e200]:
+                - img [ref=e201]
+                - text: Passenger Info
+              - generic [ref=e204]:
+                - generic [ref=e205]:
+                  - generic [ref=e206]: Seat No.
+                  - generic [ref=e207]:
+                    - generic:
+                      - img
+                    - textbox [ref=e208]
+                - generic [ref=e209]:
+                  - generic [ref=e210]: Cabin Class
+                  - generic [ref=e211]:
+                    - generic:
+                      - img
+                    - combobox [ref=e212]:
+                      - option "Select..." [selected]
+                      - option "First"
+                      - option "Business"
+                      - option "Premium Economy"
+                      - option "Economy"
+            - generic [ref=e213]:
+              - heading "A/C Photo" [level=3] [ref=e214]:
+                - img [ref=e215]
+                - text: A/C Photo
+              - generic [ref=e218]:
+                - generic [ref=e220]:
+                  - generic:
+                    - img
+                  - textbox "Enter registration (e.g. B-8579)" [ref=e221]
+                - button "Search Photo" [disabled] [ref=e222]:
+                  - img [ref=e223]
+                  - text: Search Photo
+          - button "Preview" [disabled] [ref=e226]
+    - contentinfo [ref=e227]:
+      - text: Built with ❤️ by
+      - link "Justin" [ref=e228] [cursor=pointer]:
+        - /url: https://x.com/JustinBao_
+  - button "Open Next.js Dev Tools" [ref=e234] [cursor=pointer]:
+    - img [ref=e235]
+  - alert [ref=e238]

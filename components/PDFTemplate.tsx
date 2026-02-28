@@ -299,9 +299,43 @@ export default function PDFTemplate({
             <h3 className="text-xs font-bold tracking-widest mb-2">
               {isPro ? "A/C PHOTOS / RMKS:" : "AIRCRAFT PHOTOS / REMARKS:"}
             </h3>
-            <div className="border border-dashed border-gray-300 rounded h-[100mm] flex items-center justify-center text-gray-400 text-sm">
-              Aircraft photo area
-            </div>
+            {data.selectedPhoto ? (
+              <div className="border border-gray-300 rounded h-[100mm] overflow-hidden relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={data.selectedPhoto.dataUrl}
+                  alt="Aircraft"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                  crossOrigin="anonymous"
+                />
+                {data.selectedPhoto.photographer && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      padding: "3mm 4mm",
+                      background: "linear-gradient(transparent, rgba(0,0,0,0.55))",
+                      fontSize: "7pt",
+                      color: "#fff",
+                      fontFamily: "var(--font-b612-mono), monospace",
+                    }}
+                  >
+                    Photo: {data.selectedPhoto.photographer}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="border border-dashed border-gray-300 rounded h-[100mm] flex items-center justify-center text-gray-400 text-sm">
+                Aircraft photo area
+              </div>
+            )}
           </div>
           <div className="w-[70mm]">
             <h3 className="text-xs font-bold tracking-widest mb-2">

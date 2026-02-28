@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "content.airhex.com",
       },
+      {
+        protocol: "https",
+        hostname: "t.plnspttrs.net",
+      },
     ],
   },
 };

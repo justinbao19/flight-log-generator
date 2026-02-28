@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useRef, useCallback } from "react";
-import type { FlightTrackData, MatchedFix } from "@/lib/types";
+import type { FlightTrackData } from "@/lib/types";
 
 interface AltitudeProfileProps {
   trackData: FlightTrackData;
@@ -9,7 +9,7 @@ interface AltitudeProfileProps {
   height?: number;
 }
 
-const PADDING = { top: 28, right: 20, bottom: 36, left: 56 };
+const PADDING = { top: 32, right: 24, bottom: 42, left: 64 };
 
 function metersToFeet(m: number): number {
   return Math.round(m * 3.28084);
@@ -76,7 +76,7 @@ function detectPhases(
 export default function AltitudeProfile({
   trackData,
   width = 800,
-  height = 200,
+  height = 220,
 }: AltitudeProfileProps) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -86,7 +86,7 @@ export default function AltitudeProfile({
   const chartW = width - PADDING.left - PADDING.right;
   const chartH = height - PADDING.top - PADDING.bottom;
 
-  const { maxAlt, timeRange, xScale, yScale } = useMemo(() => {
+  const { maxAlt, xScale, yScale } = useMemo(() => {
     const alts = path.map((p) => p.altitude);
     const maxA = Math.max(...alts, 1000);
     const ceilAlt = Math.ceil(maxA / 1000) * 1000;
@@ -97,7 +97,6 @@ export default function AltitudeProfile({
 
     return {
       maxAlt: ceilAlt,
-      timeRange: tRange,
       xScale: (t: number) => ((t - tStart) / tRange) * chartW,
       yScale: (alt: number) => chartH - (alt / ceilAlt) * chartH,
     };
@@ -105,7 +104,6 @@ export default function AltitudeProfile({
 
   const pathD = useMemo(() => {
     if (path.length === 0) return "";
-    const startT = path[0].time;
     const points = path.map(
       (p) => `${PADDING.left + xScale(p.time)},${PADDING.top + yScale(p.altitude)}`
     );
@@ -143,28 +141,33 @@ export default function AltitudeProfile({
     (e: React.MouseEvent<SVGSVGElement>) => {
       if (!svgRef.current || path.length === 0) return;
       const rect = svgRef.current.getBoundingClientRect();
-      const mx = e.clientX - rect.left - PADDING.left;
-      const ratio = mx / chartW;
+      const svgWidth = rect.width;
+      const mx = e.clientX - rect.left;
+      const scaledX = (mx / svgWidth) * width - PADDING.left;
+      const ratio = scaledX / chartW;
       const idx = Math.round(ratio * (path.length - 1));
       setHoverIdx(Math.max(0, Math.min(path.length - 1, idx)));
     },
-    [path, chartW]
+    [path, chartW, width]
   );
 
   const hoverPoint = hoverIdx !== null ? path[hoverIdx] : null;
+
+  const tooltipW = 120;
+  const tooltipH = 44;
 
   return (
     <svg
       ref={svgRef}
       viewBox={`0 0 ${width} ${height}`}
-      className="w-full"
+      className="w-full select-none"
       style={{ maxHeight: height }}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setHoverIdx(null)}
     >
       <defs>
         <linearGradient id="altGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.3} />
+          <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.25} />
           <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.02} />
         </linearGradient>
       </defs>
@@ -184,10 +187,10 @@ export default function AltitudeProfile({
               strokeDasharray={alt === 0 ? "none" : "4,3"}
             />
             <text
-              x={PADDING.left - 8}
-              y={y + 3}
+              x={PADDING.left - 10}
+              y={y + 4}
               textAnchor="end"
-              style={{ fontSize: 9, fill: "#94a3b8", fontFamily: "var(--font-b612-mono), monospace" }}
+              style={{ fontSize: 11, fill: "#94a3b8", fontFamily: "var(--font-b612-mono), monospace" }}
             >
               {formatAlt(alt)}
             </text>
@@ -202,9 +205,9 @@ export default function AltitudeProfile({
           <text
             key={`x-${i}`}
             x={x}
-            y={height - 8}
+            y={height - 10}
             textAnchor="middle"
-            style={{ fontSize: 9, fill: "#94a3b8", fontFamily: "var(--font-b612-mono), monospace" }}
+            style={{ fontSize: 11, fill: "#94a3b8", fontFamily: "var(--font-b612-mono), monospace" }}
           >
             {formatTime(t, path[0]?.time ?? 0)}
           </text>
@@ -220,7 +223,7 @@ export default function AltitudeProfile({
           d={pathD}
           fill="none"
           stroke="#0ea5e9"
-          strokeWidth={2}
+          strokeWidth={2.5}
           strokeLinejoin="round"
           strokeLinecap="round"
         />
@@ -234,19 +237,19 @@ export default function AltitudeProfile({
           const midPt = path[midIdx];
           if (!midPt) return null;
           const x = PADDING.left + xScale(midPt.time);
-          const y = PADDING.top + yScale(midPt.altitude) - 14;
+          const y = PADDING.top + yScale(midPt.altitude) - 16;
           return (
             <text
               key={`phase-${i}`}
               x={x}
-              y={Math.max(PADDING.top + 4, y)}
+              y={Math.max(PADDING.top + 6, y)}
               textAnchor="middle"
               style={{
-                fontSize: 8,
+                fontSize: 10,
                 fill: "#64748b",
                 fontWeight: 600,
                 textTransform: "uppercase",
-                letterSpacing: "0.05em",
+                letterSpacing: "0.06em",
               }}
             >
               {phase.label}
@@ -272,14 +275,15 @@ export default function AltitudeProfile({
               strokeDasharray="2,2"
               opacity={0.4}
             />
-            <circle cx={x} cy={y} r={2.5} fill="#0ea5e9" stroke="#fff" strokeWidth={1} />
+            <circle cx={x} cy={y} r={3} fill="#0ea5e9" stroke="#fff" strokeWidth={1.5} />
             <text
               x={x}
-              y={PADDING.top + chartH + 12}
+              y={PADDING.top + chartH + 14}
               textAnchor="middle"
               style={{
-                fontSize: 7,
+                fontSize: 10,
                 fill: "#64748b",
+                fontWeight: 500,
                 fontFamily: "var(--font-b612-mono), monospace",
               }}
             >
@@ -290,44 +294,61 @@ export default function AltitudeProfile({
       })}
 
       {/* Hover crosshair + tooltip */}
-      {hoverPoint && hoverIdx !== null && (
-        <g>
-          <line
-            x1={PADDING.left + xScale(hoverPoint.time)}
-            y1={PADDING.top}
-            x2={PADDING.left + xScale(hoverPoint.time)}
-            y2={PADDING.top + chartH}
-            stroke="#475569"
-            strokeWidth={0.5}
-            strokeDasharray="3,2"
-          />
-          <circle
-            cx={PADDING.left + xScale(hoverPoint.time)}
-            cy={PADDING.top + yScale(hoverPoint.altitude)}
-            r={4}
-            fill="#0ea5e9"
-            stroke="#fff"
-            strokeWidth={2}
-          />
-          <rect
-            x={PADDING.left + xScale(hoverPoint.time) - 48}
-            y={PADDING.top - 24}
-            width={96}
-            height={20}
-            rx={4}
-            fill="#0f172a"
-            opacity={0.9}
-          />
-          <text
-            x={PADDING.left + xScale(hoverPoint.time)}
-            y={PADDING.top - 10}
-            textAnchor="middle"
-            style={{ fontSize: 9, fill: "#fff", fontFamily: "var(--font-b612-mono), monospace" }}
-          >
-            {metersToFeet(hoverPoint.altitude).toLocaleString()}ft · {formatTime(hoverPoint.time, path[0].time)}
-          </text>
-        </g>
-      )}
+      {hoverPoint && hoverIdx !== null && (() => {
+        const hx = PADDING.left + xScale(hoverPoint.time);
+        const hy = PADDING.top + yScale(hoverPoint.altitude);
+        let tooltipX = hx - tooltipW / 2;
+        if (tooltipX < PADDING.left) tooltipX = PADDING.left;
+        if (tooltipX + tooltipW > width - PADDING.right) tooltipX = width - PADDING.right - tooltipW;
+        const tooltipY = PADDING.top - tooltipH - 6;
+
+        return (
+          <g>
+            <line
+              x1={hx}
+              y1={PADDING.top}
+              x2={hx}
+              y2={PADDING.top + chartH}
+              stroke="#475569"
+              strokeWidth={0.5}
+              strokeDasharray="3,2"
+            />
+            <circle
+              cx={hx}
+              cy={hy}
+              r={5}
+              fill="#0ea5e9"
+              stroke="#fff"
+              strokeWidth={2.5}
+            />
+            <rect
+              x={tooltipX}
+              y={tooltipY}
+              width={tooltipW}
+              height={tooltipH}
+              rx={8}
+              fill="#0f172a"
+              opacity={0.92}
+            />
+            <text
+              x={tooltipX + tooltipW / 2}
+              y={tooltipY + 17}
+              textAnchor="middle"
+              style={{ fontSize: 12, fill: "#fff", fontWeight: 700, fontFamily: "var(--font-b612-mono), monospace" }}
+            >
+              {metersToFeet(hoverPoint.altitude).toLocaleString()} ft
+            </text>
+            <text
+              x={tooltipX + tooltipW / 2}
+              y={tooltipY + 34}
+              textAnchor="middle"
+              style={{ fontSize: 10, fill: "#94a3b8", fontFamily: "var(--font-b612-mono), monospace" }}
+            >
+              {formatTime(hoverPoint.time, path[0].time)}
+            </text>
+          </g>
+        );
+      })()}
     </svg>
   );
 }
