@@ -470,6 +470,11 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      <footer className="mx-auto max-w-7xl px-3 pb-4 sm:px-4 text-center text-xs text-slate-400">
+        Built with ❤️ by{" "}
+        <a href="https://x.com/JustinBao_" target="_blank" rel="noreferrer" className="text-slate-500 hover:text-slate-700 font-medium transition-colors">Justin</a>
+      </footer>
     </div>
   );
 }

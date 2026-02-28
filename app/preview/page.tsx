@@ -233,7 +233,7 @@ export default function PreviewPage() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
       >
-        <div className="flex justify-center py-6 sm:py-8 px-4 min-h-full pb-24 sm:pb-8">
+        <div className="flex justify-center py-6 sm:py-8 px-4 min-h-full pb-28 sm:pb-8">
           <div
             ref={contentRef}
             style={{
@@ -250,6 +250,10 @@ export default function PreviewPage() {
               />
             </div>
           </div>
+        </div>
+        <div className="text-center text-xs text-gray-400 pb-4 sm:pb-2">
+          Built with ❤️ by{" "}
+          <a href="https://x.com/JustinBao_" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-gray-700 font-medium transition-colors">Justin</a>
         </div>
       </div>
     </div>
