@@ -13,6 +13,8 @@ interface UploadAreaProps {
   draftStatus: "saved" | "unsaved" | "idle";
   onSaveDraft: () => void;
   displayMode: DisplayMode;
+  onFetchTrack?: () => void;
+  trackLoading?: boolean;
 }
 
 type InputMode = "screenshot" | "text" | "manual";
@@ -25,6 +27,8 @@ export default function UploadArea({
   draftStatus,
   onSaveDraft,
   displayMode,
+  onFetchTrack,
+  trackLoading,
 }: UploadAreaProps) {
   const [mode, setMode] = useState<InputMode>("manual");
   const [text, setText] = useState("");
@@ -299,7 +303,7 @@ export default function UploadArea({
             </button>
           </div>
 
-          <FieldEditor data={flightData} onChange={onFlightDataChange} displayMode={displayMode} />
+          <FieldEditor data={flightData} onChange={onFlightDataChange} displayMode={displayMode} onFetchTrack={onFetchTrack} trackLoading={trackLoading} />
 
           <button
             onClick={onPreview}

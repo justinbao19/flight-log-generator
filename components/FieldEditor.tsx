@@ -5,7 +5,7 @@ import { decodeMetar, DecodedMetar } from "@/lib/metarDecode";
 import AirportInput from "./AirportInput";
 import { DatePicker, TimePicker } from "./DateTimePicker";
 import { useMemo, useEffect, useRef, ReactNode } from "react";
-import { Plane, Hash, Clock, CloudSun, PlaneTakeoff, PlaneLanding, Radio, Tag, Timer, Hourglass, Globe, CircleParking, AlarmClock, ClockArrowDown, UserRound } from "lucide-react";
+import { Plane, Hash, Clock, CloudSun, PlaneTakeoff, PlaneLanding, Radio, Tag, Timer, Hourglass, Globe, CircleParking, AlarmClock, ClockArrowDown, UserRound, MapPin, Satellite } from "lucide-react";
 import { RunwayIcon } from "./icons/RunwayIcon";
 import { CabinClassIcon } from "./icons/CabinClassIcon";
 import { AltitudeIcon } from "./icons/AltitudeIcon";
@@ -15,6 +15,8 @@ interface FieldEditorProps {
   data: FlightData;
   onChange: (data: FlightData) => void;
   displayMode: DisplayMode;
+  onFetchTrack?: () => void;
+  trackLoading?: boolean;
 }
 
 function InputField({
@@ -128,6 +130,8 @@ export default function FieldEditor({
   data,
   onChange,
   displayMode,
+  onFetchTrack,
+  trackLoading,
 }: FieldEditorProps) {
   const isPro = displayMode === "professional";
 
@@ -262,10 +266,34 @@ export default function FieldEditor({
     <div className="space-y-5 sm:space-y-6">
       {/* General Flight Info */}
       <section>
-        <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-          <Plane className="w-4 h-4 text-sky-500" />
-          {isPro ? "General Flight Info" : "General Flight Information"}
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <Plane className="w-4 h-4 text-sky-500" />
+            {isPro ? "General Flight Info" : "General Flight Information"}
+          </h3>
+          {onFetchTrack && (
+            <button
+              onClick={onFetchTrack}
+              disabled={!data.flightNumber || !data.date || trackLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-sky-50 text-sky-600 hover:bg-sky-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              {trackLoading ? (
+                <>
+                  <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Fetching...
+                </>
+              ) : (
+                <>
+                  <Satellite className="w-3.5 h-3.5" />
+                  Fetch Track
+                </>
+              )}
+            </button>
+          )}
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <InputField
             label={isPro ? "Flight No." : "Flight Number"}
@@ -323,6 +351,14 @@ export default function FieldEditor({
             onChange={handleDistanceChange}
             icon={<DistanceIcon className="w-4 h-4" />}
           />
+          <div className="col-span-1 sm:col-span-2">
+            <InputField
+              label={isPro ? "MJR WPTS" : "Major Waypoints"}
+              value={data.majorWaypoints || ""}
+              onChange={(v) => update("majorWaypoints", v)}
+              icon={<MapPin className="w-4 h-4" />}
+            />
+          </div>
         </div>
       </section>
 

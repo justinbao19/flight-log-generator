@@ -3,18 +3,22 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import PDFTemplate from "@/components/PDFTemplate";
+import FlightTrackView from "@/components/FlightTrackView";
 import {
   FlightData,
+  FlightTrackData,
   AirlineInfo,
   DisplayMode,
   createEmptyFlightData,
 } from "@/lib/types";
-import { loadDraft } from "@/lib/storage";
+import { loadDraft, loadTrackData } from "@/lib/storage";
 
 const A4_WIDTH_PX = 794;
 const MIN_SCALE = 0.2;
 const MAX_SCALE = 3;
 const SCALE_STEP = 0.15;
+
+type PreviewTab = "pdf" | "track";
 
 export default function PreviewPage() {
   const router = useRouter();
@@ -25,6 +29,8 @@ export default function PreviewPage() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>("professional");
   const [scale, setScale] = useState(1);
   const [loaded, setLoaded] = useState(false);
+  const [activeTab, setActiveTab] = useState<PreviewTab>("pdf");
+  const [trackData, setTrackData] = useState<FlightTrackData | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -47,6 +53,9 @@ export default function PreviewPage() {
     if (savedMode === "standard" || savedMode === "professional") {
       setDisplayMode(savedMode);
     }
+
+    const savedTrack = loadTrackData();
+    if (savedTrack) setTrackData(savedTrack);
 
     fitToScreen();
     setLoaded(true);
@@ -129,7 +138,7 @@ export default function PreviewPage() {
   if (!loaded) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+        <div className="animate-spin h-8 w-8 border-4 border-sky-500 border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -142,7 +151,7 @@ export default function PreviewPage() {
         </p>
         <button
           onClick={() => router.push("/app")}
-          className="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+          className="rounded-xl bg-sky-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-sky-400 transition-colors"
         >
           Go to Editor
         </button>
@@ -167,51 +176,80 @@ export default function PreviewPage() {
             <span className="hidden sm:inline">Back to Editor</span>
           </button>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Tab switcher */}
+          <div className="flex items-center bg-slate-100 rounded-xl p-0.5">
             <button
-              onClick={handleZoomOut}
-              disabled={scale <= MIN_SCALE}
-              className="p-2.5 rounded-xl hover:bg-gray-100/80 text-gray-700 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
-              aria-label="Zoom out"
+              onClick={() => setActiveTab("pdf")}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                activeTab === "pdf"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-              </svg>
+              PDF Preview
             </button>
-
             <button
-              onClick={handleFit}
-              className="min-w-[4rem] px-2 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100/80 rounded-xl transition-colors tabular-nums"
+              onClick={() => setActiveTab("track")}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
+                activeTab === "track"
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
             >
-              {scalePercent}%
-            </button>
-
-            <button
-              onClick={handleZoomIn}
-              disabled={scale >= MAX_SCALE}
-              className="p-2.5 rounded-xl hover:bg-gray-100/80 text-gray-700 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
-              aria-label="Zoom in"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-            </button>
-
-            <div className="w-px h-6 bg-gray-200 mx-1 hidden sm:block" />
-
-            <button
-              onClick={handleFit}
-              className="p-2.5 rounded-xl hover:bg-gray-100/80 text-gray-700 transition-colors hidden sm:block"
-              aria-label="Fit to screen"
-              title="Fit to screen"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-              </svg>
+              Flight Track
+              {trackData && (
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+              )}
             </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {activeTab === "pdf" && (
+              <>
+                <button
+                  onClick={handleZoomOut}
+                  disabled={scale <= MIN_SCALE}
+                  className="p-2.5 rounded-xl hover:bg-gray-100/80 text-gray-700 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
+                  aria-label="Zoom out"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+                  </svg>
+                </button>
+
+                <button
+                  onClick={handleFit}
+                  className="min-w-[4rem] px-2 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100/80 rounded-xl transition-colors tabular-nums"
+                >
+                  {scalePercent}%
+                </button>
+
+                <button
+                  onClick={handleZoomIn}
+                  disabled={scale >= MAX_SCALE}
+                  className="p-2.5 rounded-xl hover:bg-gray-100/80 text-gray-700 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
+                  aria-label="Zoom in"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+
+                <div className="w-px h-6 bg-gray-200 mx-1 hidden sm:block" />
+
+                <button
+                  onClick={handleFit}
+                  className="p-2.5 rounded-xl hover:bg-gray-100/80 text-gray-700 transition-colors hidden sm:block"
+                  aria-label="Fit to screen"
+                  title="Fit to screen"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                  </svg>
+                </button>
+              </>
+            )}
+
             <button
               onClick={() =>
                 setDisplayMode((m) =>
@@ -226,35 +264,68 @@ export default function PreviewPage() {
         </div>
       </div>
 
-      {/* Zoomable content area */}
-      <div
-        ref={containerRef}
-        className="flex-1 overflow-auto"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-      >
-        <div className="flex justify-center py-6 sm:py-8 px-4 min-h-full pb-28 sm:pb-8">
-          <div
-            ref={contentRef}
-            style={{
-              transform: `scale(${scale})`,
-              transformOrigin: "top center",
-              transition: "transform 0.15s ease-out",
-            }}
-          >
-            <div className="shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] border border-gray-100 bg-white rounded-lg overflow-hidden">
-              <PDFTemplate
-                data={flightData}
-                airline={airline}
-                displayMode={displayMode}
-              />
+      {/* Content area */}
+      {activeTab === "pdf" ? (
+        <div
+          ref={containerRef}
+          className="flex-1 overflow-auto"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+        >
+          <div className="flex justify-center py-6 sm:py-8 px-4 min-h-full pb-28 sm:pb-8">
+            <div
+              ref={contentRef}
+              style={{
+                transform: `scale(${scale})`,
+                transformOrigin: "top center",
+                transition: "transform 0.15s ease-out",
+              }}
+            >
+              <div className="shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] border border-gray-100 bg-white rounded-lg overflow-hidden">
+                <PDFTemplate
+                  data={flightData}
+                  airline={airline}
+                  displayMode={displayMode}
+                />
+              </div>
             </div>
           </div>
         </div>
-        <div className="text-center text-xs text-gray-400 pb-4 sm:pb-2">
-          Built with ❤️ by{" "}
-          <a href="https://x.com/JustinBao_" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-gray-700 font-medium transition-colors">Justin</a>
+      ) : (
+        <div className="flex-1 overflow-auto">
+          <div className="py-6 sm:py-8 px-4 pb-28 sm:pb-8">
+            {trackData ? (
+              <FlightTrackView trackData={trackData} />
+            ) : (
+              <div className="max-w-lg mx-auto text-center py-20">
+                <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-slate-100 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-base font-semibold text-slate-900 mb-2">
+                  No Flight Track Data
+                </h3>
+                <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+                  Go back to the editor and click &quot;Fetch Track&quot; to load
+                  flight track data. Track data is available for flights within
+                  the past 30 days.
+                </p>
+                <button
+                  onClick={() => router.push("/app")}
+                  className="rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-400 transition-colors shadow-[0_4px_14px_0_rgba(14,165,233,0.25)]"
+                >
+                  Go to Editor
+                </button>
+              </div>
+            )}
+          </div>
         </div>
+      )}
+
+      <div className="text-center text-xs text-gray-400 pb-4 sm:pb-2">
+        Built with ❤️ by{" "}
+        <a href="https://x.com/JustinBao_" target="_blank" rel="noreferrer" className="text-gray-500 hover:text-gray-700 font-medium transition-colors">Justin</a>
       </div>
     </div>
   );

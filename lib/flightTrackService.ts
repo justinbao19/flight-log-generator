@@ -60,18 +60,66 @@ interface OpenSkyFlight {
   estArrivalAirport: string | null;
 }
 
+let cachedToken: { token: string; expiresAt: number } | null = null;
+
+async function getOpenSkyAuthHeaders(): Promise<Record<string, string>> {
+  const clientId = process.env.OPENSKY_CLIENT_ID;
+  const clientSecret = process.env.OPENSKY_CLIENT_SECRET;
+
+  if (clientId && clientSecret) {
+    if (cachedToken && Date.now() < cachedToken.expiresAt) {
+      return { Authorization: `Bearer ${cachedToken.token}` };
+    }
+
+    const res = await fetch(
+      "https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "client_credentials",
+          client_id: clientId,
+          client_secret: clientSecret,
+        }),
+        signal: AbortSignal.timeout(10000),
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`OpenSky OAuth2 token request failed: ${res.status}`);
+    }
+
+    const data = await res.json();
+    cachedToken = {
+      token: data.access_token,
+      expiresAt: Date.now() + (data.expires_in - 60) * 1000,
+    };
+    return { Authorization: `Bearer ${cachedToken.token}` };
+  }
+
+  const username = process.env.OPENSKY_USERNAME;
+  const password = process.env.OPENSKY_PASSWORD;
+  if (username && password) {
+    const auth = Buffer.from(`${username}:${password}`).toString("base64");
+    return { Authorization: `Basic ${auth}` };
+  }
+
+  throw new Error(
+    "OpenSky credentials not configured. " +
+    "Set OPENSKY_CLIENT_ID + OPENSKY_CLIENT_SECRET (OAuth2, recommended for new accounts), " +
+    "or OPENSKY_USERNAME + OPENSKY_PASSWORD (Basic Auth, legacy accounts only)."
+  );
+}
+
 async function findFlightOnOpenSky(
   depIcao: string,
   arrIcao: string,
-  dateStr: string,
-  username: string,
-  password: string
+  dateStr: string
 ): Promise<OpenSkyFlight | null> {
   const dayStart = Math.floor(new Date(`${dateStr}T00:00:00Z`).getTime() / 1000);
   const dayEnd = dayStart + 86400;
 
-  const auth = Buffer.from(`${username}:${password}`).toString("base64");
-  const headers = { Authorization: `Basic ${auth}` };
+  const headers = await getOpenSkyAuthHeaders();
 
   try {
     const url = `https://opensky-network.org/api/flights/arrival?airport=${arrIcao}&begin=${dayStart}&end=${dayEnd}`;
@@ -99,15 +147,13 @@ interface OpenSkyTrack {
 
 async function fetchTrackFromOpenSky(
   icao24: string,
-  time: number,
-  username: string,
-  password: string
+  time: number
 ): Promise<OpenSkyTrack | null> {
-  const auth = Buffer.from(`${username}:${password}`).toString("base64");
+  const headers = await getOpenSkyAuthHeaders();
   try {
     const url = `https://opensky-network.org/api/tracks/all?icao24=${icao24}&time=${time}`;
     const res = await fetch(url, {
-      headers: { Authorization: `Basic ${auth}` },
+      headers,
       signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) return null;
@@ -121,11 +167,7 @@ export async function getFlightTrack(
   flightNumber: string,
   dateStr: string
 ): Promise<FlightTrackData> {
-  const username = process.env.OPENSKY_USERNAME;
-  const password = process.env.OPENSKY_PASSWORD;
-  if (!username || !password) {
-    throw new Error("OpenSky credentials not configured");
-  }
+  await getOpenSkyAuthHeaders();
 
   const callsign = iataToIcaoCallsign(flightNumber);
   if (!callsign) {
@@ -145,9 +187,7 @@ export async function getFlightTrack(
   const flight = await findFlightOnOpenSky(
     depIcao,
     arrIcao,
-    dateStr,
-    username,
-    password
+    dateStr
   );
   if (!flight) {
     throw new Error(
@@ -159,9 +199,7 @@ export async function getFlightTrack(
   const midTime = Math.floor((flight.firstSeen + flight.lastSeen) / 2);
   const track = await fetchTrackFromOpenSky(
     flight.icao24,
-    midTime,
-    username,
-    password
+    midTime
   );
   if (!track || !track.path || track.path.length === 0) {
     throw new Error(

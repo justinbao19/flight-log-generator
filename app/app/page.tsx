@@ -16,7 +16,7 @@ import {
   generateFilename,
   ExportFormat,
 } from "@/lib/pdfGenerator";
-import { saveDraft, loadDraft, clearDraft } from "@/lib/storage";
+import { saveDraft, loadDraft, clearDraft, saveTrackData, clearTrackData } from "@/lib/storage";
 
 type Step = "input" | "preview";
 
@@ -30,6 +30,7 @@ export default function Home() {
   const [generating, setGenerating] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const [trackLoading, setTrackLoading] = useState(false);
   const [draftStatus, setDraftStatus] = useState<"saved" | "unsaved" | "idle">(
     "idle"
   );
@@ -108,7 +109,37 @@ export default function Home() {
     clearDraft();
     setDraftStatus("idle");
     setStep("input");
+    clearTrackData();
   };
+
+  const fetchFlightTrack = useCallback(async () => {
+    if (!flightData.flightNumber || !flightData.date) return;
+    setTrackLoading(true);
+    try {
+      const res = await fetch(
+        `/api/flight-track?flight=${encodeURIComponent(flightData.flightNumber)}&date=${flightData.date}`
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: "Request failed" }));
+        alert(body.error || "Failed to fetch flight track");
+        return;
+      }
+      const trackData = await res.json();
+      saveTrackData(trackData);
+
+      if (trackData.matchedFixes?.length > 0) {
+        const wpStr = trackData.matchedFixes
+          .map((f: { name: string }) => f.name)
+          .join(" - ");
+        setFlightData((prev) => ({ ...prev, majorWaypoints: wpStr }));
+      }
+    } catch (err) {
+      console.error("Track fetch failed:", err);
+      alert("Failed to fetch flight track. Please try again.");
+    } finally {
+      setTrackLoading(false);
+    }
+  }, [flightData.flightNumber, flightData.date]);
 
   const handleExport = async (format: ExportFormat) => {
     if (!flightData) return;
@@ -322,6 +353,8 @@ export default function Home() {
                 draftStatus={draftStatus}
                 onSaveDraft={handleSaveDraft}
                 displayMode={displayMode}
+                onFetchTrack={fetchFlightTrack}
+                trackLoading={trackLoading}
               />
             </div>
           </div>

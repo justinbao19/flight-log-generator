@@ -173,6 +173,12 @@ export default function PDFTemplate({
             <strong>{isPro ? "CRZ ALT:" : "CRUISING ALTITUDE:"}</strong>{" "}
             <span style={mono}>{data.cruisingAltitude || "N/A"}</span>
           </div>
+          {data.majorWaypoints && (
+            <div className="col-span-3 mt-0.5">
+              <strong>{isPro ? "MJR WPTS:" : "MAJOR WAYPOINTS:"}</strong>{" "}
+              <span style={mono}>{data.majorWaypoints}</span>
+            </div>
+          )}
         </div>
       </section>
 

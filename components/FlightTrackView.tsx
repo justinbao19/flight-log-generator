@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import type { FlightTrackData } from "@/lib/types";
 import FlightTrackMap from "./FlightTrackMap";
 import AltitudeProfile from "./AltitudeProfile";
@@ -44,6 +44,19 @@ function haversineKm(
 export default function FlightTrackView({ trackData }: FlightTrackViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(800);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    observer.observe(el);
+    setContainerWidth(el.clientWidth);
+    return () => observer.disconnect();
+  }, []);
 
   const stats = useMemo(() => {
     const duration = trackData.endTime - trackData.startTime;
