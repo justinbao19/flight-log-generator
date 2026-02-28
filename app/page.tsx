@@ -156,7 +156,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="border-b bg-white">
+      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/70 backdrop-blur-xl">
         <div className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <svg
@@ -336,17 +336,17 @@ export default function Home() {
         {/* Step 2: Preview */}
         {step === "preview" && flightData && (
           <div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-              <div className="flex gap-2 sm:gap-3">
+            <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-gray-100 p-4 pb-safe sm:static sm:bg-transparent sm:backdrop-blur-none sm:border-none sm:p-0 flex flex-row items-center justify-between gap-3 sm:mb-6 shadow-[0_-8px_30px_-4px_rgba(0,0,0,0.05)] sm:shadow-none">
+              <div className="flex gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => setStep("input")}
-                  className="rounded-xl border border-gray-300 px-3 py-2 text-xs sm:text-sm sm:px-4 font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex-1 sm:flex-none rounded-xl border border-gray-200 bg-white px-4 py-3 sm:py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                 >
-                  Back to Edit
+                  Edit
                 </button>
                 <button
                   onClick={handleNewFlight}
-                  className="rounded-xl border border-gray-300 px-3 py-2 text-xs sm:text-sm sm:px-4 font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="hidden sm:block rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                 >
                   New Flight
                 </button>
@@ -354,19 +354,19 @@ export default function Home() {
                   href="/preview"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-xl border border-gray-300 px-3 py-2 text-xs sm:text-sm sm:px-4 font-medium text-gray-700 hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5"
+                  className="flex-1 sm:flex-none rounded-xl border border-gray-200 bg-white px-4 py-3 sm:py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm inline-flex items-center justify-center gap-2"
                 >
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                   </svg>
-                  Preview
+                  <span className="hidden sm:inline">Preview</span>
                 </a>
               </div>
-              <div className="relative self-end sm:self-auto" ref={exportMenuRef}>
+              <div className="relative flex-1 sm:flex-none" ref={exportMenuRef}>
                 <button
                   onClick={() => setShowExportMenu((v) => !v)}
                   disabled={generating}
-                  className="rounded-xl bg-blue-600 px-4 py-2 sm:px-6 text-xs sm:text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+                  className="w-full rounded-xl bg-gray-900 px-4 py-3 sm:py-2.5 text-sm font-semibold text-white hover:bg-black disabled:opacity-80 transition-all shadow-[0_4px_14px_0_rgba(0,0,0,0.1)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] flex items-center justify-center gap-2"
                 >
                   {generating ? (
                     <>
@@ -425,10 +425,10 @@ export default function Home() {
                 </button>
 
                 {showExportMenu && (
-                  <div className="absolute right-0 top-full mt-1.5 w-40 rounded-xl bg-white shadow-lg border border-gray-200 py-1 z-50">
+                  <div className="absolute bottom-full right-0 mb-2 sm:top-full sm:bottom-auto sm:mt-1.5 w-40 rounded-2xl bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] border border-gray-100 py-1.5 z-50 transform transition-all">
                     <button
                       onClick={() => handleExport("pdf")}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                     >
                       <svg
                         className="h-4 w-4 text-red-500"
@@ -437,11 +437,11 @@ export default function Home() {
                       >
                         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM8.5 13h1c.55 0 1 .45 1 1v.5c0 .55-.45 1-1 1h-.5v1H8v-3.5h.5zm3 0h1c.55 0 1 .45 1 1v1.5c0 .55-.45 1-1 1h-1V13zm3 0H16v.75h-1v.75h.75v.75H15V17h-.75v-4h.25z" />
                       </svg>
-                      PDF
+                      Export PDF
                     </button>
                     <button
                       onClick={() => handleExport("png")}
-                      className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                     >
                       <svg
                         className="h-4 w-4 text-green-500"
@@ -450,7 +450,7 @@ export default function Home() {
                       >
                         <path d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
                       </svg>
-                      PNG
+                      Export PNG
                     </button>
                   </div>
                 )}
@@ -458,8 +458,8 @@ export default function Home() {
             </div>
 
             {/* PDF Preview Container */}
-            <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex sm:justify-center pb-8">
-              <div className="shadow-2xl border border-gray-200 bg-white overflow-auto max-w-full mb-2">
+            <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex sm:justify-center pb-24 sm:pb-8">
+              <div className="shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] border border-gray-100 bg-white overflow-auto max-w-full mb-2 rounded-xl">
                 <PDFTemplate
                   data={flightData}
                   airline={airline}

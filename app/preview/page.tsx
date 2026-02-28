@@ -153,35 +153,35 @@ export default function PreviewPage() {
   const scalePercent = Math.round(scale * 100);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col touch-none">
+    <div className="min-h-screen bg-gray-50 flex flex-col touch-none">
       {/* Toolbar */}
-      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 max-w-7xl mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 sm:sticky sm:top-0 z-50 bg-white/80 backdrop-blur-xl border-t sm:border-t-0 sm:border-b border-gray-200 shadow-[0_-8px_30px_-4px_rgba(0,0,0,0.05)] sm:shadow-sm pb-safe">
+        <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
           <button
             onClick={() => router.push("/")}
-            className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
           >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
-            <span className="hidden sm:inline">Back</span>
+            <span className="hidden sm:inline">Back to Editor</span>
           </button>
 
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={handleZoomOut}
               disabled={scale <= MIN_SCALE}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-700 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
+              className="p-2.5 rounded-xl hover:bg-gray-100/80 text-gray-700 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
               aria-label="Zoom out"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
               </svg>
             </button>
 
             <button
               onClick={handleFit}
-              className="min-w-[4rem] px-2 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors tabular-nums"
+              className="min-w-[4rem] px-2 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100/80 rounded-xl transition-colors tabular-nums"
             >
               {scalePercent}%
             </button>
@@ -189,10 +189,10 @@ export default function PreviewPage() {
             <button
               onClick={handleZoomIn}
               disabled={scale >= MAX_SCALE}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-700 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
+              className="p-2.5 rounded-xl hover:bg-gray-100/80 text-gray-700 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
               aria-label="Zoom in"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
             </button>
@@ -201,11 +201,11 @@ export default function PreviewPage() {
 
             <button
               onClick={handleFit}
-              className="p-2 rounded-lg hover:bg-gray-100 text-gray-700 transition-colors hidden sm:block"
+              className="p-2.5 rounded-xl hover:bg-gray-100/80 text-gray-700 transition-colors hidden sm:block"
               aria-label="Fit to screen"
               title="Fit to screen"
             >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
               </svg>
             </button>
@@ -218,7 +218,7 @@ export default function PreviewPage() {
                   m === "professional" ? "standard" : "professional"
                 )
               }
-              className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+              className="px-3 py-2 text-xs font-bold rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors shadow-sm"
             >
               {displayMode === "professional" ? "PRO" : "STD"}
             </button>
@@ -233,7 +233,7 @@ export default function PreviewPage() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
       >
-        <div className="flex justify-center py-6 sm:py-8 px-4 min-h-full">
+        <div className="flex justify-center py-6 sm:py-8 px-4 min-h-full pb-24 sm:pb-8">
           <div
             ref={contentRef}
             style={{
@@ -242,7 +242,7 @@ export default function PreviewPage() {
               transition: "transform 0.15s ease-out",
             }}
           >
-            <div className="shadow-2xl border border-gray-200 bg-white">
+            <div className="shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] border border-gray-100 bg-white rounded-lg overflow-hidden">
               <PDFTemplate
                 data={flightData}
                 airline={airline}

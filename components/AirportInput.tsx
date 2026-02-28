@@ -7,6 +7,7 @@ import {
   searchByName,
   AirportResult,
 } from "@/lib/airportLookup";
+import { TowerControl } from "lucide-react";
 
 interface AirportInputProps {
   name: string;
@@ -22,7 +23,9 @@ interface AirportInputProps {
 }
 
 const INPUT_CLASS =
-  "w-full rounded-lg border border-gray-200 px-3 py-2 sm:py-1.5 text-base sm:text-sm text-black focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500";
+  "w-full rounded-xl border border-gray-200 bg-gray-50/50 py-2 sm:py-2 text-base sm:text-sm text-black transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] pl-10 pr-3";
+const IATA_ICAO_INPUT_CLASS =
+  "w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 sm:py-2 text-base sm:text-sm text-black transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)]";
 
 export default function AirportInput({
   name,
@@ -140,46 +143,55 @@ export default function AirportInput({
   return (
     <>
       <div className="col-span-1 sm:col-span-2 relative" ref={wrapperRef}>
-        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+        <label className="block text-sm font-medium text-gray-600 mb-1.5 capitalize">
           {labelPrefix ? `${labelPrefix} Name` : "Airport Name"}
         </label>
-        <input
-          type="text"
-          value={name || ""}
-          onChange={(e) => handleNameChange(e.target.value)}
-          onKeyDown={handleNameKeyDown}
-          onFocus={() => {
-            if (suggestions.length > 0) setShowSuggestions(true);
-          }}
-          className={INPUT_CLASS}
-          autoComplete="off"
-        />
+        <div className="relative flex items-center">
+          <div className="absolute left-3 text-gray-400 pointer-events-none flex items-center justify-center">
+            <TowerControl className="w-4 h-4" />
+          </div>
+          <input
+            type="text"
+            value={name || ""}
+            onChange={(e) => handleNameChange(e.target.value)}
+            onKeyDown={handleNameKeyDown}
+            onFocus={() => {
+              if (suggestions.length > 0) setShowSuggestions(true);
+            }}
+            className={INPUT_CLASS}
+            autoComplete="off"
+          />
+        </div>
         {showSuggestions && suggestions.length > 0 && (
-          <ul className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+          <ul className="absolute z-50 left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl border border-gray-200 bg-white/90 backdrop-blur-xl shadow-lg">
             {suggestions.map((s, i) => (
               <li
                 key={`${s.iata}-${s.icao}-${i}`}
-                className={`px-3 py-2 text-sm cursor-pointer ${
-                  i === highlightIdx
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-gray-800 hover:bg-gray-50"
-                }`}
+                className="px-2 py-1"
                 onMouseDown={() => selectSuggestion(s)}
                 onMouseEnter={() => setHighlightIdx(i)}
               >
-                <span className="font-medium">{s.name}</span>
-                {(s.iata || s.icao) && (
-                  <span className="ml-2 text-xs text-gray-400">
-                    {[s.iata, s.icao].filter(Boolean).join(" / ")}
-                  </span>
-                )}
+                <div
+                  className={`px-3 py-2 text-sm cursor-pointer rounded-lg transition-colors ${
+                    i === highlightIdx
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-gray-800 hover:bg-gray-50/80"
+                  }`}
+                >
+                  <span className="font-medium">{s.name}</span>
+                  {(s.iata || s.icao) && (
+                    <span className="ml-2 text-xs text-gray-400">
+                      {[s.iata, s.icao].filter(Boolean).join(" / ")}
+                    </span>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
         )}
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+        <label className="block text-sm font-medium text-gray-600 mb-1.5 capitalize">
           IATA
         </label>
         <input
@@ -187,11 +199,11 @@ export default function AirportInput({
           value={iata || ""}
           onChange={(e) => handleIataChange(e.target.value)}
           maxLength={3}
-          className={INPUT_CLASS}
+          className={IATA_ICAO_INPUT_CLASS}
         />
       </div>
       <div>
-        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+        <label className="block text-sm font-medium text-gray-600 mb-1.5 capitalize">
           ICAO
         </label>
         <input
@@ -199,7 +211,7 @@ export default function AirportInput({
           value={icao || ""}
           onChange={(e) => handleIcaoChange(e.target.value)}
           maxLength={4}
-          className={INPUT_CLASS}
+          className={IATA_ICAO_INPUT_CLASS}
         />
       </div>
     </>
