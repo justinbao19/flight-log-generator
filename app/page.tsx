@@ -64,9 +64,10 @@ export default function LandingPage() {
             {flightRoutes.map((route) => (
               <path key={`def-${route.id}`} id={`route-${route.id}`} d={route.path} />
             ))}
-            {/* Airplane silhouette, nose pointing RIGHT (0°) so rotate="auto" works directly */}
-            <symbol id="plane-icon" viewBox="0 0 32 32">
-              <path d="M31 16l-8-6v4H13V8l4 0 0-2-6-4-6 4 0 2 4 0v6H1l0 4h8v6l-4 0 0 2 6 4 6-4 0-2-4 0v-6h10v4z" fill="#3b82f6" opacity="0.8" />
+            {/* Font Awesome "fa-plane" (solid). Nose points RIGHT by default,
+                matching animateMotion rotate="auto" (0° = positive X). */}
+            <symbol id="plane-icon" viewBox="0 0 576 512">
+              <path d="M480 192H365.71L260.61 8.06A16.014 16.014 0 0 0 246.71 0h-65.5c-10.63 0-18.3 10.17-15.38 20.39L214.86 192H112l-43.2-57.6c-3.02-4.03-7.77-6.4-12.8-6.4H16.01C5.6 128-2.04 137.78.49 147.88L32 256 .49 364.12C-2.04 374.22 5.6 384 16.01 384H56c5.04 0 9.78-2.37 12.8-6.4L112 320h102.86l-49.03 171.6c-2.92 10.22 4.75 20.4 15.38 20.4h65.5c5.74 0 11.04-3.08 13.89-8.06L365.71 320H480c35.35 0 96-28.65 96-64s-60.65-64-96-64z" fill="#3b82f6" />
             </symbol>
           </defs>
 
@@ -86,7 +87,6 @@ export default function LandingPage() {
                 }}
               />
 
-              {/* Plane icon moving along path — rotate -90° so nose faces motion direction */}
               <g>
                 <animateMotion
                   dur={`${route.duration}s`}
@@ -96,7 +96,7 @@ export default function LandingPage() {
                 >
                   <mpath href={`#route-${route.id}`} />
                 </animateMotion>
-                <use href="#plane-icon" width="22" height="22" x="-11" y="-11" transform="rotate(-90)" opacity="0.7" />
+                <use href="#plane-icon" width="24" height="21" x="-12" y="-10.5" opacity="0.65" />
               </g>
             </g>
           ))}
