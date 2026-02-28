@@ -1,6 +1,15 @@
 import { FlightTrackData, TrackWaypoint } from "./types";
 import { matchWaypoints } from "./navdata";
 
+export class FlightDateError extends Error {
+  availableDates: string[];
+  constructor(message: string, availableDates: string[]) {
+    super(message);
+    this.name = "FlightDateError";
+    this.availableDates = availableDates;
+  }
+}
+
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
@@ -62,6 +71,17 @@ interface FR24DetailData {
   firstTimestamp?: number;
 }
 
+function estimateUtcOffset(lon: number | undefined): number {
+  if (lon === undefined || lon === 0) return 8;
+  if (lon >= 73 && lon <= 136) return 8;
+  return Math.round(lon / 15);
+}
+
+function tsToLocalDateStr(ts: number, utcOffsetHours: number): string {
+  const ms = ts * 1000 + utcOffsetHours * 3600000;
+  return new Date(ms).toISOString().slice(0, 10);
+}
+
 function tsToDateStr(ts: number): string {
   return new Date(ts * 1000).toISOString().slice(0, 10);
 }
@@ -69,7 +89,7 @@ function tsToDateStr(ts: number): string {
 async function fetchFlightList(
   flightNumber: string
 ): Promise<FR24FlightEntry[]> {
-  const url = `https://api.flightradar24.com/common/v1/flight/list.json?query=${encodeURIComponent(flightNumber)}&fetchBy=flight&page=1&limit=25`;
+  const url = `https://api.flightradar24.com/common/v1/flight/list.json?query=${encodeURIComponent(flightNumber)}&fetchBy=flight&page=1&limit=50`;
   const res = await fetch(url, {
     headers: { "User-Agent": UA, Accept: "application/json" },
     signal: AbortSignal.timeout(12000),
@@ -81,6 +101,14 @@ async function fetchFlightList(
   return body?.result?.response?.data ?? [];
 }
 
+function getDepTs(f: FR24FlightEntry): number | null {
+  return f.time?.real?.departure ?? f.time?.scheduled?.departure ?? null;
+}
+
+function getOriginLon(f: FR24FlightEntry): number | undefined {
+  return f.airport?.origin?.position?.longitude;
+}
+
 function findFlightForDate(
   flights: FR24FlightEntry[],
   dateStr: string
@@ -89,16 +117,36 @@ function findFlightForDate(
     (f) => f.identification?.id
   );
 
-  const dateMatch = withId.find((f) => {
-    const depTs =
-      f.time?.real?.departure ?? f.time?.scheduled?.departure;
-    if (!depTs) return false;
-    return tsToDateStr(depTs) === dateStr;
-  });
-  if (dateMatch) return dateMatch;
+  if (withId.length === 0) return null;
 
-  const withReg = withId.filter((f) => f.aircraft?.registration);
-  return withReg[0] ?? withId[0] ?? null;
+  const exactUtc = withId.find((f) => {
+    const ts = getDepTs(f);
+    return ts ? tsToDateStr(ts) === dateStr : false;
+  });
+  if (exactUtc) return exactUtc;
+
+  const localMatch = withId.find((f) => {
+    const ts = getDepTs(f);
+    if (!ts) return false;
+    const offset = estimateUtcOffset(getOriginLon(f));
+    return tsToLocalDateStr(ts, offset) === dateStr;
+  });
+  if (localMatch) return localMatch;
+
+  const availableDates = withId
+    .map((f) => {
+      const ts = getDepTs(f);
+      if (!ts) return null;
+      const offset = estimateUtcOffset(getOriginLon(f));
+      return tsToLocalDateStr(ts, offset);
+    })
+    .filter((d): d is string => d !== null);
+  const uniqueDates = [...new Set(availableDates)].sort().reverse();
+
+  throw new FlightDateError(
+    `No flight found for ${dateStr}. Available dates: ${uniqueDates.join(", ") || "none"}.`,
+    uniqueDates,
+  );
 }
 
 async function fetchFlightDetail(

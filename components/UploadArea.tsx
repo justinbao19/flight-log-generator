@@ -13,8 +13,9 @@ interface UploadAreaProps {
   draftStatus: "saved" | "unsaved" | "idle";
   onSaveDraft: () => void;
   displayMode: DisplayMode;
-  onFetchTrack?: () => void;
+  onFetchTrack?: (overrideDate?: string) => void;
   trackLoading?: boolean;
+  trackError?: { message: string; availableDates?: string[] } | null;
   onFlightLookup?: () => void;
   flightLookupLoading?: boolean;
 }
@@ -31,6 +32,7 @@ export default function UploadArea({
   displayMode,
   onFetchTrack,
   trackLoading,
+  trackError,
   onFlightLookup,
   flightLookupLoading,
 }: UploadAreaProps) {
@@ -307,7 +309,7 @@ export default function UploadArea({
             </button>
           </div>
 
-          <FieldEditor data={flightData} onChange={onFlightDataChange} displayMode={displayMode} onFetchTrack={onFetchTrack} trackLoading={trackLoading} onFlightLookup={onFlightLookup} flightLookupLoading={flightLookupLoading} />
+          <FieldEditor data={flightData} onChange={onFlightDataChange} displayMode={displayMode} onFetchTrack={onFetchTrack} trackLoading={trackLoading} trackError={trackError} onFlightLookup={onFlightLookup} flightLookupLoading={flightLookupLoading} />
 
           <button
             onClick={onPreview}

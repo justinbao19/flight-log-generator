@@ -300,15 +300,18 @@ export default function PDFTemplate({
               {isPro ? "A/C PHOTOS / RMKS:" : "AIRCRAFT PHOTOS / REMARKS:"}
             </h3>
             {data.selectedPhoto ? (
-              <div className="border border-gray-300 rounded h-[100mm] overflow-hidden relative">
+              <div
+                style={{ height: "100mm" }}
+                className="flex flex-col items-center justify-center"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={data.selectedPhoto.dataUrl}
                   alt="Aircraft"
                   style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
+                    maxWidth: "100%",
+                    maxHeight: data.selectedPhoto.photographer ? "95mm" : "100mm",
+                    objectFit: "contain",
                     display: "block",
                   }}
                   crossOrigin="anonymous"
@@ -316,14 +319,9 @@ export default function PDFTemplate({
                 {data.selectedPhoto.photographer && (
                   <div
                     style={{
-                      position: "absolute",
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      padding: "3mm 4mm",
-                      background: "linear-gradient(transparent, rgba(0,0,0,0.55))",
-                      fontSize: "7pt",
-                      color: "#fff",
+                      marginTop: "1.5mm",
+                      fontSize: "6.5pt",
+                      color: "#94a3b8",
                       fontFamily: "var(--font-b612-mono), monospace",
                     }}
                   >

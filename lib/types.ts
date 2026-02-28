@@ -109,26 +109,25 @@ export function createSampleFlightData(): FlightData {
   return {
     flightNumber: "MU5137",
     callSign: "CES5137",
-    date: "2026-02-15",
-    aircraftType: "A320-251N",
-    registration: "B-30EX",
-    flightDuration: "2h 15min",
-    aircraftAge: "3.5 years",
+    date: "2026-02-28",
+    aircraftType: "A321-231",
+    registration: "B-1615",
+    flightDuration: "2h 02min",
     distance: { km: 1075, nm: 580 },
-    cruisingAltitude: "FL370",
-    majorWaypoints: "PIKAS - LAMEN - DOGAR - ELKUR - IGONO",
+    cruisingAltitude: "FL276",
+    majorWaypoints: "POMOK - PIMOL - UDINO - GOLAL",
     departure: {
       airport: {
-        iata: "PVG",
-        icao: "ZSPD",
-        name: "Shanghai Pudong International Airport",
+        iata: "SHA",
+        icao: "ZSSS",
+        name: "Shanghai Hongqiao International Airport",
       },
-      parkingBay: "D68",
-      runway: "35L",
-      scheduledTime: "08:00",
-      actualTime: "08:12",
-      offChocks: "07:55",
-      metar: "METAR ZSPD 150000Z 34006KT 9999 FEW040 08/02 Q1024 NOSIG",
+      parkingBay: "D12",
+      runway: "36L",
+      scheduledTime: "09:20",
+      actualTime: "09:32",
+      offChocks: "09:25",
+      metar: "METAR ZSSS 280100Z 36004KT 9999 FEW040 10/03 Q1026 NOSIG",
       utcOffset: 8,
     },
     arrival: {
@@ -139,10 +138,10 @@ export function createSampleFlightData(): FlightData {
       },
       parkingBay: "B21",
       runway: "11R",
-      scheduledTime: "10:30",
-      actualTime: "10:25",
-      onChocks: "10:32",
-      metar: "METAR ZBAD 150200Z 02008KT CAVOK 03/M08 Q1031 NOSIG",
+      scheduledTime: "11:25",
+      actualTime: "11:35",
+      onChocks: "11:40",
+      metar: "METAR ZBAD 280300Z 02008KT CAVOK 05/M06 Q1029 NOSIG",
       utcOffset: 8,
     },
     seatNumber: "31A",
@@ -162,9 +161,11 @@ export interface FlightLookupResult {
 
 export interface AircraftPhoto {
   url: string;
+  fullUrl: string;
   thumbnailUrl: string;
   photographer: string;
   link: string;
+  source: "planespotters" | "airport-data";
 }
 
 export interface AirlineInfo {

@@ -37,6 +37,7 @@ export default function Home() {
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const [trackLoading, setTrackLoading] = useState(false);
   const [trackData, setTrackData] = useState<FlightTrackData | null>(null);
+  const [trackError, setTrackError] = useState<{ message: string; availableDates?: string[] } | null>(null);
   const [flightLookupLoading, setFlightLookupLoading] = useState(false);
   const [draftStatus, setDraftStatus] = useState<"saved" | "unsaved" | "idle">(
     "idle"
@@ -113,8 +114,32 @@ export default function Home() {
     localStorage.setItem("flight-log-display-mode", displayMode);
   }, [displayMode]);
 
-  const handleLoadSample = () => {
-    setFlightData(createSampleFlightData());
+  const handleLoadSample = async () => {
+    const sampleData = createSampleFlightData();
+
+    try {
+      const [photoRes, trackRes] = await Promise.all([
+        fetch("/data/sample-photo.json").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch("/data/sample-track.json").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      ]);
+
+      if (photoRes?.dataUrl) {
+        sampleData.selectedPhoto = {
+          dataUrl: photoRes.dataUrl,
+          photographer: photoRes.photographer ?? "",
+          link: photoRes.link ?? "",
+        };
+      }
+
+      if (trackRes) {
+        setTrackData(trackRes as FlightTrackData);
+        saveTrackData(trackRes as FlightTrackData, sampleData.flightNumber, sampleData.date);
+      }
+    } catch {
+      // proceed without supplementary data
+    }
+
+    setFlightData(sampleData);
     setStep("preview");
   };
 
@@ -129,21 +154,27 @@ export default function Home() {
     setTrackData(null);
   };
 
-  const fetchFlightTrack = useCallback(async () => {
-    if (!flightData.flightNumber || !flightData.date) return;
+  const fetchFlightTrack = useCallback(async (overrideDate?: string) => {
+    if (!flightData.flightNumber || (!flightData.date && !overrideDate)) return;
+    const dateToUse = overrideDate || flightData.date;
     setTrackLoading(true);
+    setTrackError(null);
     try {
       const res = await fetch(
-        `/api/flight-track?flight=${encodeURIComponent(flightData.flightNumber)}&date=${flightData.date}`
+        `/api/flight-track?flight=${encodeURIComponent(flightData.flightNumber)}&date=${dateToUse}`
       );
       if (!res.ok) {
         const body = await res.json().catch(() => ({ error: "Request failed" }));
-        alert(body.error || "Failed to fetch flight track");
+        setTrackError({
+          message: body.error || "Failed to fetch flight track",
+          availableDates: body.availableDates,
+        });
         return;
       }
       const track: FlightTrackData = await res.json();
-      saveTrackData(track, flightData.flightNumber, flightData.date);
+      saveTrackData(track, flightData.flightNumber, dateToUse);
       setTrackData(track);
+      setTrackError(null);
 
       if (track.matchedFixes?.length > 0) {
         const wpStr = track.matchedFixes
@@ -153,7 +184,7 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Track fetch failed:", err);
-      alert("Failed to fetch flight track. Please try again.");
+      setTrackError({ message: "Network error. Please try again." });
     } finally {
       setTrackLoading(false);
     }
@@ -430,6 +461,7 @@ export default function Home() {
                 displayMode={displayMode}
                 onFetchTrack={fetchFlightTrack}
                 trackLoading={trackLoading}
+                trackError={trackError}
                 onFlightLookup={fetchFlightLookup}
                 flightLookupLoading={flightLookupLoading}
               />

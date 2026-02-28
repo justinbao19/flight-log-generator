@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFlightTrack } from "@/lib/flightTrackService";
+import { getFlightTrack, FlightDateError } from "@/lib/flightTrackService";
 
 export async function GET(request: NextRequest) {
   const flight = request.nextUrl.searchParams.get("flight");
@@ -23,14 +23,17 @@ export async function GET(request: NextRequest) {
     const trackData = await getFlightTrack(flight, date);
     return NextResponse.json(trackData);
   } catch (err) {
+    if (err instanceof FlightDateError) {
+      return NextResponse.json(
+        { error: err.message, availableDates: err.availableDates },
+        { status: 404 }
+      );
+    }
+
     const message =
       err instanceof Error ? err.message : "Failed to fetch flight track";
 
-    const status = message.includes("not configured")
-      ? 503
-      : message.includes("not yet available") || message.includes("No flight found")
-        ? 404
-        : 500;
+    const status = message.includes("not configured") ? 503 : 500;
 
     return NextResponse.json({ error: message }, { status });
   }

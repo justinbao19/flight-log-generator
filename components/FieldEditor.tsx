@@ -11,12 +11,18 @@ import { CabinClassIcon } from "./icons/CabinClassIcon";
 import { AltitudeIcon } from "./icons/AltitudeIcon";
 import { DistanceIcon } from "./icons/DistanceIcon";
 
+interface TrackError {
+  message: string;
+  availableDates?: string[];
+}
+
 interface FieldEditorProps {
   data: FlightData;
   onChange: (data: FlightData) => void;
   displayMode: DisplayMode;
-  onFetchTrack?: () => void;
+  onFetchTrack?: (overrideDate?: string) => void;
   trackLoading?: boolean;
+  trackError?: TrackError | null;
   onFlightLookup?: () => void;
   flightLookupLoading?: boolean;
 }
@@ -134,6 +140,7 @@ export default function FieldEditor({
   displayMode,
   onFetchTrack,
   trackLoading,
+  trackError,
   onFlightLookup,
   flightLookupLoading,
 }: FieldEditorProps) {
@@ -188,7 +195,8 @@ export default function FieldEditor({
     }
     setSelectingPhotoIdx(idx);
     try {
-      const res = await fetch(`/api/aircraft-photo?proxy=${encodeURIComponent(photo.url)}`);
+      const proxyTarget = photo.fullUrl || photo.url;
+      const res = await fetch(`/api/aircraft-photo?proxy=${encodeURIComponent(proxyTarget)}`);
       if (!res.ok) throw new Error("Failed to load image");
       const { dataUrl } = await res.json();
       onChange({
@@ -201,6 +209,27 @@ export default function FieldEditor({
       setSelectingPhotoIdx(null);
     }
   }, [data, onChange]);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = useCallback((file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      onChange({
+        ...data,
+        selectedPhoto: { dataUrl, photographer: "", link: "" },
+      });
+    };
+    reader.readAsDataURL(file);
+  }, [data, onChange]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileUpload(file);
+  }, [handleFileUpload]);
 
   const [metarLoading, setMetarLoading] = useState<"departure" | "arrival" | null>(null);
 
@@ -397,7 +426,7 @@ export default function FieldEditor({
             )}
             {onFetchTrack && (
               <button
-                onClick={onFetchTrack}
+                onClick={() => onFetchTrack()}
                 disabled={!data.flightNumber || !data.date || trackLoading}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-sky-50 text-sky-600 hover:bg-sky-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
@@ -418,6 +447,29 @@ export default function FieldEditor({
               </button>
             )}
           </div>
+
+          {trackError && !trackLoading && (
+            <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50/60 p-3">
+              <p className="text-xs text-amber-800 leading-relaxed">
+                {trackError.availableDates?.length
+                  ? "No track found for the selected date. Pick an available date below to retry:"
+                  : trackError.message}
+              </p>
+              {trackError.availableDates && trackError.availableDates.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {trackError.availableDates.map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => onFetchTrack?.(d)}
+                      className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-amber-200 text-amber-700 hover:bg-amber-100 hover:border-amber-300 transition-all"
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <InputField
@@ -770,68 +822,108 @@ export default function FieldEditor({
         )}
 
         {photoResults.length > 0 && (
-          <div className="mt-3 space-y-3">
-            <p className="text-xs text-slate-500">Click a photo to use it in the PDF</p>
-            {photoResults.slice(0, 3).map((photo, i) => {
-              const isSelected = data.selectedPhoto?.link === photo.link;
-              const isSelecting = selectingPhotoIdx === i;
-              return (
-                <div
-                  key={i}
-                  className={`rounded-xl border-2 overflow-hidden cursor-pointer transition-all ${
-                    isSelected
-                      ? "border-sky-500 ring-2 ring-sky-200 shadow-md"
-                      : "border-slate-200 hover:border-slate-300"
-                  } bg-slate-50/50`}
-                  onClick={() => handleSelectPhoto(photo, i)}
-                >
-                  <div className="relative">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={photo.url}
-                      alt={`Aircraft ${photoReg}`}
-                      className="w-full h-auto object-cover"
-                      loading="lazy"
-                    />
-                    {isSelected && (
-                      <div className="absolute top-2 right-2 bg-sky-500 text-white rounded-full p-1 shadow-lg">
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
+          <div className="mt-3">
+            <p className="text-xs text-slate-500 mb-2">Click a photo to use it in the PDF</p>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-slate-200">
+              {photoResults.slice(0, 6).map((photo, i) => {
+                const isSelected = data.selectedPhoto?.link === photo.link;
+                const isSelecting = selectingPhotoIdx === i;
+                return (
+                  <div
+                    key={i}
+                    className={`flex-none w-[200px] snap-start rounded-xl border-2 overflow-hidden cursor-pointer transition-all ${
+                      isSelected
+                        ? "border-sky-500 ring-2 ring-sky-200 shadow-md"
+                        : "border-slate-200 hover:border-slate-300"
+                    } bg-slate-50/50`}
+                    onClick={() => handleSelectPhoto(photo, i)}
+                  >
+                    <div className="relative aspect-[3/2]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={photo.url}
+                        alt={`Aircraft ${photoReg}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                      {isSelected && (
+                        <div className="absolute top-1.5 right-1.5 bg-sky-500 text-white rounded-full p-0.5 shadow-lg">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                      {isSelecting && (
+                        <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+                          <svg className="h-5 w-5 animate-spin text-sky-500" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-2 pt-4 pb-1">
+                        <span className="text-[10px] text-white/90 truncate block">
+                          {photo.photographer}
+                        </span>
                       </div>
-                    )}
-                    {isSelecting && (
-                      <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-                        <svg className="h-5 w-5 animate-spin text-sky-500" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                      </div>
-                    )}
+                    </div>
                   </div>
-                  <div className="px-3 py-2 flex items-center justify-between text-xs text-slate-500">
-                    <span className="truncate">
-                      {isSelected && <span className="text-sky-600 font-semibold mr-1">Selected ·</span>}
-                      Photo by <span className="font-medium text-slate-700">{photo.photographer}</span>
-                    </span>
-                    {photo.link && (
-                      <a
-                        href={photo.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-sky-500 hover:text-sky-700 font-medium shrink-0 ml-2"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        View
-                      </a>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
+
+        {/* Upload or selected preview */}
+        <div className="mt-3">
+          {data.selectedPhoto ? (
+            <div className="rounded-xl border-2 border-sky-500 overflow-hidden relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={data.selectedPhoto.dataUrl}
+                alt="Selected aircraft"
+                className="w-full h-auto object-contain max-h-[200px] bg-slate-50"
+              />
+              <button
+                onClick={() => onChange({ ...data, selectedPhoto: undefined })}
+                className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              {data.selectedPhoto.photographer && (
+                <div className="px-3 py-1.5 text-xs text-slate-500 bg-sky-50 border-t border-sky-100">
+                  Photo by <span className="font-medium text-slate-700">{data.selectedPhoto.photographer}</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div
+              className="rounded-xl border-2 border-dashed border-slate-200 hover:border-sky-300 bg-slate-50/50 hover:bg-sky-50/30 transition-all cursor-pointer p-4 text-center"
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop}
+            >
+              <Camera className="w-5 h-5 text-slate-400 mx-auto mb-1.5" />
+              <p className="text-xs text-slate-500">
+                Drop an image here or <span className="text-sky-500 font-medium">browse</span>
+              </p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Upload your own aircraft photo</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileUpload(file);
+                  e.target.value = "";
+                }}
+              />
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );
