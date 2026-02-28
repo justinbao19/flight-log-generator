@@ -128,7 +128,7 @@ export default function LandingPage() {
           <span className="text-xl font-bold tracking-tight text-slate-900">FlightLog<span className="text-sky-500">.</span></span>
         </div>
         <div className="flex items-center gap-6">
-          <a href="https://github.com" target="_blank" rel="noreferrer" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2">
+          <a href="https://github.com/justinbao19" target="_blank" rel="noreferrer" className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors flex items-center gap-2">
             <Github className="w-4 h-4" />
             <span className="hidden sm:inline">Star on GitHub</span>
           </a>
@@ -425,11 +425,12 @@ export default function LandingPage() {
               <a href="https://x.com/JustinBao_" target="_blank" rel="noreferrer" className="text-slate-700 hover:text-slate-900 font-medium transition-colors">Justin</a>
             </p>
             <div className="flex items-center gap-4">
-              <a href="https://x.com/JustinBao_" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors inline-flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-                @JustinBao_
+              <a href="https://x.com/JustinBao_" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors" aria-label="X (Twitter)">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
               </a>
-              <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors">GitHub</a>
+              <a href="https://github.com/justinbao19" target="_blank" rel="noreferrer" className="hover:text-slate-900 transition-colors" aria-label="GitHub">
+                <Github className="w-4 h-4" />
+              </a>
             </div>
           </div>
         </div>

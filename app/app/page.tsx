@@ -37,13 +37,7 @@ export default function Home() {
   const skipNextAutoSave = useRef(true);
 
   useEffect(() => {
-    const draft = loadDraft();
-    if (draft && draft.flightNumber) {
-      setFlightData(draft);
-      setDraftStatus("saved");
-    } else {
-      skipNextAutoSave.current = false;
-    }
+    skipNextAutoSave.current = false;
   }, []);
 
   useEffect(() => {
