@@ -4,9 +4,8 @@ import { useRef, useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import type { FlightTrackData } from "@/lib/types";
 import AltitudeProfile from "./AltitudeProfile";
-import { Plane, Clock, ArrowRight, Navigation, Gauge } from "lucide-react";
+import { Plane, Clock, ArrowRight } from "lucide-react";
 import { AltitudeIcon } from "./icons/AltitudeIcon";
-import { DistanceIcon } from "./icons/DistanceIcon";
 
 const FlightTrackMap = dynamic(() => import("./FlightTrackMap"), {
   ssr: false,
@@ -117,123 +116,59 @@ export default function FlightTrackView({ trackData }: FlightTrackViewProps) {
   return (
     <div ref={containerRef} className="flex flex-col gap-3 w-full max-w-5xl mx-auto">
       {/* Route header */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          {/* Route and callsign */}
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-3">
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="p-4 sm:p-5">
+          {/* Row 1: Route codes + callsign + date */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
               <div
-                className="flex items-center gap-2.5 text-2xl sm:text-3xl font-bold text-slate-900"
+                className="flex items-center gap-2 text-2xl sm:text-3xl font-bold text-slate-900"
                 style={{ fontFamily: "var(--font-b612-mono), monospace" }}
               >
                 <span>{trackData.departure.iata}</span>
-                <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-slate-300 shrink-0" />
+                <Plane className="w-4 h-4 sm:w-5 sm:h-5 text-sky-400 shrink-0" />
                 <span>{trackData.arrival.iata}</span>
               </div>
               <span
-                className="text-sm sm:text-base text-slate-400 font-semibold px-2.5 py-0.5 bg-slate-50 rounded-lg"
+                className="text-[10px] sm:text-xs text-slate-400 font-semibold px-1.5 py-0.5 bg-slate-50 rounded border border-slate-100"
                 style={{ fontFamily: "var(--font-b612-mono), monospace" }}
               >
                 {trackData.callsign}
               </span>
             </div>
-            <div className="text-xs sm:text-sm text-slate-500">
-              {trackData.departure.name && (
-                <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
-                  <span className="line-clamp-1">{trackData.departure.name}</span>
-                  <ArrowRight className="w-3 h-3 text-slate-300 shrink-0 hidden sm:block" />
-                  <span className="text-slate-300 sm:hidden">→</span>
-                  <span className="line-clamp-1">{trackData.arrival.name}</span>
-                </div>
-              )}
-              {!trackData.departure.name && trackData.icao24 && (
-                <span className="font-mono text-xs text-slate-400">ICAO24: {trackData.icao24}</span>
-              )}
+            <div className="flex items-center gap-1 text-[10px] sm:text-xs text-slate-400 font-medium shrink-0">
+              <Clock className="w-3 h-3" />
+              {stats.date}
             </div>
           </div>
-          {/* Date badge */}
-          <div className="flex items-center gap-2 text-sm text-slate-500 font-medium shrink-0">
-            <Clock className="w-4 h-4" />
-            {stats.date}
+          {/* Row 2: Full airport names */}
+          <div className="text-[11px] sm:text-xs text-slate-400 mt-1 leading-relaxed">
+            {trackData.departure.name || trackData.departure.iata}
+            {" → "}
+            {trackData.arrival.name || trackData.arrival.iata}
           </div>
         </div>
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-5">
-          <div className="bg-slate-50/80 rounded-xl p-3.5">
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1.5">
-              <Clock className="w-3.5 h-3.5" />
-              Duration
-            </div>
+        {/* Stats bar */}
+        <div
+          className="flex items-stretch border-t border-slate-100 bg-slate-50/40 overflow-x-auto"
+          style={{ fontFamily: "var(--font-b612-mono), monospace" }}
+        >
+          {[
+            { label: "Duration", value: stats.duration },
+            { label: "Alt", value: stats.maxAltFL },
+            ...(stats.maxSpeed > 0 ? [{ label: "GS", value: `${stats.maxSpeed}kt` }] : []),
+            { label: "Dist", value: `${stats.distanceNm}nm` },
+            { label: "Fixes", value: String(stats.waypoints) },
+          ].map((item, i) => (
             <div
-              className="text-lg sm:text-xl font-bold text-slate-900"
-              style={{ fontFamily: "var(--font-b612-mono), monospace" }}
+              key={item.label}
+              className={`flex-1 min-w-0 px-2 py-2 sm:px-4 sm:py-2.5 text-center ${i > 0 ? "border-l border-slate-100" : ""}`}
             >
-              {stats.duration}
+              <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider leading-none">{item.label}</div>
+              <div className="text-sm sm:text-base font-bold text-slate-900 mt-1 whitespace-nowrap">{item.value}</div>
             </div>
-          </div>
-          <div className="bg-slate-50/80 rounded-xl p-3.5">
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1.5">
-              <AltitudeIcon className="w-3.5 h-3.5" />
-              Max Altitude
-            </div>
-            <div
-              className="text-lg sm:text-xl font-bold text-slate-900"
-              style={{ fontFamily: "var(--font-b612-mono), monospace" }}
-            >
-              {stats.maxAltFL}
-            </div>
-            <div className="text-xs text-slate-400 mt-0.5" style={{ fontFamily: "var(--font-b612-mono), monospace" }}>
-              {stats.maxAltFt} ft
-            </div>
-          </div>
-          {stats.maxSpeed > 0 && (
-            <div className="bg-slate-50/80 rounded-xl p-3.5">
-              <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1.5">
-                <Gauge className="w-3.5 h-3.5" />
-                Max Speed
-              </div>
-              <div
-                className="text-lg sm:text-xl font-bold text-slate-900"
-                style={{ fontFamily: "var(--font-b612-mono), monospace" }}
-              >
-                {stats.maxSpeed} kts
-              </div>
-              <div className="text-xs text-slate-400 mt-0.5" style={{ fontFamily: "var(--font-b612-mono), monospace" }}>
-                {stats.maxSpeedKmh} km/h
-              </div>
-            </div>
-          )}
-          <div className="bg-slate-50/80 rounded-xl p-3.5">
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1.5">
-              <DistanceIcon className="w-3.5 h-3.5" />
-              Distance
-            </div>
-            <div
-              className="text-lg sm:text-xl font-bold text-slate-900"
-              style={{ fontFamily: "var(--font-b612-mono), monospace" }}
-            >
-              {stats.distanceKm} km
-            </div>
-            <div className="text-xs text-slate-400 mt-0.5" style={{ fontFamily: "var(--font-b612-mono), monospace" }}>
-              {stats.distanceNm} NM
-            </div>
-          </div>
-          <div className="bg-slate-50/80 rounded-xl p-3.5">
-            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1.5">
-              <Navigation className="w-3.5 h-3.5" />
-              Waypoints
-            </div>
-            <div
-              className="text-lg sm:text-xl font-bold text-slate-900"
-              style={{ fontFamily: "var(--font-b612-mono), monospace" }}
-            >
-              {stats.waypoints}
-            </div>
-            <div className="text-xs text-slate-400 mt-0.5">
-              matched fixes
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 

@@ -468,11 +468,11 @@ export default function AltitudeProfile({
                 strokeWidth={2}
               />
             )}
-            {/* Inline altitude label */}
+            {/* Inline altitude label — flip anchor near right edge */}
             <text
-              x={hx + 8}
+              x={hx > width - PADDING.right - 80 ? hx - 8 : hx + 8}
               y={hyAlt - 8}
-              textAnchor="start"
+              textAnchor={hx > width - PADDING.right - 80 ? "end" : "start"}
               style={{ fontSize: 10, fill: ALT_COLOR, fontWeight: 700, fontFamily: "var(--font-b612-mono), monospace" }}
             >
               {metersToFeet(hoverPoint.altitude).toLocaleString()}ft
@@ -510,9 +510,7 @@ export default function AltitudeProfile({
     ) : (
       <div className="flex items-center justify-center mt-2 px-2 py-2 rounded-xl bg-slate-50/50 border border-slate-100/50">
         <span className="text-[10px] text-slate-400 font-medium">
-          {typeof window !== "undefined" && "ontouchstart" in window
-            ? "Drag on chart to inspect"
-            : "Hover on chart to inspect"}
+          Hover or drag on chart to inspect
         </span>
       </div>
     )}
