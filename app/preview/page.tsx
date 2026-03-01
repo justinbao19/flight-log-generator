@@ -37,7 +37,7 @@ export default function PreviewPage() {
   const pinchRef = useRef({ startDist: 0, startScale: 1 });
 
   const fitToScreen = useCallback(() => {
-    const padding = 32;
+    const padding = 16;
     const availableWidth = window.innerWidth - padding;
     const fitScale = Math.min(availableWidth / A4_WIDTH_PX, 1);
     setScale(Math.max(fitScale, MIN_SCALE));
@@ -59,6 +59,9 @@ export default function PreviewPage() {
 
     fitToScreen();
     setLoaded(true);
+
+    window.addEventListener("resize", fitToScreen);
+    return () => window.removeEventListener("resize", fitToScreen);
   }, [fitToScreen]);
 
   useEffect(() => {
@@ -272,13 +275,14 @@ export default function PreviewPage() {
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
         >
-          <div className="flex justify-center py-6 sm:py-8 px-4 min-h-full pb-28 sm:pb-8">
+          <div className="flex justify-center py-4 sm:py-8 px-2 sm:px-4 min-h-full pb-28 sm:pb-8">
             <div
               ref={contentRef}
               style={{
                 transform: `scale(${scale})`,
                 transformOrigin: "top center",
                 transition: "transform 0.15s ease-out",
+                height: scale < 1 ? `calc(${scale * 100}% + 1px)` : undefined,
               }}
             >
               <div className="shadow-[0_8px_30px_-4px_rgba(0,0,0,0.1)] border border-gray-100 bg-white rounded-lg overflow-hidden">

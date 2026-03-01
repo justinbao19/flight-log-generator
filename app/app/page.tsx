@@ -24,6 +24,39 @@ import { saveDraft, loadDraft, clearDraft, saveTrackData, clearTrackData, loadTr
 type Step = "input" | "preview";
 type PreviewTab = "pdf" | "track";
 
+const A4_WIDTH_PX = 794;
+
+function PDFPreviewWrapper({ children }: { children: React.ReactNode }) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [pdfScale, setPdfScale] = useState(1);
+
+  useEffect(() => {
+    const calcScale = () => {
+      if (!wrapperRef.current) return;
+      const padding = 24;
+      const availableWidth = wrapperRef.current.offsetWidth - padding;
+      setPdfScale(Math.min(availableWidth / A4_WIDTH_PX, 1));
+    };
+    calcScale();
+    window.addEventListener("resize", calcScale);
+    return () => window.removeEventListener("resize", calcScale);
+  }, []);
+
+  return (
+    <div ref={wrapperRef} className="flex justify-center pb-24 sm:pb-8 px-2 sm:px-0">
+      <div
+        style={{
+          transform: `scale(${pdfScale})`,
+          transformOrigin: "top center",
+          height: pdfScale < 1 ? `calc(${pdfScale * 100}% + 1px)` : undefined,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [step, setStep] = useState<Step>("input");
   const [previewTab, setPreviewTab] = useState<PreviewTab>("pdf");
@@ -650,15 +683,15 @@ export default function Home() {
 
             {/* Content area */}
             {previewTab === "pdf" ? (
-              <div className="overflow-x-auto -mx-3 px-3 sm:mx-0 sm:px-0 sm:flex sm:justify-center pb-24 sm:pb-8">
-                <div className="shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] border border-slate-200/80 bg-white overflow-auto max-w-full mb-2 rounded-xl">
+              <PDFPreviewWrapper>
+                <div className="shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] border border-slate-200/80 bg-white overflow-hidden max-w-full mb-2 rounded-xl">
                   <PDFTemplate
                     data={flightData}
                     airline={airline}
                     displayMode={displayMode}
                   />
                 </div>
-              </div>
+              </PDFPreviewWrapper>
             ) : (
               <div className="pb-24 sm:pb-8">
                 {trackData ? (
