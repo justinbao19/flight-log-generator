@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useMemo, useCallback } from "react";
+import { useEffect, useRef, useMemo, useCallback, useState } from "react";
 import type { FlightTrackData } from "@/lib/types";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -67,6 +67,9 @@ export default function FlightTrackMap({
 }: FlightTrackMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const [mapUnlocked, setMapUnlocked] = useState(false);
+
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
 
   const trackCoords = useMemo<L.LatLngTuple[]>(
     () => trackData.path.map((p) => [p.latitude, p.longitude]),
@@ -83,16 +86,23 @@ export default function FlightTrackMap({
     return L.latLngBounds(sw, ne);
   }, [trackData]);
 
+  const unlockMap = useCallback(() => {
+    if (!mapRef.current || mapUnlocked) return;
+    mapRef.current.dragging.enable();
+    mapRef.current.touchZoom.enable();
+    setMapUnlocked(true);
+  }, [mapUnlocked]);
+
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
     const map = L.map(mapContainerRef.current, {
       zoomControl: false,
       attributionControl: false,
-      scrollWheelZoom: true,
+      scrollWheelZoom: !isMobile,
       doubleClickZoom: true,
-      touchZoom: true,
-      dragging: true,
+      touchZoom: !isMobile,
+      dragging: !isMobile,
     });
 
     L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
@@ -117,7 +127,12 @@ export default function FlightTrackMap({
       lineJoin: "round",
     }).addTo(map);
 
-    trackData.matchedFixes.forEach((fix) => {
+    // On mobile, show fewer waypoints to avoid label overlap
+    const fixes = trackData.matchedFixes;
+    const maxWaypoints = isMobile ? 6 : fixes.length;
+    const step = fixes.length > maxWaypoints ? Math.ceil(fixes.length / maxWaypoints) : 1;
+    fixes.forEach((fix, i) => {
+      if (i % step !== 0 && i !== fixes.length - 1) return;
       L.marker([fix.lat, fix.lon], {
         icon: createWaypointIcon(fix.name),
         interactive: false,
@@ -156,12 +171,23 @@ export default function FlightTrackMap({
       <div
         ref={mapContainerRef}
         className="w-full rounded-xl"
-        style={{ height, minHeight: 300 }}
+        style={{ height, minHeight: 260 }}
       />
+      {/* Mobile: overlay to unlock map interaction */}
+      {isMobile && !mapUnlocked && (
+        <button
+          onClick={unlockMap}
+          className="absolute inset-0 z-[999] flex items-end justify-center pb-4"
+        >
+          <span className="bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full">
+            Tap to interact with map
+          </span>
+        </button>
+      )}
       <button
         onClick={handleRecenter}
         title="Fit to track"
-        className="absolute top-[84px] right-[10px] z-[1000] flex h-[30px] w-[30px] items-center justify-center rounded-sm border-2 border-[rgba(0,0,0,0.2)] bg-white text-slate-600 hover:bg-slate-50 hover:text-sky-600 transition-colors"
+        className="absolute top-2 right-2 sm:top-[84px] sm:right-[10px] z-[1000] flex h-8 w-8 sm:h-[30px] sm:w-[30px] items-center justify-center rounded-lg sm:rounded-sm border-2 border-[rgba(0,0,0,0.2)] bg-white text-slate-600 hover:bg-slate-50 hover:text-sky-600 transition-colors shadow-sm"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />

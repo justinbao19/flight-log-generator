@@ -137,18 +137,30 @@ export default function AltitudeProfile({
     return ticks;
   }, [path, chartW]);
 
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent<SVGSVGElement>) => {
+  const resolveIdx = useCallback(
+    (clientX: number) => {
       if (!svgRef.current || path.length === 0) return;
       const rect = svgRef.current.getBoundingClientRect();
-      const svgWidth = rect.width;
-      const mx = e.clientX - rect.left;
-      const scaledX = (mx / svgWidth) * width - PADDING.left;
+      const mx = clientX - rect.left;
+      const scaledX = (mx / rect.width) * width - PADDING.left;
       const ratio = scaledX / chartW;
       const idx = Math.round(ratio * (path.length - 1));
       setHoverIdx(Math.max(0, Math.min(path.length - 1, idx)));
     },
     [path, chartW, width]
+  );
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<SVGSVGElement>) => resolveIdx(e.clientX),
+    [resolveIdx]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent<SVGSVGElement>) => {
+      e.preventDefault();
+      resolveIdx(e.touches[0].clientX);
+    },
+    [resolveIdx]
   );
 
   const hoverPoint = hoverIdx !== null ? path[hoverIdx] : null;
@@ -164,6 +176,8 @@ export default function AltitudeProfile({
       style={{ maxHeight: height }}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => setHoverIdx(null)}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={() => setHoverIdx(null)}
     >
       <defs>
         <linearGradient id="altGradient" x1="0" y1="0" x2="0" y2="1">
@@ -229,69 +243,91 @@ export default function AltitudeProfile({
         />
       )}
 
-      {/* Phase labels */}
-      {phases
-        .filter((p) => p.label === "Climb" || p.label === "Cruise" || p.label === "Descent")
-        .map((phase, i) => {
-          const midIdx = Math.floor((phase.startIdx + phase.endIdx) / 2);
-          const midPt = path[midIdx];
-          if (!midPt) return null;
-          const x = PADDING.left + xScale(midPt.time);
-          const y = PADDING.top + yScale(midPt.altitude) - 16;
-          return (
-            <text
-              key={`phase-${i}`}
-              x={x}
-              y={Math.max(PADDING.top + 6, y)}
-              textAnchor="middle"
-              style={{
-                fontSize: 10,
-                fill: "#64748b",
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-              }}
-            >
-              {phase.label}
-            </text>
-          );
-        })}
+      {/* Phase labels — deduplicated and spaced to avoid overlap */}
+      {(() => {
+        const candidates = phases
+          .filter((p) => p.label === "Climb" || p.label === "Cruise" || p.label === "Descent")
+          .map((phase) => {
+            const midIdx = Math.floor((phase.startIdx + phase.endIdx) / 2);
+            const midPt = path[midIdx];
+            if (!midPt) return null;
+            return {
+              label: phase.label,
+              x: PADDING.left + xScale(midPt.time),
+              y: Math.max(PADDING.top + 6, PADDING.top + yScale(midPt.altitude) - 16),
+            };
+          })
+          .filter(Boolean) as { label: string; x: number; y: number }[];
 
-      {/* Waypoint markers on the profile */}
-      {matchedFixes.map((fix) => {
-        const pt = path[fix.trackIndex];
-        if (!pt) return null;
-        const x = PADDING.left + xScale(pt.time);
-        const y = PADDING.top + yScale(pt.altitude);
-        return (
-          <g key={`fix-${fix.name}-${fix.trackIndex}`}>
-            <line
-              x1={x}
-              y1={y}
-              x2={x}
-              y2={PADDING.top + chartH}
-              stroke="#0ea5e9"
-              strokeWidth={0.5}
-              strokeDasharray="2,2"
-              opacity={0.4}
-            />
-            <circle cx={x} cy={y} r={3} fill="#0ea5e9" stroke="#fff" strokeWidth={1.5} />
-            <text
-              x={x}
-              y={PADDING.top + chartH + 14}
-              textAnchor="middle"
-              style={{
-                fontSize: 10,
-                fill: "#64748b",
-                fontWeight: 500,
-                fontFamily: "var(--font-b612-mono), monospace",
-              }}
-            >
-              {fix.name}
-            </text>
-          </g>
-        );
-      })}
+        const minGap = 60;
+        const placed: { label: string; x: number; y: number }[] = [];
+        for (const c of candidates) {
+          if (placed.some((p) => Math.abs(p.x - c.x) < minGap)) continue;
+          placed.push(c);
+        }
+
+        return placed.map((p, i) => (
+          <text
+            key={`phase-${i}`}
+            x={p.x}
+            y={p.y}
+            textAnchor="middle"
+            style={{
+              fontSize: 10,
+              fill: "#64748b",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+            }}
+          >
+            {p.label}
+          </text>
+        ));
+      })()}
+
+      {/* Waypoint markers on the profile — spaced to avoid label overlap */}
+      {(() => {
+        const minLabelGap = 40;
+        let lastLabelX = -Infinity;
+        return matchedFixes.map((fix) => {
+          const pt = path[fix.trackIndex];
+          if (!pt) return null;
+          const x = PADDING.left + xScale(pt.time);
+          const y = PADDING.top + yScale(pt.altitude);
+          const showLabel = x - lastLabelX >= minLabelGap;
+          if (showLabel) lastLabelX = x;
+          return (
+            <g key={`fix-${fix.name}-${fix.trackIndex}`}>
+              <line
+                x1={x}
+                y1={y}
+                x2={x}
+                y2={PADDING.top + chartH}
+                stroke="#0ea5e9"
+                strokeWidth={0.5}
+                strokeDasharray="2,2"
+                opacity={0.4}
+              />
+              <circle cx={x} cy={y} r={3} fill="#0ea5e9" stroke="#fff" strokeWidth={1.5} />
+              {showLabel && (
+                <text
+                  x={x}
+                  y={PADDING.top + chartH + 14}
+                  textAnchor="middle"
+                  style={{
+                    fontSize: 10,
+                    fill: "#64748b",
+                    fontWeight: 500,
+                    fontFamily: "var(--font-b612-mono), monospace",
+                  }}
+                >
+                  {fix.name}
+                </text>
+              )}
+            </g>
+          );
+        });
+      })()}
 
       {/* Hover crosshair + tooltip */}
       {hoverPoint && hoverIdx !== null && (() => {

@@ -106,7 +106,7 @@ export default function FlightTrackView({ trackData }: FlightTrackViewProps) {
   }, [trackData]);
 
   const mapHeight = useMemo(() => {
-    if (containerWidth < 640) return 360;
+    if (containerWidth < 640) return 280;
     return Math.min(Math.round(containerWidth * 0.5), 520);
   }, [containerWidth]);
 
@@ -133,12 +133,12 @@ export default function FlightTrackView({ trackData }: FlightTrackViewProps) {
                 {trackData.callsign}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-slate-500">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500">
               {trackData.departure.name && (
                 <>
-                  <span className="truncate max-w-[180px]">{trackData.departure.name}</span>
+                  <span className="truncate max-w-[120px] sm:max-w-[180px]">{trackData.departure.name}</span>
                   <ArrowRight className="w-3 h-3 text-slate-300 shrink-0" />
-                  <span className="truncate max-w-[180px]">{trackData.arrival.name}</span>
+                  <span className="truncate max-w-[120px] sm:max-w-[180px]">{trackData.arrival.name}</span>
                 </>
               )}
               {!trackData.departure.name && trackData.icao24 && (
@@ -232,7 +232,7 @@ export default function FlightTrackView({ trackData }: FlightTrackViewProps) {
         <AltitudeProfile
           trackData={trackData}
           width={Math.min(containerWidth - 40, 928)}
-          height={220}
+          height={containerWidth < 640 ? 180 : 220}
         />
       </div>
 
