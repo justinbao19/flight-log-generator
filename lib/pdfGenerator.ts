@@ -3,6 +3,39 @@ import jsPDF from "jspdf";
 
 const PIXEL_RATIO = 2;
 
+function dataUrlToBlob(dataUrl: string): Blob {
+  const [header, base64] = dataUrl.split(",");
+  const mime = header.match(/:(.*?);/)?.[1] ?? "application/octet-stream";
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
+function triggerDownload(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+  if (isIOS || isSafari) {
+    window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    return;
+  }
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(() => {
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }, 200);
+}
+
 function rasterizeSvg(svgText: string, width: number, height: number): Promise<string> {
   return new Promise((resolve, reject) => {
     const svgBlob = new Blob([svgText], { type: "image/svg+xml;charset=utf-8" });
@@ -102,7 +135,8 @@ export async function generatePDF(
   }
 
   pdf.addImage(dataUrl, "JPEG", 0, 0, finalWidth, finalHeight);
-  pdf.save(filename);
+  const pdfBlob = pdf.output("blob");
+  triggerDownload(pdfBlob, filename);
 }
 
 export async function generatePNG(
@@ -121,10 +155,8 @@ export async function generatePNG(
 
   restore();
 
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = dataUrl;
-  link.click();
+  const blob = dataUrlToBlob(dataUrl);
+  triggerDownload(blob, filename);
 }
 
 export type ExportFormat = "pdf" | "png";
