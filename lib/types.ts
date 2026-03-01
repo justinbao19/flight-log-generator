@@ -22,6 +22,20 @@ export interface SelectedPhoto {
   link: string;
 }
 
+export interface BoardingPassData {
+  imageDataUrl: string;
+  source: "image" | "pkpass";
+  parsedData?: {
+    passengerName?: string;
+    flightNumber?: string;
+    seatNumber?: string;
+    gate?: string;
+    boardingTime?: string;
+    departureAirport?: string;
+    arrivalAirport?: string;
+  };
+}
+
 export interface FlightData {
   flightNumber: string;
   callSign?: string;
@@ -42,6 +56,7 @@ export interface FlightData {
   cabinClass?: string;
   bagTag?: string;
   selectedPhoto?: SelectedPhoto;
+  boardingPass?: BoardingPassData;
 }
 
 export interface TrackWaypoint {

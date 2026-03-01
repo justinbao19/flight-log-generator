@@ -339,9 +339,20 @@ export default function PDFTemplate({
             <h3 className="text-xs font-bold tracking-widest mb-2">
               {isPro ? "B/Pass:" : "Boarding Pass:"}
             </h3>
-            <div className="border border-dashed border-gray-300 rounded h-[100mm] flex items-center justify-center text-gray-400 text-sm">
-              Boarding pass area
-            </div>
+            {data.boardingPass?.imageDataUrl ? (
+              <div className="rounded overflow-hidden h-[100mm] flex items-center justify-center bg-white">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={data.boardingPass.imageDataUrl}
+                  alt="Boarding pass"
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="border border-dashed border-gray-300 rounded h-[100mm] flex items-center justify-center text-gray-400 text-sm">
+                Boarding pass area
+              </div>
+            )}
           </div>
         </div>
       </section>

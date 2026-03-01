@@ -1,11 +1,12 @@
 "use client";
 
 import { FlightData, DisplayMode, AircraftPhoto } from "@/lib/types";
+import { parsePkpass } from "@/lib/pkpassParser";
 import { decodeMetar, DecodedMetar } from "@/lib/metarDecode";
 import AirportInput from "./AirportInput";
 import { DatePicker, TimePicker } from "./DateTimePicker";
 import { useMemo, useEffect, useRef, useState, useCallback, ReactNode } from "react";
-import { Plane, Hash, Clock, CloudSun, PlaneTakeoff, PlaneLanding, Radio, Tag, Timer, Hourglass, Globe, CircleParking, AlarmClock, ClockArrowDown, UserRound, MapPin, Satellite, Search, Camera, ExternalLink, CloudDownload, Info } from "lucide-react";
+import { Plane, Hash, Clock, CloudSun, PlaneTakeoff, PlaneLanding, Radio, Tag, Timer, Hourglass, Globe, CircleParking, AlarmClock, ClockArrowDown, UserRound, MapPin, Satellite, Search, Camera, ExternalLink, CloudDownload, ClipboardPaste, Ticket, Upload, Loader2, Info } from "lucide-react";
 import { RunwayIcon } from "./icons/RunwayIcon";
 import { CabinClassIcon } from "./icons/CabinClassIcon";
 import { AltitudeIcon } from "./icons/AltitudeIcon";
@@ -230,6 +231,92 @@ export default function FieldEditor({
     const file = e.dataTransfer.files[0];
     if (file) handleFileUpload(file);
   }, [handleFileUpload]);
+
+  const handlePaste = useCallback(async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) handleFileUpload(file);
+        return;
+      }
+    }
+    const html = e.clipboardData.getData("text/html");
+    if (html) {
+      const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+      if (match?.[1]) {
+        e.preventDefault();
+        try {
+          const res = await fetch(match[1]);
+          const blob = await res.blob();
+          if (blob.type.startsWith("image/")) {
+            handleFileUpload(new File([blob], "pasted-image.jpg", { type: blob.type }));
+          }
+        } catch {
+          // CORS blocked — try via proxy
+          try {
+            const res = await fetch(`/api/aircraft-photo?proxy=${encodeURIComponent(match[1])}`);
+            if (res.ok) {
+              const { dataUrl } = await res.json();
+              onChange({ ...data, selectedPhoto: { dataUrl, photographer: "", link: "" } });
+            }
+          } catch { /* ignore */ }
+        }
+        return;
+      }
+    }
+  }, [handleFileUpload, data, onChange]);
+
+  // --- Boarding Pass handlers ---
+  const bpFileInputRef = useRef<HTMLInputElement>(null);
+  const [bpLoading, setBpLoading] = useState(false);
+
+  const handleBpFile = useCallback(async (file: File) => {
+    if (file.name.endsWith(".pkpass") || file.type === "application/vnd.apple.pkpass") {
+      setBpLoading(true);
+      try {
+        const result = await parsePkpass(file);
+        onChange({
+          ...data,
+          boardingPass: { imageDataUrl: result.imageDataUrl, source: "pkpass", parsedData: result.parsedData },
+        });
+      } catch (err) {
+        console.error("Failed to parse .pkpass:", err);
+        alert("Failed to parse .pkpass file. The file may be corrupted.");
+      } finally {
+        setBpLoading(false);
+      }
+      return;
+    }
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      onChange({
+        ...data,
+        boardingPass: { imageDataUrl: reader.result as string, source: "image" },
+      });
+    };
+    reader.readAsDataURL(file);
+  }, [data, onChange]);
+
+  const handleBpDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleBpFile(file);
+  }, [handleBpFile]);
+
+  const handleBpPaste = useCallback(async (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith("image/")) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) handleBpFile(file);
+        return;
+      }
+    }
+  }, [handleBpFile]);
 
   const [metarLoading, setMetarLoading] = useState<"departure" | "arrival" | null>(null);
 
@@ -933,16 +1020,18 @@ export default function FieldEditor({
             </div>
           ) : (
             <div
-              className="rounded-xl border-2 border-dashed border-slate-200 hover:border-sky-300 bg-slate-50/50 hover:bg-sky-50/30 transition-all cursor-pointer p-4 text-center"
+              tabIndex={0}
+              className="rounded-xl border-2 border-dashed border-slate-200 hover:border-sky-300 focus:border-sky-300 focus:ring-2 focus:ring-sky-100 bg-slate-50/50 hover:bg-sky-50/30 transition-all cursor-pointer p-4 text-center outline-none"
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
+              onPaste={handlePaste}
             >
               <Camera className="w-5 h-5 text-slate-400 mx-auto mb-1.5" />
               <p className="text-xs text-slate-500">
-                Drop an image here or <span className="text-sky-500 font-medium">browse</span>
+                Drop, <span className="text-sky-500 font-medium">browse</span>, or <span className="inline-flex items-center gap-0.5 align-text-bottom text-sky-500 font-medium"><ClipboardPaste className="w-3 h-3" />paste</span> an image
               </p>
-              <p className="text-[10px] text-slate-400 mt-0.5">Upload your own aircraft photo</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">Supports pasting photos copied from websites</p>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -957,6 +1046,96 @@ export default function FieldEditor({
             </div>
           )}
         </div>
+      </section>
+
+      {/* Boarding Pass */}
+      <section>
+        <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2 mt-2">
+          <Ticket className="w-4 h-4 text-sky-500" />
+          Boarding Pass
+        </h3>
+        {data.boardingPass ? (
+          <div className="rounded-xl border-2 border-sky-500 overflow-hidden relative">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={data.boardingPass.imageDataUrl}
+              alt="Boarding pass"
+              className="w-full h-auto object-contain max-h-[260px] bg-slate-50"
+            />
+            <button
+              onClick={() => onChange({ ...data, boardingPass: undefined })}
+              className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            {data.boardingPass.source === "pkpass" && data.boardingPass.parsedData && (
+              <div className="px-3 py-2 text-xs bg-sky-50 border-t border-sky-100 space-y-0.5">
+                {data.boardingPass.parsedData.passengerName && (
+                  <div className="text-slate-600">
+                    <span className="text-slate-400">PAX:</span>{" "}
+                    <span className="font-medium text-slate-700">{data.boardingPass.parsedData.passengerName}</span>
+                  </div>
+                )}
+                <div className="flex gap-3 flex-wrap">
+                  {data.boardingPass.parsedData.flightNumber && (
+                    <span className="text-slate-600">
+                      <span className="text-slate-400">FLT:</span> {data.boardingPass.parsedData.flightNumber}
+                    </span>
+                  )}
+                  {data.boardingPass.parsedData.seatNumber && (
+                    <span className="text-slate-600">
+                      <span className="text-slate-400">SEAT:</span> {data.boardingPass.parsedData.seatNumber}
+                    </span>
+                  )}
+                  {data.boardingPass.parsedData.gate && (
+                    <span className="text-slate-600">
+                      <span className="text-slate-400">GATE:</span> {data.boardingPass.parsedData.gate}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div
+            tabIndex={0}
+            className="rounded-xl border-2 border-dashed border-slate-200 hover:border-sky-300 focus:border-sky-300 focus:ring-2 focus:ring-sky-100 bg-slate-50/50 hover:bg-sky-50/30 transition-all cursor-pointer p-4 text-center outline-none"
+            onClick={() => bpFileInputRef.current?.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleBpDrop}
+            onPaste={handleBpPaste}
+          >
+            {bpLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 text-sky-400 mx-auto mb-1.5 animate-spin" />
+                <p className="text-xs text-slate-500">Parsing boarding pass...</p>
+              </>
+            ) : (
+              <>
+                <Upload className="w-5 h-5 text-slate-400 mx-auto mb-1.5" />
+                <p className="text-xs text-slate-500">
+                  Drop, <span className="text-sky-500 font-medium">browse</span>, or <span className="inline-flex items-center gap-0.5 align-text-bottom text-sky-500 font-medium"><ClipboardPaste className="w-3 h-3" />paste</span>
+                </p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  Supports images, screenshots, and Apple Wallet .pkpass files
+                </p>
+              </>
+            )}
+            <input
+              ref={bpFileInputRef}
+              type="file"
+              accept="image/*,.pkpass"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleBpFile(file);
+                e.target.value = "";
+              }}
+            />
+          </div>
+        )}
       </section>
     </div>
   );
