@@ -4,7 +4,7 @@ import { useRef, useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import type { FlightTrackData } from "@/lib/types";
 import AltitudeProfile from "./AltitudeProfile";
-import { Plane, Clock, ArrowRight, Navigation } from "lucide-react";
+import { Plane, Clock, ArrowRight, Navigation, Gauge } from "lucide-react";
 import { AltitudeIcon } from "./icons/AltitudeIcon";
 import { DistanceIcon } from "./icons/DistanceIcon";
 
@@ -93,6 +93,8 @@ export default function FlightTrackView({ trackData }: FlightTrackViewProps) {
       totalDist += haversineKm(p1.latitude, p1.longitude, p2.latitude, p2.longitude);
     }
 
+    const maxSpd = Math.max(...trackData.path.map((p) => p.speed ?? 0));
+
     return {
       duration: formatDuration(duration),
       durationSeconds: duration,
@@ -102,6 +104,8 @@ export default function FlightTrackView({ trackData }: FlightTrackViewProps) {
       distanceNm: Math.round(totalDist * 0.539957),
       waypoints: trackData.matchedFixes.length,
       date: formatDate(trackData.startTime),
+      maxSpeed: Math.round(maxSpd),
+      maxSpeedKmh: Math.round(maxSpd * 1.852),
     };
   }, [trackData]);
 
@@ -133,13 +137,14 @@ export default function FlightTrackView({ trackData }: FlightTrackViewProps) {
                 {trackData.callsign}
               </span>
             </div>
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500">
+            <div className="text-xs sm:text-sm text-slate-500">
               {trackData.departure.name && (
-                <>
-                  <span className="truncate max-w-[120px] sm:max-w-[180px]">{trackData.departure.name}</span>
-                  <ArrowRight className="w-3 h-3 text-slate-300 shrink-0" />
-                  <span className="truncate max-w-[120px] sm:max-w-[180px]">{trackData.arrival.name}</span>
-                </>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+                  <span className="line-clamp-1">{trackData.departure.name}</span>
+                  <ArrowRight className="w-3 h-3 text-slate-300 shrink-0 hidden sm:block" />
+                  <span className="text-slate-300 sm:hidden">→</span>
+                  <span className="line-clamp-1">{trackData.arrival.name}</span>
+                </div>
               )}
               {!trackData.departure.name && trackData.icao24 && (
                 <span className="font-mono text-xs text-slate-400">ICAO24: {trackData.icao24}</span>
@@ -154,7 +159,7 @@ export default function FlightTrackView({ trackData }: FlightTrackViewProps) {
         </div>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-5">
           <div className="bg-slate-50/80 rounded-xl p-3.5">
             <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1.5">
               <Clock className="w-3.5 h-3.5" />
@@ -182,6 +187,23 @@ export default function FlightTrackView({ trackData }: FlightTrackViewProps) {
               {stats.maxAltFt} ft
             </div>
           </div>
+          {stats.maxSpeed > 0 && (
+            <div className="bg-slate-50/80 rounded-xl p-3.5">
+              <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1.5">
+                <Gauge className="w-3.5 h-3.5" />
+                Max Speed
+              </div>
+              <div
+                className="text-lg sm:text-xl font-bold text-slate-900"
+                style={{ fontFamily: "var(--font-b612-mono), monospace" }}
+              >
+                {stats.maxSpeed} kts
+              </div>
+              <div className="text-xs text-slate-400 mt-0.5" style={{ fontFamily: "var(--font-b612-mono), monospace" }}>
+                {stats.maxSpeedKmh} km/h
+              </div>
+            </div>
+          )}
           <div className="bg-slate-50/80 rounded-xl p-3.5">
             <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1.5">
               <DistanceIcon className="w-3.5 h-3.5" />
@@ -227,7 +249,7 @@ export default function FlightTrackView({ trackData }: FlightTrackViewProps) {
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 sm:p-5">
         <h4 className="text-xs font-bold text-slate-500 tracking-widest uppercase mb-4 flex items-center gap-2">
           <AltitudeIcon className="w-3.5 h-3.5 text-sky-500" />
-          Altitude Profile
+          Altitude &amp; Speed Profile
         </h4>
         <AltitudeProfile
           trackData={trackData}

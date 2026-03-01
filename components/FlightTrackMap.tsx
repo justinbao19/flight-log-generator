@@ -187,7 +187,7 @@ export default function FlightTrackMap({
       <button
         onClick={handleRecenter}
         title="Fit to track"
-        className="absolute top-2 right-2 sm:top-[84px] sm:right-[10px] z-[1000] flex h-8 w-8 sm:h-[30px] sm:w-[30px] items-center justify-center rounded-lg sm:rounded-sm border-2 border-[rgba(0,0,0,0.2)] bg-white text-slate-600 hover:bg-slate-50 hover:text-sky-600 transition-colors shadow-sm"
+        className="absolute bottom-3 right-3 sm:top-[84px] sm:bottom-auto sm:right-[10px] z-[1000] flex h-8 w-8 sm:h-[30px] sm:w-[30px] items-center justify-center rounded-lg sm:rounded-sm border-2 border-[rgba(0,0,0,0.2)] bg-white text-slate-600 hover:bg-slate-50 hover:text-sky-600 transition-colors shadow-sm"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />

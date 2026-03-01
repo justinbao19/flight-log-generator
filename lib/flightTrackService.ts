@@ -200,6 +200,7 @@ export async function getFlightTrack(
     altitude: Math.round(p.alt * 0.3048),
     track: p.hd,
     onGround: p.alt === 0 && p.spd < 50,
+    speed: p.spd,
   }));
 
   const matchedFixes = await matchWaypoints(path);

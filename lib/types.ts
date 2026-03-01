@@ -66,6 +66,7 @@ export interface TrackWaypoint {
   altitude: number;
   track: number;
   onGround: boolean;
+  speed: number;
 }
 
 export interface MatchedFix {

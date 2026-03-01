@@ -9,7 +9,10 @@ interface AltitudeProfileProps {
   height?: number;
 }
 
-const PADDING = { top: 32, right: 24, bottom: 42, left: 64 };
+const PADDING = { top: 32, right: 64, bottom: 42, left: 64 };
+
+const ALT_COLOR = "#0ea5e9";
+const SPD_COLOR = "#f59e0b";
 
 function metersToFeet(m: number): number {
   return Math.round(m * 3.28084);
@@ -86,10 +89,16 @@ export default function AltitudeProfile({
   const chartW = width - PADDING.left - PADDING.right;
   const chartH = height - PADDING.top - PADDING.bottom;
 
-  const { maxAlt, xScale, yScale } = useMemo(() => {
+  const hasSpeed = useMemo(() => path.some((p) => p.speed > 0), [path]);
+
+  const { maxAlt, maxSpd, xScale, yScaleAlt, yScaleSpd } = useMemo(() => {
     const alts = path.map((p) => p.altitude);
     const maxA = Math.max(...alts, 1000);
     const ceilAlt = Math.ceil(maxA / 1000) * 1000;
+
+    const speeds = path.map((p) => p.speed ?? 0);
+    const maxS = Math.max(...speeds, 100);
+    const ceilSpd = Math.ceil(maxS / 100) * 100;
 
     const tStart = path[0]?.time ?? 0;
     const tEnd = path[path.length - 1]?.time ?? 1;
@@ -97,35 +106,61 @@ export default function AltitudeProfile({
 
     return {
       maxAlt: ceilAlt,
+      maxSpd: ceilSpd,
       xScale: (t: number) => ((t - tStart) / tRange) * chartW,
-      yScale: (alt: number) => chartH - (alt / ceilAlt) * chartH,
+      yScaleAlt: (alt: number) => chartH - (alt / ceilAlt) * chartH,
+      yScaleSpd: (spd: number) => chartH - (spd / ceilSpd) * chartH,
     };
   }, [path, chartW, chartH]);
 
-  const pathD = useMemo(() => {
+  const altPathD = useMemo(() => {
     if (path.length === 0) return "";
     const points = path.map(
-      (p) => `${PADDING.left + xScale(p.time)},${PADDING.top + yScale(p.altitude)}`
+      (p) => `${PADDING.left + xScale(p.time)},${PADDING.top + yScaleAlt(p.altitude)}`
     );
     return `M${points.join("L")}`;
-  }, [path, xScale, yScale]);
+  }, [path, xScale, yScaleAlt]);
 
-  const areaD = useMemo(() => {
-    if (!pathD) return "";
+  const altAreaD = useMemo(() => {
+    if (!altPathD) return "";
     const bottom = PADDING.top + chartH;
     const firstX = PADDING.left + xScale(path[0].time);
     const lastX = PADDING.left + xScale(path[path.length - 1].time);
-    return `${pathD}L${lastX},${bottom}L${firstX},${bottom}Z`;
-  }, [pathD, path, xScale, chartH]);
+    return `${altPathD}L${lastX},${bottom}L${firstX},${bottom}Z`;
+  }, [altPathD, path, xScale, chartH]);
+
+  const spdPathD = useMemo(() => {
+    if (!hasSpeed || path.length === 0) return "";
+    const points = path.map(
+      (p) => `${PADDING.left + xScale(p.time)},${PADDING.top + yScaleSpd(p.speed ?? 0)}`
+    );
+    return `M${points.join("L")}`;
+  }, [path, xScale, yScaleSpd, hasSpeed]);
+
+  const spdAreaD = useMemo(() => {
+    if (!spdPathD) return "";
+    const bottom = PADDING.top + chartH;
+    const firstX = PADDING.left + xScale(path[0].time);
+    const lastX = PADDING.left + xScale(path[path.length - 1].time);
+    return `${spdPathD}L${lastX},${bottom}L${firstX},${bottom}Z`;
+  }, [spdPathD, path, xScale, chartH]);
 
   const phases = useMemo(() => detectPhases(path), [path]);
 
-  const yTicks = useMemo(() => {
+  const altTicks = useMemo(() => {
     const step = maxAlt <= 5000 ? 1000 : maxAlt <= 15000 ? 3000 : 5000;
     const ticks: number[] = [];
     for (let a = 0; a <= maxAlt; a += step) ticks.push(a);
     return ticks;
   }, [maxAlt]);
+
+  const spdTicks = useMemo(() => {
+    if (!hasSpeed) return [];
+    const step = maxSpd <= 400 ? 100 : 200;
+    const ticks: number[] = [];
+    for (let s = 0; s <= maxSpd; s += step) ticks.push(s);
+    return ticks;
+  }, [maxSpd, hasSpeed]);
 
   const xTicks = useMemo(() => {
     const tStart = path[0]?.time ?? 0;
@@ -165,8 +200,8 @@ export default function AltitudeProfile({
 
   const hoverPoint = hoverIdx !== null ? path[hoverIdx] : null;
 
-  const tooltipW = 120;
-  const tooltipH = 44;
+  const tooltipW = 140;
+  const tooltipH = hasSpeed ? 58 : 44;
 
   return (
     <svg
@@ -181,16 +216,22 @@ export default function AltitudeProfile({
     >
       <defs>
         <linearGradient id="altGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.25} />
-          <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.02} />
+          <stop offset="0%" stopColor={ALT_COLOR} stopOpacity={0.2} />
+          <stop offset="100%" stopColor={ALT_COLOR} stopOpacity={0.02} />
         </linearGradient>
+        {hasSpeed && (
+          <linearGradient id="spdGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={SPD_COLOR} stopOpacity={0.12} />
+            <stop offset="100%" stopColor={SPD_COLOR} stopOpacity={0.01} />
+          </linearGradient>
+        )}
       </defs>
 
-      {/* Y-axis grid + labels */}
-      {yTicks.map((alt) => {
-        const y = PADDING.top + yScale(alt);
+      {/* Left Y-axis (altitude) grid + labels */}
+      {altTicks.map((alt) => {
+        const y = PADDING.top + yScaleAlt(alt);
         return (
-          <g key={`y-${alt}`}>
+          <g key={`y-alt-${alt}`}>
             <line
               x1={PADDING.left}
               y1={y}
@@ -204,11 +245,27 @@ export default function AltitudeProfile({
               x={PADDING.left - 10}
               y={y + 4}
               textAnchor="end"
-              style={{ fontSize: 11, fill: "#94a3b8", fontFamily: "var(--font-b612-mono), monospace" }}
+              style={{ fontSize: 11, fill: ALT_COLOR, fontFamily: "var(--font-b612-mono), monospace" }}
             >
               {formatAlt(alt)}
             </text>
           </g>
+        );
+      })}
+
+      {/* Right Y-axis (speed) labels */}
+      {spdTicks.map((spd) => {
+        const y = PADDING.top + yScaleSpd(spd);
+        return (
+          <text
+            key={`y-spd-${spd}`}
+            x={width - PADDING.right + 10}
+            y={y + 4}
+            textAnchor="start"
+            style={{ fontSize: 11, fill: SPD_COLOR, fontFamily: "var(--font-b612-mono), monospace" }}
+          >
+            {spd}
+          </text>
         );
       })}
 
@@ -228,19 +285,67 @@ export default function AltitudeProfile({
         );
       })}
 
-      {/* Area fill */}
-      {areaD && <path d={areaD} fill="url(#altGradient)" />}
+      {/* Speed area fill */}
+      {spdAreaD && <path d={spdAreaD} fill="url(#spdGradient)" />}
+
+      {/* Altitude area fill */}
+      {altAreaD && <path d={altAreaD} fill="url(#altGradient)" />}
+
+      {/* Speed line */}
+      {spdPathD && (
+        <path
+          d={spdPathD}
+          fill="none"
+          stroke={SPD_COLOR}
+          strokeWidth={1.5}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          opacity={0.8}
+        />
+      )}
 
       {/* Altitude line */}
-      {pathD && (
+      {altPathD && (
         <path
-          d={pathD}
+          d={altPathD}
           fill="none"
-          stroke="#0ea5e9"
+          stroke={ALT_COLOR}
           strokeWidth={2.5}
           strokeLinejoin="round"
           strokeLinecap="round"
         />
+      )}
+
+      {/* Legend */}
+      <g transform={`translate(${PADDING.left + 4}, ${PADDING.top - 20})`}>
+        <line x1={0} y1={0} x2={14} y2={0} stroke={ALT_COLOR} strokeWidth={2.5} strokeLinecap="round" />
+        <text x={18} y={4} style={{ fontSize: 9, fill: "#64748b", fontWeight: 600 }}>ALT</text>
+        {hasSpeed && (
+          <>
+            <line x1={46} y1={0} x2={60} y2={0} stroke={SPD_COLOR} strokeWidth={1.5} strokeLinecap="round" />
+            <text x={64} y={4} style={{ fontSize: 9, fill: "#64748b", fontWeight: 600 }}>GS</text>
+          </>
+        )}
+      </g>
+
+      {/* Axis unit labels */}
+      <text
+        x={PADDING.left - 10}
+        y={PADDING.top - 6}
+        textAnchor="end"
+        style={{ fontSize: 9, fill: ALT_COLOR, fontWeight: 600 }}
+      >
+        ft
+      </text>
+      {hasSpeed && (
+        <text
+          x={width - PADDING.right + 10}
+          y={PADDING.top - 6}
+          textAnchor="start"
+          style={{ fontSize: 9, fill: SPD_COLOR, fontWeight: 600 }}
+        >
+          kts
+        </text>
       )}
 
       {/* Phase labels — deduplicated and spaced to avoid overlap */}
@@ -254,7 +359,7 @@ export default function AltitudeProfile({
             return {
               label: phase.label,
               x: PADDING.left + xScale(midPt.time),
-              y: Math.max(PADDING.top + 6, PADDING.top + yScale(midPt.altitude) - 16),
+              y: Math.max(PADDING.top + 6, PADDING.top + yScaleAlt(midPt.altitude) - 16),
             };
           })
           .filter(Boolean) as { label: string; x: number; y: number }[];
@@ -293,7 +398,7 @@ export default function AltitudeProfile({
           const pt = path[fix.trackIndex];
           if (!pt) return null;
           const x = PADDING.left + xScale(pt.time);
-          const y = PADDING.top + yScale(pt.altitude);
+          const y = PADDING.top + yScaleAlt(pt.altitude);
           const showLabel = x - lastLabelX >= minLabelGap;
           if (showLabel) lastLabelX = x;
           return (
@@ -303,12 +408,12 @@ export default function AltitudeProfile({
                 y1={y}
                 x2={x}
                 y2={PADDING.top + chartH}
-                stroke="#0ea5e9"
+                stroke={ALT_COLOR}
                 strokeWidth={0.5}
                 strokeDasharray="2,2"
                 opacity={0.4}
               />
-              <circle cx={x} cy={y} r={3} fill="#0ea5e9" stroke="#fff" strokeWidth={1.5} />
+              <circle cx={x} cy={y} r={3} fill={ALT_COLOR} stroke="#fff" strokeWidth={1.5} />
               {showLabel && (
                 <text
                   x={x}
@@ -332,7 +437,7 @@ export default function AltitudeProfile({
       {/* Hover crosshair + tooltip */}
       {hoverPoint && hoverIdx !== null && (() => {
         const hx = PADDING.left + xScale(hoverPoint.time);
-        const hy = PADDING.top + yScale(hoverPoint.altitude);
+        const hyAlt = PADDING.top + yScaleAlt(hoverPoint.altitude);
         let tooltipX = hx - tooltipW / 2;
         if (tooltipX < PADDING.left) tooltipX = PADDING.left;
         if (tooltipX + tooltipW > width - PADDING.right) tooltipX = width - PADDING.right - tooltipW;
@@ -349,14 +454,26 @@ export default function AltitudeProfile({
               strokeWidth={0.5}
               strokeDasharray="3,2"
             />
+            {/* Altitude dot */}
             <circle
               cx={hx}
-              cy={hy}
+              cy={hyAlt}
               r={5}
-              fill="#0ea5e9"
+              fill={ALT_COLOR}
               stroke="#fff"
               strokeWidth={2.5}
             />
+            {/* Speed dot */}
+            {hasSpeed && (
+              <circle
+                cx={hx}
+                cy={PADDING.top + yScaleSpd(hoverPoint.speed ?? 0)}
+                r={4}
+                fill={SPD_COLOR}
+                stroke="#fff"
+                strokeWidth={2}
+              />
+            )}
             <rect
               x={tooltipX}
               y={tooltipY}
@@ -368,15 +485,25 @@ export default function AltitudeProfile({
             />
             <text
               x={tooltipX + tooltipW / 2}
-              y={tooltipY + 17}
+              y={tooltipY + 16}
               textAnchor="middle"
               style={{ fontSize: 12, fill: "#fff", fontWeight: 700, fontFamily: "var(--font-b612-mono), monospace" }}
             >
               {metersToFeet(hoverPoint.altitude).toLocaleString()} ft
             </text>
+            {hasSpeed && (
+              <text
+                x={tooltipX + tooltipW / 2}
+                y={tooltipY + 32}
+                textAnchor="middle"
+                style={{ fontSize: 11, fill: SPD_COLOR, fontWeight: 600, fontFamily: "var(--font-b612-mono), monospace" }}
+              >
+                {Math.round(hoverPoint.speed ?? 0)} kts
+              </text>
+            )}
             <text
               x={tooltipX + tooltipW / 2}
-              y={tooltipY + 34}
+              y={tooltipY + tooltipH - 8}
               textAnchor="middle"
               style={{ fontSize: 10, fill: "#94a3b8", fontFamily: "var(--font-b612-mono), monospace" }}
             >
