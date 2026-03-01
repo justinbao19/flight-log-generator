@@ -200,10 +200,8 @@ export default function AltitudeProfile({
 
   const hoverPoint = hoverIdx !== null ? path[hoverIdx] : null;
 
-  const tooltipW = 140;
-  const tooltipH = hasSpeed ? 58 : 44;
-
   return (
+    <div>
     <svg
       ref={svgRef}
       viewBox={`0 0 ${width} ${height}`}
@@ -434,14 +432,10 @@ export default function AltitudeProfile({
         });
       })()}
 
-      {/* Hover crosshair + tooltip */}
+      {/* Hover crosshair + dots */}
       {hoverPoint && hoverIdx !== null && (() => {
         const hx = PADDING.left + xScale(hoverPoint.time);
         const hyAlt = PADDING.top + yScaleAlt(hoverPoint.altitude);
-        let tooltipX = hx - tooltipW / 2;
-        if (tooltipX < PADDING.left) tooltipX = PADDING.left;
-        if (tooltipX + tooltipW > width - PADDING.right) tooltipX = width - PADDING.right - tooltipW;
-        const tooltipY = PADDING.top - tooltipH - 6;
 
         return (
           <g>
@@ -474,44 +468,54 @@ export default function AltitudeProfile({
                 strokeWidth={2}
               />
             )}
-            <rect
-              x={tooltipX}
-              y={tooltipY}
-              width={tooltipW}
-              height={tooltipH}
-              rx={8}
-              fill="#0f172a"
-              opacity={0.92}
-            />
+            {/* Inline altitude label */}
             <text
-              x={tooltipX + tooltipW / 2}
-              y={tooltipY + 16}
-              textAnchor="middle"
-              style={{ fontSize: 12, fill: "#fff", fontWeight: 700, fontFamily: "var(--font-b612-mono), monospace" }}
+              x={hx + 8}
+              y={hyAlt - 8}
+              textAnchor="start"
+              style={{ fontSize: 10, fill: ALT_COLOR, fontWeight: 700, fontFamily: "var(--font-b612-mono), monospace" }}
             >
-              {metersToFeet(hoverPoint.altitude).toLocaleString()} ft
-            </text>
-            {hasSpeed && (
-              <text
-                x={tooltipX + tooltipW / 2}
-                y={tooltipY + 32}
-                textAnchor="middle"
-                style={{ fontSize: 11, fill: SPD_COLOR, fontWeight: 600, fontFamily: "var(--font-b612-mono), monospace" }}
-              >
-                {Math.round(hoverPoint.speed ?? 0)} kts
-              </text>
-            )}
-            <text
-              x={tooltipX + tooltipW / 2}
-              y={tooltipY + tooltipH - 8}
-              textAnchor="middle"
-              style={{ fontSize: 10, fill: "#94a3b8", fontFamily: "var(--font-b612-mono), monospace" }}
-            >
-              {formatTime(hoverPoint.time, path[0].time)}
+              {metersToFeet(hoverPoint.altitude).toLocaleString()}ft
             </text>
           </g>
         );
       })()}
     </svg>
+
+    {/* Data readout panel below chart */}
+    {hoverPoint ? (
+      <div
+        className="flex items-center justify-center gap-4 sm:gap-6 mt-2 px-2 py-2 rounded-xl bg-slate-50 border border-slate-100 transition-opacity"
+        style={{ fontFamily: "var(--font-b612-mono), monospace" }}
+      >
+        <div className="text-center">
+          <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Time</div>
+          <div className="text-sm font-bold text-slate-700">{formatTime(hoverPoint.time, path[0].time)}</div>
+        </div>
+        <div className="w-px h-6 bg-slate-200" />
+        <div className="text-center">
+          <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: ALT_COLOR }}>Altitude</div>
+          <div className="text-sm font-bold text-slate-900">{metersToFeet(hoverPoint.altitude).toLocaleString()} ft</div>
+        </div>
+        {hasSpeed && (
+          <>
+            <div className="w-px h-6 bg-slate-200" />
+            <div className="text-center">
+              <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: SPD_COLOR }}>Speed</div>
+              <div className="text-sm font-bold text-slate-900">{Math.round(hoverPoint.speed ?? 0)} kts</div>
+            </div>
+          </>
+        )}
+      </div>
+    ) : (
+      <div className="flex items-center justify-center mt-2 px-2 py-2 rounded-xl bg-slate-50/50 border border-slate-100/50">
+        <span className="text-[10px] text-slate-400 font-medium">
+          {typeof window !== "undefined" && "ontouchstart" in window
+            ? "Drag on chart to inspect"
+            : "Hover on chart to inspect"}
+        </span>
+      </div>
+    )}
+    </div>
   );
 }
