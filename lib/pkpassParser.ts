@@ -77,7 +77,7 @@ async function generateBarcodeDataUrl(barcode: PkpassBarcode): Promise<string | 
     bwipjs.toCanvas(canvas, {
       bcid,
       text: barcode.message,
-      scale: 3,
+      scale: 6, // Increased from 3 to 6 for much higher resolution
       backgroundcolor: "ffffff",
       barcolor: "000000",
     });
@@ -95,6 +95,26 @@ function parseColor(c: string | undefined, fallback: string): string {
   return fallback;
 }
 
+function fillTextTruncated(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number, y: number,
+  maxWidth: number,
+) {
+  const measuredW = ctx.measureText(text).width;
+  if (measuredW <= maxWidth) {
+    ctx.fillText(text, x, y);
+    return;
+  }
+  // Scale text horizontally to fit instead of truncating
+  const scale = maxWidth / measuredW;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, 1);
+  ctx.fillText(text, 0, 0);
+  ctx.restore();
+}
+
 function drawFieldRow(
   ctx: CanvasRenderingContext2D,
   fields: PkpassField[],
@@ -103,22 +123,24 @@ function drawFieldRow(
   labelSize: number, valueSize: number,
 ): number {
   if (fields.length === 0) return y;
+  const gap = 16;
   const colW = w / fields.length;
+  const maxTextW = colW - gap;
   for (let i = 0; i < fields.length; i++) {
     const fx = x + colW * i;
     ctx.textAlign = "left";
     if (fields[i].label) {
       ctx.font = `${labelSize}px -apple-system, "SF Pro Text", sans-serif`;
       ctx.fillStyle = labelColor;
-      ctx.fillText(fields[i].label!, fx, y);
+      fillTextTruncated(ctx, fields[i].label!, fx, y, maxTextW);
     }
     if (fields[i].value) {
       ctx.font = `500 ${valueSize}px -apple-system, "SF Pro Text", sans-serif`;
       ctx.fillStyle = valueColor;
-      ctx.fillText(String(fields[i].value), fx, y + labelSize + valueSize - 2);
+      fillTextTruncated(ctx, String(fields[i].value), fx, y + labelSize + 14, maxTextW);
     }
   }
-  return y + labelSize + valueSize + 14;
+  return y + labelSize + valueSize + 28;
 }
 
 async function renderBoardingPassCard(
@@ -130,21 +152,49 @@ async function renderBoardingPassCard(
 ): Promise<string> {
   const W = 600;
   const H = 900;
+  // Create a high-resolution canvas internally (2x scale)
+  const scaleFactor = 2;
   const canvas = document.createElement("canvas");
-  canvas.width = W;
-  canvas.height = H;
+  canvas.width = W * scaleFactor;
+  canvas.height = H * scaleFactor;
   const ctx = canvas.getContext("2d")!;
+  ctx.scale(scaleFactor, scaleFactor);
 
   const bgColor = parseColor(passJson.backgroundColor, "#1e293b");
   const textColor = parseColor(passJson.foregroundColor, "#ffffff");
   const labelColor = parseColor(passJson.labelColor, "rgba(255,255,255,0.6)");
 
+  const notchY = 260;
+  const notchR = 14;
+  const radius = 24;
+
   ctx.fillStyle = bgColor;
   ctx.beginPath();
-  ctx.roundRect(0, 0, W, H, 24);
+  // Top-left
+  ctx.moveTo(0, radius);
+  ctx.arcTo(0, 0, radius, 0, radius);
+  // Top-right
+  ctx.lineTo(W - radius, 0);
+  ctx.arcTo(W, 0, W, radius, radius);
+  // Right edge down to notch
+  ctx.lineTo(W, notchY - notchR);
+  // Right notch (inward half-circle)
+  ctx.arc(W, notchY, notchR, -Math.PI / 2, Math.PI / 2, true);
+  // Right edge down to bottom-right
+  ctx.lineTo(W, H - radius);
+  ctx.arcTo(W, H, W - radius, H, radius);
+  // Bottom-left
+  ctx.lineTo(radius, H);
+  ctx.arcTo(0, H, 0, H - radius, radius);
+  // Left edge up to notch
+  ctx.lineTo(0, notchY + notchR);
+  // Left notch (inward half-circle)
+  ctx.arc(0, notchY, notchR, Math.PI / 2, -Math.PI / 2, true);
+  // Close path
+  ctx.lineTo(0, radius);
   ctx.fill();
 
-  const PAD = 36;
+  const PAD = 28;
   let y = 32;
 
   // --- Row 1: Logo + headerFields (top-right) ---
@@ -158,23 +208,24 @@ async function renderBoardingPassCard(
     } catch { /* ignore */ }
   }
   if (headerFields.length > 0) {
-    const hColW = 90;
-    for (let i = headerFields.length - 1; i >= 0; i--) {
-      const hx = W - PAD - (headerFields.length - i) * hColW;
+    const hColW = 120;
+    for (let i = 0; i < headerFields.length; i++) {
+      const fieldIndex = headerFields.length - 1 - i;
+      const hx = W - PAD - i * hColW;
       ctx.textAlign = "right";
-      if (headerFields[i].label) {
-        ctx.font = `12px -apple-system, "SF Pro Text", sans-serif`;
+      if (headerFields[fieldIndex].label) {
+        ctx.font = `10px -apple-system, "SF Pro Text", sans-serif`;
         ctx.fillStyle = labelColor;
-        ctx.fillText(headerFields[i].label!, hx + hColW - 4, y + 12);
+        ctx.fillText(headerFields[fieldIndex].label!, hx, y + 12);
       }
-      if (headerFields[i].value) {
-        ctx.font = `500 24px -apple-system, "SF Pro Display", sans-serif`;
+      if (headerFields[fieldIndex].value) {
+        ctx.font = `300 28px -apple-system, "SF Pro Display", sans-serif`;
         ctx.fillStyle = textColor;
-        ctx.fillText(String(headerFields[i].value), hx + hColW - 4, y + 38);
+        ctx.fillText(String(headerFields[fieldIndex].value), hx, y + 40);
       }
     }
   }
-  y += 56;
+  y += 80; // Increased spacing below header
 
   // --- Strip image (if present) ---
   if (stripDataUrl) {
@@ -182,7 +233,7 @@ async function renderBoardingPassCard(
       const img = await loadImage(stripDataUrl);
       const stripH = Math.min(160, (W / img.width) * img.height);
       ctx.drawImage(img, 0, y, W, stripH);
-      y += stripH + 12;
+      y += stripH + 24; // Increased spacing
     } catch { /* ignore */ }
   }
 
@@ -195,47 +246,54 @@ async function renderBoardingPassCard(
 
   if (depLabel) {
     ctx.textAlign = "left";
-    ctx.font = `13px -apple-system, "SF Pro Text", sans-serif`;
+    ctx.font = `11px -apple-system, "SF Pro Text", sans-serif`;
     ctx.fillStyle = labelColor;
     ctx.fillText(depLabel, PAD, y + 14);
   }
   if (arrLabel) {
     ctx.textAlign = "right";
-    ctx.font = `13px -apple-system, "SF Pro Text", sans-serif`;
+    ctx.font = `11px -apple-system, "SF Pro Text", sans-serif`;
     ctx.fillStyle = labelColor;
     ctx.fillText(arrLabel, W - PAD, y + 14);
   }
-  y += depLabel || arrLabel ? 22 : 4;
+  y += depLabel || arrLabel ? 24 : 4; // Increased spacing
 
   ctx.fillStyle = textColor;
-  ctx.font = `bold 64px -apple-system, "SF Pro Display", sans-serif`;
+  ctx.font = `300 76px -apple-system, "SF Pro Display", sans-serif`;
   ctx.textAlign = "left";
-  ctx.fillText(String(depValue).substring(0, 4), PAD, y + 60);
+  ctx.fillText(String(depValue).substring(0, 4), PAD, y + 68);
   ctx.textAlign = "right";
-  ctx.fillText(String(arrValue).substring(0, 4), W - PAD, y + 60);
+  ctx.fillText(String(arrValue).substring(0, 4), W - PAD, y + 68);
 
   // Airplane icon between codes
-  ctx.textAlign = "center";
-  ctx.font = `28px -apple-system, sans-serif`;
   ctx.fillStyle = textColor;
   ctx.globalAlpha = 0.7;
-  ctx.fillText("✈", W / 2, y + 50);
+  ctx.save();
+  ctx.translate(W / 2, y + 36);
+  // A standard airplane SVG path
+  const planePath = new Path2D("M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z");
+  ctx.scale(1.8, 1.8);
+  ctx.translate(-12, -12);
+  ctx.rotate(Math.PI / 2); // Point right
+  ctx.translate(0, -24);
+  ctx.fill(planePath);
+  ctx.restore();
   ctx.globalAlpha = 1;
 
-  y += 80;
+  y += 110; // Increased spacing below primary fields
 
   // --- Row 3: Secondary fields ---
   const secondaryFields = passJson.boardingPass?.secondaryFields || [];
   if (secondaryFields.length > 0) {
-    y += 8;
-    y = drawFieldRow(ctx, secondaryFields, PAD, y, W - PAD * 2, labelColor, textColor, 13, 22);
+    y += 12;
+    y = drawFieldRow(ctx, secondaryFields, PAD, y, W - PAD * 2, labelColor, textColor, 11, 22);
   }
 
   // --- Row 4: Auxiliary fields ---
   const auxiliaryFields = passJson.boardingPass?.auxiliaryFields || [];
   if (auxiliaryFields.length > 0) {
-    y += 4;
-    y = drawFieldRow(ctx, auxiliaryFields, PAD, y, W - PAD * 2, labelColor, textColor, 13, 20);
+    y += 12;
+    y = drawFieldRow(ctx, auxiliaryFields, PAD, y, W - PAD * 2, labelColor, textColor, 11, 20); // Slightly smaller value size for auxiliary fields
   }
 
   // --- Barcode ---
@@ -243,24 +301,33 @@ async function renderBoardingPassCard(
     try {
       const img = await loadImage(barcodeDataUrl);
       const remainingH = H - y;
-      const barcodeSize = Math.round(W * 0.36);
-      const scale = Math.min(barcodeSize / img.width, barcodeSize / img.height);
+      const barcodeSize = Math.round(W * 0.44); // Increased size
+      
+      // Increase internal canvas resolution for sharper barcode
+      const bw = Math.min(barcodeSize, img.width);
+      const bh = Math.min(barcodeSize, img.height);
+      const scale = Math.min(bw / img.width, bh / img.height);
       const finalW = img.width * scale;
       const finalH = img.height * scale;
 
       const bx = (W - finalW) / 2;
-      const by = y + (remainingH - finalH) / 2;
+      // Shift slightly down for better visual balance
+      const by = y + (remainingH - finalH) / 2 + 10;
 
-      const pad = Math.round(finalW * 0.1);
+      const pad = 16; // Fixed padding instead of proportional
       ctx.fillStyle = "#ffffff";
       ctx.beginPath();
-      ctx.roundRect(bx - pad, by - pad, finalW + pad * 2, finalH + pad * 2, 14);
+      ctx.roundRect(bx - pad, by - pad, finalW + pad * 2, finalH + pad * 2, 16);
       ctx.fill();
 
+      // Disable image smoothing for barcodes to keep edges sharp
+      ctx.imageSmoothingEnabled = false;
       ctx.drawImage(img, bx, by, finalW, finalH);
+      ctx.imageSmoothingEnabled = true;
     } catch { /* ignore */ }
   }
 
+  // Double the output resolution for sharper text and graphics
   return canvas.toDataURL("image/png");
 }
 
