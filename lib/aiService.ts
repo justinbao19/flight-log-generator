@@ -1,12 +1,18 @@
 import { FlightData } from "./types";
 
-const SYSTEM_PROMPT = `你是一个飞行日志数据提取专家。请从以下文本/图片中提取飞行信息，输出为 JSON 格式。
+function getSystemPrompt(): string {
+  const today = new Date().toISOString().slice(0, 10);
+  const currentYear = new Date().getFullYear();
+
+  return `你是一个飞行日志数据提取专家。请从以下文本/图片中提取飞行信息，输出为 JSON 格式。
+
+当前日期：${today}
 
 ## 输出格式
 {
   "flightNumber": "8L9887",
   "callSign": "LKE9887",
-  "date": "2025-02-25",
+  "date": "${today}",
   "aircraftType": "A330-343",
   "registration": "B-1004",
   "flightDuration": "2h 16m",
@@ -49,7 +55,7 @@ const SYSTEM_PROMPT = `你是一个飞行日志数据提取专家。请从以下
 
 ## 提取规则
 1. 如果某个字段缺失，设为 null
-2. 日期统一转为 YYYY-MM-DD 格式
+2. 日期统一转为 YYYY-MM-DD 格式。如果原文缺少年份，默认使用 ${currentYear} 年（但如果推断出的日期在未来，则使用 ${currentYear - 1} 年）
 3. 时间统一为 24 小时制 HH:MM
 4. 航班号自动识别航空公司（前两位字母/数字）
 5. 机场代码优先使用 IATA，同时提取 ICAO
@@ -57,6 +63,7 @@ const SYSTEM_PROMPT = `你是一个飞行日志数据提取专家。请从以下
 7. 机场全称请用英文
 
 仅返回 JSON，不要任何解释文字。`;
+}
 
 export async function recognizeFromText(
   text: string,
@@ -75,7 +82,7 @@ export async function recognizeFromText(
       messages: [
         {
           role: "user",
-          content: `${SYSTEM_PROMPT}\n\n## 输入文本\n${text}`,
+          content: `${getSystemPrompt()}\n\n## 输入文本\n${text}`,
         },
       ],
     }),
@@ -122,7 +129,7 @@ export async function recognizeFromImage(
             },
             {
               type: "text",
-              text: SYSTEM_PROMPT,
+              text: getSystemPrompt(),
             },
           ],
         },

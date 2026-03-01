@@ -892,6 +892,21 @@ export default function FieldEditor({
           </div>
         )}
 
+        {photoReg.trim() && (
+          <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
+            <span>Can&apos;t find the right photo?</span>
+            <a
+              href={`https://www.jetphotos.com/registration/${encodeURIComponent(photoReg.trim())}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sky-500 hover:text-sky-600 font-medium transition-colors"
+            >
+              Search on JetPhotos
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        )}
+
         {/* Upload or selected preview */}
         <div className="mt-3">
           {data.selectedPhoto ? (
