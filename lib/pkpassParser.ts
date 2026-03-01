@@ -106,12 +106,19 @@ function fillTextTruncated(
     ctx.fillText(text, x, y);
     return;
   }
-  // Scale text horizontally to fit instead of truncating
   const scale = maxWidth / measuredW;
+  const align = ctx.textAlign;
   ctx.save();
-  ctx.translate(x, y);
-  ctx.scale(scale, 1);
-  ctx.fillText(text, 0, 0);
+  if (align === "right") {
+    ctx.translate(x, y);
+    ctx.scale(scale, 1);
+    ctx.textAlign = "right";
+    ctx.fillText(text, 0, 0);
+  } else {
+    ctx.translate(x, y);
+    ctx.scale(scale, 1);
+    ctx.fillText(text, 0, 0);
+  }
   ctx.restore();
 }
 
@@ -123,21 +130,29 @@ function drawFieldRow(
   labelSize: number, valueSize: number,
 ): number {
   if (fields.length === 0) return y;
-  const gap = 16;
-  const colW = w / fields.length;
-  const maxTextW = colW - gap;
-  for (let i = 0; i < fields.length; i++) {
-    const fx = x + colW * i;
-    ctx.textAlign = "left";
+  const n = fields.length;
+  // Give the last column a fixed small width and distribute the rest evenly
+  const lastColW = n > 1 ? Math.min(w * 0.14, 80) : w;
+  const remainW = w - lastColW;
+  const midColW = n > 1 ? remainW / (n - 1) : 0;
+  const gap = 12;
+
+  for (let i = 0; i < n; i++) {
+    const isLast = i === n - 1 && n > 1;
+    const fx = i < n - 1 ? x + midColW * i : 0;
+    const anchorX = isLast ? x + w : fx;
+    const align = isLast ? "right" as const : "left" as const;
+    const maxTextW = (isLast ? lastColW : midColW) - gap;
+    ctx.textAlign = align;
     if (fields[i].label) {
       ctx.font = `${labelSize}px -apple-system, "SF Pro Text", sans-serif`;
       ctx.fillStyle = labelColor;
-      fillTextTruncated(ctx, fields[i].label!, fx, y, maxTextW);
+      fillTextTruncated(ctx, fields[i].label!, anchorX, y, maxTextW);
     }
     if (fields[i].value) {
       ctx.font = `500 ${valueSize}px -apple-system, "SF Pro Text", sans-serif`;
       ctx.fillStyle = valueColor;
-      fillTextTruncated(ctx, String(fields[i].value), fx, y + labelSize + 14, maxTextW);
+      fillTextTruncated(ctx, String(fields[i].value), anchorX, y + labelSize + 14, maxTextW);
     }
   }
   return y + labelSize + valueSize + 28;
@@ -202,8 +217,9 @@ async function renderBoardingPassCard(
   if (logoDataUrl) {
     try {
       const img = await loadImage(logoDataUrl);
+      const maxW = 180;
       const maxH = 36;
-      const scale = Math.min(180 / img.width, maxH / img.height, 1);
+      const scale = Math.min(maxW / img.width, maxH / img.height);
       ctx.drawImage(img, PAD, y, img.width * scale, img.height * scale);
     } catch { /* ignore */ }
   }
@@ -214,7 +230,7 @@ async function renderBoardingPassCard(
       const hx = W - PAD - i * hColW;
       ctx.textAlign = "right";
       if (headerFields[fieldIndex].label) {
-        ctx.font = `10px -apple-system, "SF Pro Text", sans-serif`;
+        ctx.font = `13px -apple-system, "SF Pro Text", sans-serif`;
         ctx.fillStyle = labelColor;
         ctx.fillText(headerFields[fieldIndex].label!, hx, y + 12);
       }
@@ -246,13 +262,13 @@ async function renderBoardingPassCard(
 
   if (depLabel) {
     ctx.textAlign = "left";
-    ctx.font = `11px -apple-system, "SF Pro Text", sans-serif`;
+    ctx.font = `14px -apple-system, "SF Pro Text", sans-serif`;
     ctx.fillStyle = labelColor;
     ctx.fillText(depLabel, PAD, y + 14);
   }
   if (arrLabel) {
     ctx.textAlign = "right";
-    ctx.font = `11px -apple-system, "SF Pro Text", sans-serif`;
+    ctx.font = `14px -apple-system, "SF Pro Text", sans-serif`;
     ctx.fillStyle = labelColor;
     ctx.fillText(arrLabel, W - PAD, y + 14);
   }
@@ -286,14 +302,14 @@ async function renderBoardingPassCard(
   const secondaryFields = passJson.boardingPass?.secondaryFields || [];
   if (secondaryFields.length > 0) {
     y += 12;
-    y = drawFieldRow(ctx, secondaryFields, PAD, y, W - PAD * 2, labelColor, textColor, 11, 22);
+    y = drawFieldRow(ctx, secondaryFields, PAD, y, W - PAD * 2, labelColor, textColor, 14, 22);
   }
 
   // --- Row 4: Auxiliary fields ---
   const auxiliaryFields = passJson.boardingPass?.auxiliaryFields || [];
   if (auxiliaryFields.length > 0) {
     y += 12;
-    y = drawFieldRow(ctx, auxiliaryFields, PAD, y, W - PAD * 2, labelColor, textColor, 11, 20); // Slightly smaller value size for auxiliary fields
+    y = drawFieldRow(ctx, auxiliaryFields, PAD, y, W - PAD * 2, labelColor, textColor, 14, 20); // Slightly smaller value size for auxiliary fields
   }
 
   // --- Barcode ---
