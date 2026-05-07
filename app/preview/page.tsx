@@ -44,24 +44,29 @@ export default function PreviewPage() {
   }, []);
 
   useEffect(() => {
-    const draft = loadDraft();
-    if (draft && draft.flightNumber) {
-      setFlightData(draft);
-    }
+    const loadSavedState = window.setTimeout(() => {
+      const draft = loadDraft();
+      if (draft && draft.flightNumber) {
+        setFlightData(draft);
+      }
 
-    const savedMode = localStorage.getItem("flight-log-display-mode");
-    if (savedMode === "standard" || savedMode === "professional") {
-      setDisplayMode(savedMode);
-    }
+      const savedMode = localStorage.getItem("flight-log-display-mode");
+      if (savedMode === "standard" || savedMode === "professional") {
+        setDisplayMode(savedMode);
+      }
 
-    const savedTrack = loadTrackData();
-    if (savedTrack) setTrackData(savedTrack);
+      const savedTrack = loadTrackData();
+      if (savedTrack) setTrackData(savedTrack);
 
-    fitToScreen();
-    setLoaded(true);
+      fitToScreen();
+      setLoaded(true);
+    }, 0);
 
     window.addEventListener("resize", fitToScreen);
-    return () => window.removeEventListener("resize", fitToScreen);
+    return () => {
+      window.clearTimeout(loadSavedState);
+      window.removeEventListener("resize", fitToScreen);
+    };
   }, [fitToScreen]);
 
   useEffect(() => {

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Flight Log Agent"
+  short_description: "Fill Flight Log Generator drafts through its local agent API."
+  default_prompt: "Use $flight-log-agent to enrich a flight, write an agent draft, and guide the user through importing it into Flight Log Generator."

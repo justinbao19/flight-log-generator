@@ -42,3 +42,6 @@ next-env.d.ts
 
 # playwright-cli test artifacts
 .playwright-cli/
+
+# local agent bridge drafts
+.flight-log-agent/

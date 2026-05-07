@@ -391,14 +391,20 @@ export default function AltitudeProfile({
       {/* Waypoint markers on the profile — spaced to avoid label overlap */}
       {(() => {
         const minLabelGap = 40;
-        let lastLabelX = -Infinity;
-        return matchedFixes.map((fix) => {
+        const markerData = matchedFixes.reduce<
+          { fix: (typeof matchedFixes)[number]; x: number; y: number; showLabel: boolean }[]
+        >((items, fix) => {
           const pt = path[fix.trackIndex];
-          if (!pt) return null;
+          if (!pt) return items;
           const x = PADDING.left + xScale(pt.time);
           const y = PADDING.top + yScaleAlt(pt.altitude);
-          const showLabel = x - lastLabelX >= minLabelGap;
-          if (showLabel) lastLabelX = x;
+          const lastLabelX =
+            [...items].reverse().find((item) => item.showLabel)?.x ?? -Infinity;
+          items.push({ fix, x, y, showLabel: x - lastLabelX >= minLabelGap });
+          return items;
+        }, []);
+
+        return markerData.map(({ fix, x, y, showLabel }) => {
           return (
             <g key={`fix-${fix.name}-${fix.trackIndex}`}>
               <line

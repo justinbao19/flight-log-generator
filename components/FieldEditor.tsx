@@ -6,7 +6,7 @@ import { decodeMetar, DecodedMetar } from "@/lib/metarDecode";
 import AirportInput from "./AirportInput";
 import { DatePicker, TimePicker } from "./DateTimePicker";
 import { useMemo, useEffect, useRef, useState, useCallback, ReactNode } from "react";
-import { Plane, Hash, Clock, CloudSun, PlaneTakeoff, PlaneLanding, Radio, Tag, Timer, Hourglass, Globe, CircleParking, AlarmClock, ClockArrowDown, UserRound, MapPin, Satellite, Search, Camera, ExternalLink, CloudDownload, ClipboardPaste, Ticket, Upload, Loader2, Info } from "lucide-react";
+import { Plane, Hash, CloudSun, PlaneTakeoff, PlaneLanding, Radio, Tag, Timer, Hourglass, Globe, CircleParking, AlarmClock, ClockArrowDown, UserRound, MapPin, Satellite, Search, Camera, ExternalLink, CloudDownload, ClipboardPaste, Ticket, Upload, Loader2, Info } from "lucide-react";
 import { RunwayIcon } from "./icons/RunwayIcon";
 import { CabinClassIcon } from "./icons/CabinClassIcon";
 import { AltitudeIcon } from "./icons/AltitudeIcon";
@@ -352,7 +352,7 @@ export default function FieldEditor({
     }
   }, [data, onChange]);
 
-  const setNestedValue = (
+  const setNestedValue = useCallback((
     obj: Record<string, unknown>,
     path: string,
     value: string
@@ -371,9 +371,9 @@ export default function FieldEditor({
     } else {
       target[lastKey] = value;
     }
-  };
+  }, []);
 
-  const update = (path: string, value: string) => {
+  const update = useCallback((path: string, value: string) => {
     const newData = JSON.parse(JSON.stringify(data)) as FlightData;
     setNestedValue(
       newData as unknown as Record<string, unknown>,
@@ -381,16 +381,16 @@ export default function FieldEditor({
       value
     );
     onChange(newData);
-  };
+  }, [data, onChange, setNestedValue]);
 
-  const updateMultiple = (updates: [string, string][]) => {
+  const updateMultiple = useCallback((updates: [string, string][]) => {
     const newData = JSON.parse(JSON.stringify(data)) as FlightData;
     const obj = newData as unknown as Record<string, unknown>;
     for (const [path, value] of updates) {
       setNestedValue(obj, path, value);
     }
     onChange(newData);
-  };
+  }, [data, onChange, setNestedValue]);
 
   const handleDistanceChange = (value: string) => {
     const num = parseFloat(value) || 0;
@@ -468,7 +468,7 @@ export default function FieldEditor({
         update("flightDuration", computedDuration);
       }
     }
-  }, [computedDuration]);
+  }, [computedDuration, data.flightDuration, update]);
 
   const isDateTooOld = useMemo(() => {
     if (!data.date) return false;

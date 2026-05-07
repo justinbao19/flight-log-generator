@@ -183,9 +183,12 @@ export function TimePicker({ label, value, onChange, readOnly, className, icon }
 
   useEffect(() => {
     if (value) {
-      const [h, m] = value.split(":");
-      if (h) setHours(h);
-      if (m) setMinutes(m);
+      const syncValue = window.setTimeout(() => {
+        const [h, m] = value.split(":");
+        if (h) setHours(h);
+        if (m) setMinutes(m);
+      }, 0);
+      return () => window.clearTimeout(syncValue);
     }
   }, [value]);
 

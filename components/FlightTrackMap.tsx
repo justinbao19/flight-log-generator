@@ -155,7 +155,7 @@ export default function FlightTrackMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [trackData, trackCoords, bounds]);
+  }, [trackData, trackCoords, bounds, isMobile]);
 
   useEffect(() => {
     if (!mapRef.current) return;
