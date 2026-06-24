@@ -6,11 +6,14 @@ export async function POST(request: NextRequest) {
     const contentType = request.headers.get("content-type") || "";
     const apiKey =
       request.headers.get("x-api-key") ||
+      process.env.OPENCLAW_API_KEY ||
+      process.env.OPENAI_API_KEY ||
+      process.env.AI_API_KEY ||
       process.env.ANTHROPIC_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: "API key is required. Set ANTHROPIC_API_KEY or pass x-api-key header." },
+        { error: "API key is required. Set OPENCLAW_API_KEY or pass x-api-key header." },
         { status: 400 }
       );
     }

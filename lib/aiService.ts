@@ -1,5 +1,77 @@
 import { FlightData } from "./types";
 
+const DEFAULT_OPENCLAW_BASE_URL = "https://llm-proxy.tapsvc.com/v1";
+const DEFAULT_OPENCLAW_MODEL = "gpt-5.4";
+
+type OpenAITextPart = {
+  type: "text";
+  text: string;
+};
+
+type OpenAIImagePart = {
+  type: "image_url";
+  image_url: {
+    url: string;
+  };
+};
+
+type OpenAIMessageContent = string | (OpenAITextPart | OpenAIImagePart)[];
+
+function getAIConfig() {
+  return {
+    baseUrl:
+      process.env.OPENCLAW_BASE_URL ||
+      process.env.OPENAI_BASE_URL ||
+      process.env.AI_BASE_URL ||
+      DEFAULT_OPENCLAW_BASE_URL,
+    model:
+      process.env.OPENCLAW_MODEL ||
+      process.env.OPENAI_MODEL ||
+      process.env.AI_MODEL ||
+      DEFAULT_OPENCLAW_MODEL,
+  };
+}
+
+async function callFlightRecognition(
+  content: OpenAIMessageContent,
+  apiKey: string
+): Promise<FlightData> {
+  const { baseUrl, model } = getAIConfig();
+  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 2048,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "user",
+          content,
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`AI API error: ${response.status} - ${err}`);
+  }
+
+  const data = await response.json();
+  const contentText = data.choices?.[0]?.message?.content;
+  if (typeof contentText !== "string") {
+    throw new Error("Failed to read AI response content");
+  }
+
+  const jsonMatch = contentText.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error("Failed to parse AI response as JSON");
+  return JSON.parse(jsonMatch[0]);
+}
+
 function getSystemPrompt(): string {
   const today = new Date().toISOString().slice(0, 10);
   const currentYear = new Date().getFullYear();
@@ -69,35 +141,7 @@ export async function recognizeFromText(
   text: string,
   apiKey: string
 ): Promise<FlightData> {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2048,
-      messages: [
-        {
-          role: "user",
-          content: `${getSystemPrompt()}\n\n## 输入文本\n${text}`,
-        },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Anthropic API error: ${response.status} - ${err}`);
-  }
-
-  const data = await response.json();
-  const content = data.content[0].text;
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Failed to parse AI response as JSON");
-  return JSON.parse(jsonMatch[0]);
+  return callFlightRecognition(`${getSystemPrompt()}\n\n## 输入文本\n${text}`, apiKey);
 }
 
 export async function recognizeFromImage(
@@ -105,46 +149,19 @@ export async function recognizeFromImage(
   mediaType: string,
   apiKey: string
 ): Promise<FlightData> {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 2048,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "image",
-              source: {
-                type: "base64",
-                media_type: mediaType,
-                data: base64Image,
-              },
-            },
-            {
-              type: "text",
-              text: getSystemPrompt(),
-            },
-          ],
+  return callFlightRecognition(
+    [
+      {
+        type: "text",
+        text: getSystemPrompt(),
+      },
+      {
+        type: "image_url",
+        image_url: {
+          url: `data:${mediaType};base64,${base64Image}`,
         },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Anthropic API error: ${response.status} - ${err}`);
-  }
-
-  const data = await response.json();
-  const content = data.content[0].text;
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Failed to parse AI response as JSON");
-  return JSON.parse(jsonMatch[0]);
+      },
+    ],
+    apiKey
+  );
 }

@@ -14,7 +14,7 @@
 - Next.js 16 (App Router) + TypeScript
 - React 19 + TailwindCSS
 - soaring-symbols（航司 logo 库）
-- Anthropic Claude API（AI 识别）
+- OpenClaw GPT 5.4 / OpenAI-compatible API（AI 识别）
 - jsPDF + html2canvas（PDF 生成）
 
 ## 快速开始
@@ -25,7 +25,7 @@ npm install
 
 # 配置 API Key
 cp .env.local.example .env.local
-# 编辑 .env.local，填入你的 Anthropic API Key
+# 编辑 .env.local，填入你的 OpenClaw API Key
 
 # 启动开发服务器
 npm run dev
@@ -37,7 +37,9 @@ npm run dev
 
 | 变量 | 说明 | 必填 |
 |------|------|------|
-| `ANTHROPIC_API_KEY` | Anthropic API Key | 是（或在页面中输入） |
+| `OPENCLAW_API_KEY` | OpenClaw/OpenAI-compatible API Key | 是（或在页面中输入） |
+| `OPENCLAW_BASE_URL` | OpenClaw/OpenAI-compatible Base URL | 否，默认 `https://llm-proxy.tapsvc.com/v1` |
+| `OPENCLAW_MODEL` | AI 模型 | 否，默认 `gpt-5.4` |
 
 ## 使用方式
 
