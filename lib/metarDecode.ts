@@ -86,28 +86,28 @@ export function decodeMetar(raw: string): DecodedMetar | null {
 
     let wind = "Calm";
     if (m.wind && m.wind.speed_kts > 0) {
-      wind = `${m.wind.degrees}° / ${m.wind.speed_kts}kt`;
-      if (m.wind.gust_kts) wind += ` G${m.wind.gust_kts}kt`;
+      wind = `${m.wind.degrees}° at ${m.wind.speed_kts} kt`;
+      if (m.wind.gust_kts) wind += `, gusting ${m.wind.gust_kts} kt`;
       if (m.wind.degrees_from != null && m.wind.degrees_to != null) {
-        wind += ` (VRB ${m.wind.degrees_from}°–${m.wind.degrees_to}°)`;
+        wind += `, variable ${m.wind.degrees_from}°–${m.wind.degrees_to}°`;
       }
     }
 
     let visibility: string;
     if (hasCavok) {
-      visibility = "CAVOK (>10km)";
+      visibility = "10 km or more";
     } else if (m.visibility) {
       visibility =
-        m.visibility.meters >= 9999 ? ">10km" : `${m.visibility.meters}m`;
+        m.visibility.meters >= 9999 ? "10 km or more" : `${m.visibility.meters} m`;
     } else {
       visibility = "N/A";
     }
 
-    const weather = decodeConditions(m.conditions);
+    const weather = hasCavok ? "No significant weather" : decodeConditions(m.conditions);
 
     let clouds: string;
     if (hasCavok) {
-      clouds = "CAVOK";
+      clouds = "No significant cloud below 5,000 ft";
     } else if (m.clouds && m.clouds.length > 0) {
       clouds = m.clouds
         .map((c) => `${CLOUD_CODES[c.code] || c.code} ${c.feet}ft`)
@@ -148,11 +148,11 @@ export function decodeMetarSummary(raw: string): string {
   const d = decodeMetar(raw);
   if (!d) return raw;
 
-  const parts = [`Wind ${d.wind}`, `Vis ${d.visibility}`];
+  const parts = [`Wind ${d.wind}`, `Visibility ${d.visibility}`];
   if (d.weather !== "None") parts.push(d.weather);
   parts.push(d.clouds);
   parts.push(`${d.temperature}/${d.dewpoint}`);
-  parts.push(`QNH ${d.pressure}`);
+  parts.push(`Pressure ${d.pressure}`);
   parts.push(d.flightCategory);
 
   return parts.join(" | ");

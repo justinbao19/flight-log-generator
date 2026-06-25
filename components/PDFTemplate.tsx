@@ -3,6 +3,14 @@
 import { FlightData, AirlineInfo, DisplayMode } from "@/lib/types";
 import { decodeMetarSummary } from "@/lib/metarDecode";
 import AirlineLogo from "./AirlineLogo";
+import {
+  Camera,
+  Info,
+  Luggage,
+  PlaneLanding,
+  PlaneTakeoff,
+  Ticket,
+} from "lucide-react";
 
 interface PDFTemplateProps {
   data: FlightData;
@@ -79,7 +87,7 @@ export default function PDFTemplate({
     >
       {/* Header - Seat / Cabin / Bag Tag */}
       <div
-        className="flex justify-between items-start mb-4"
+        className="flex items-center justify-between mb-4"
         style={{ fontSize: "9pt" }}
       >
         <div className="flex gap-8">
@@ -93,10 +101,11 @@ export default function PDFTemplate({
           </span>
         </div>
         <div
-          className="border border-dashed border-gray-400 rounded px-4 py-2 text-center"
-          style={{ minWidth: "100px" }}
+          className="flex items-center justify-center gap-2 rounded border border-dashed border-gray-400 px-5 py-2.5 text-gray-400"
+          style={{ minWidth: "118px", fontSize: "9pt" }}
         >
-          <span className="text-[7pt] text-gray-400 uppercase tracking-wider">
+          <Luggage className="h-4 w-4" strokeWidth={2} />
+          <span className="uppercase tracking-wider">
             BAG TAG
           </span>
         </div>
@@ -145,7 +154,8 @@ export default function PDFTemplate({
 
       {/* General Flight Info */}
       <section className="mb-5">
-        <h3 className="text-xs font-bold tracking-widest mb-3 border-b border-black pb-1">
+        <h3 className="mb-3 flex items-center gap-1.5 border-b border-black pb-1 text-xs font-bold tracking-widest">
+          <Info className="h-3.5 w-3.5" strokeWidth={2.2} />
           {isPro ? "GENERAL FLT INFO" : "GENERAL FLIGHT INFORMATION"}
         </h3>
         <div
@@ -199,7 +209,8 @@ export default function PDFTemplate({
 
       {/* Departure Info */}
       <section className="mb-5">
-        <h3 className="text-xs font-bold tracking-widest mb-3 border-b border-black pb-1">
+        <h3 className="mb-3 flex items-center gap-1.5 border-b border-black pb-1 text-xs font-bold tracking-widest">
+          <PlaneTakeoff className="h-3.5 w-3.5" strokeWidth={2.2} />
           {isPro ? "DEP INFO" : "DEPARTURE INFORMATION"}
         </h3>
         <div className="space-y-1.5" style={{ fontSize: "9.5pt" }}>
@@ -253,7 +264,8 @@ export default function PDFTemplate({
 
       {/* Arrival Info */}
       <section className="mb-5">
-        <h3 className="text-xs font-bold tracking-widest mb-3 border-b border-black pb-1">
+        <h3 className="mb-3 flex items-center gap-1.5 border-b border-black pb-1 text-xs font-bold tracking-widest">
+          <PlaneLanding className="h-3.5 w-3.5" strokeWidth={2.2} />
           {isPro ? "ARR INFO" : "ARRIVAL INFORMATION"}
         </h3>
         <div className="space-y-1.5" style={{ fontSize: "9.5pt" }}>
@@ -311,8 +323,9 @@ export default function PDFTemplate({
       <section>
         <div className="flex gap-8">
           <div className="flex-1">
-            <h3 className="text-xs font-bold tracking-widest mb-2">
-              {isPro ? "A/C PHOTOS / RMKS:" : "AIRCRAFT PHOTOS / REMARKS:"}
+            <h3 className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-widest">
+              <Camera className="h-3.5 w-3.5" strokeWidth={2.2} />
+              {isPro ? "A/C PHOTOS:" : "AIRCRAFT PHOTOS:"}
             </h3>
             {data.selectedPhoto ? (
               <div
@@ -345,13 +358,15 @@ export default function PDFTemplate({
                 )}
               </div>
             ) : (
-              <div className="border border-dashed border-gray-300 rounded h-[100mm] flex items-center justify-center text-gray-400 text-sm">
-                Aircraft photo area
+              <div className="flex h-[100mm] items-center justify-center gap-2 rounded border border-dashed border-gray-300 text-sm text-gray-400">
+                <Camera className="h-4 w-4" strokeWidth={2} />
+                Aircraft Photo
               </div>
             )}
           </div>
           <div className="w-[70mm]">
-            <h3 className="text-xs font-bold tracking-widest mb-2">
+            <h3 className="mb-2 flex items-center gap-1.5 text-xs font-bold tracking-widest">
+              <Ticket className="h-3.5 w-3.5" strokeWidth={2.2} />
               {isPro ? "B/Pass:" : "Boarding Pass:"}
             </h3>
             {data.boardingPass?.imageDataUrl ? (
@@ -364,8 +379,9 @@ export default function PDFTemplate({
                 />
               </div>
             ) : (
-              <div className="border border-dashed border-gray-300 rounded h-[100mm] flex items-center justify-center text-gray-400 text-sm">
-                Boarding pass area
+              <div className="flex h-[100mm] items-center justify-center gap-2 rounded border border-dashed border-gray-300 text-sm text-gray-400">
+                <Ticket className="h-4 w-4" strokeWidth={2} />
+                Boarding Pass
               </div>
             )}
           </div>

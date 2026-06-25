@@ -401,48 +401,33 @@ export default function Home() {
               Guide
             </Link>
             {/* Mode Toggle */}
-            <div className="flex items-center gap-2">
-            <span
-              className={`text-xs font-medium transition-colors ${
-                displayMode === "standard"
-                  ? "text-sky-600"
-                  : "text-slate-400"
-              }`}
+            <div
+              className="grid grid-cols-2 rounded-xl border border-slate-200 bg-slate-100 p-0.5 text-xs font-semibold shadow-inner"
+              role="group"
+              aria-label="Display mode"
             >
-              STD
-            </span>
-            <button
-              onClick={() =>
-                setDisplayMode((m) =>
-                  m === "professional" ? "standard" : "professional"
-                )
-              }
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2 ${
-                displayMode === "professional"
-                  ? "bg-sky-500"
-                  : "bg-slate-300"
-              }`}
-              role="switch"
-              aria-checked={displayMode === "professional"}
-              aria-label="Toggle display mode"
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${
-                  displayMode === "professional"
-                    ? "translate-x-6"
-                    : "translate-x-1"
+              <button
+                type="button"
+                onClick={() => setDisplayMode("standard")}
+                className={`w-20 rounded-lg px-2 py-1.5 transition-colors ${
+                  displayMode === "standard"
+                    ? "bg-white text-sky-700 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
                 }`}
-              />
-            </button>
-            <span
-              className={`text-xs font-medium transition-colors ${
-                displayMode === "professional"
-                  ? "text-sky-600"
-                  : "text-slate-400"
-              }`}
-            >
-              PRO
-            </span>
+              >
+                Decoded
+              </button>
+              <button
+                type="button"
+                onClick={() => setDisplayMode("professional")}
+                className={`w-20 rounded-lg px-2 py-1.5 transition-colors ${
+                  displayMode === "professional"
+                    ? "bg-white text-sky-700 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                Raw
+              </button>
             </div>
           </div>
         </div>

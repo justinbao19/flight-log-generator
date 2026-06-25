@@ -266,7 +266,7 @@ export default function PreviewPage() {
               }
               className="px-3 py-2 text-xs font-bold rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors shadow-sm"
             >
-              {displayMode === "professional" ? "PRO" : "STD"}
+              {displayMode === "professional" ? "Raw" : "Decoded"}
             </button>
           </div>
         </div>
