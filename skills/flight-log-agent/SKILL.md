@@ -1,6 +1,6 @@
 ---
 name: flight-log-agent
-description: Fill Flight Log Generator drafts through its local agent API. Use when the user wants an agent such as OpenClaw or Codex to gather flight information, enrich a real flight, write or patch a flight-log draft, run the CA8565 backtest, or prepare a draft for import into the Flight Log Generator web editor.
+description: Fill Flight Log Generator drafts through its local agent API. Use when the user wants an automation agent to gather flight information, enrich a real flight, write or patch a flight-log draft, run the CA8565 backtest, or prepare a draft for import into the Flight Log Generator web editor.
 ---
 
 # Flight Log Agent

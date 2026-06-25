@@ -23,7 +23,7 @@ Replace or merge the current agent draft.
 
 ```json
 {
-  "source": "openclaw",
+  "source": "agent",
   "notes": "Collected from public sources.",
   "merge": false,
   "data": {
@@ -40,7 +40,7 @@ Apply field-path updates.
 
 ```json
 {
-  "source": "openclaw",
+  "source": "agent",
   "updates": [
     { "path": "departure.airport.iata", "value": "PVG" },
     { "path": "arrival.airport.iata", "value": "CAN" },

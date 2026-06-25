@@ -40,8 +40,8 @@ export default function GuidePage() {
           </h1>
           <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600">
             This guide explains the flight-log concepts, the normal browser workflow,
-            and the agent API bridge that lets OpenClaw or another agent collect flight
-            facts from the web and inject them into the app.
+            and the agent API bridge that lets any automation agent collect flight
+            facts, prepare a draft, and inject it into the app for review.
           </p>
         </section>
 
@@ -89,14 +89,14 @@ export default function GuidePage() {
         </section>
 
         <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <h2 className="text-xl font-bold text-slate-950">Normal Tool Workflow</h2>
+          <h2 className="text-xl font-bold text-slate-950">Manual Editor Workflow</h2>
           <ol className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
             <li>1. Open the editor and choose screenshot, paste text, or manual input.</li>
             <li>2. Enter the flight number and local departure date first.</li>
-            <li>3. Use Lookup for aircraft and route data when the source is available.</li>
+            <li>3. Add aircraft, route, registration, seat, cabin, and schedule details.</li>
             <li>4. Use airport fields to resolve IATA, ICAO, airport name, and UTC offset.</li>
             <li>5. Fetch METAR after the airport ICAO and date/time are known.</li>
-            <li>6. Fetch Track for recent flights when FlightRadar24 data is accessible.</li>
+            <li>6. Add track or waypoint details when a reliable source is available.</li>
             <li>7. Search or upload an aircraft photo, add a boarding pass, then preview and export.</li>
           </ol>
         </section>
@@ -104,10 +104,11 @@ export default function GuidePage() {
         <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <h2 className="text-xl font-bold text-slate-950">Agent API Workflow</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
+            Any agent, script, or workflow runner can use the same HTTP bridge.
             Set <code className="rounded bg-slate-100 px-1.5 py-0.5">FLIGHT_LOG_AGENT_TOKEN</code>{" "}
             on the server. Send the same value as{" "}
             <code className="rounded bg-slate-100 px-1.5 py-0.5">x-agent-token</code>{" "}
-            for write endpoints.
+            for write endpoints when the token is configured.
           </p>
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <pre className={codeBlockClass}>{`GET /api/agent/flight-log/schema
@@ -128,7 +129,7 @@ x-agent-token: $FLIGHT_LOG_AGENT_TOKEN
 x-agent-token: $FLIGHT_LOG_AGENT_TOKEN
 
 {
-  "source": "openclaw",
+  "source": "agent",
   "data": { "flightNumber": "CA8565", "date": "2026-05-07" }
 }`}</pre>
             <pre className={codeBlockClass}>{`PATCH /api/agent/flight-log/draft
@@ -144,20 +145,30 @@ x-agent-token: $FLIGHT_LOG_AGENT_TOKEN
         </section>
 
         <section className="mb-10 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <h2 className="text-xl font-bold text-slate-950">OpenClaw Skill Usage</h2>
+          <h2 className="text-xl font-bold text-slate-950">Universal Agent Skill</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            The repo includes a skill package at{" "}
-            <code className="rounded bg-slate-100 px-1.5 py-0.5">skills/flight-log-agent</code>.
-            After the repository is pushed, install it from GitHub with OpenClaw:
+            The repo includes a portable skill package at{" "}
+            <code className="rounded bg-slate-100 px-1.5 py-0.5">skills/flight-log-agent</code>. It is plain Markdown,
+            JavaScript helper scripts, and REST API references, so it can be registered
+            with any agent runtime that supports repository skills, local instruction
+            folders, or custom tools.
           </p>
-          <pre className={`${codeBlockClass} mt-4`}>{`openclaw skills install github:<owner>/flight-log-generator/skills/flight-log-agent`}</pre>
+          <pre className={`${codeBlockClass} mt-4`}>{`git clone https://github.com/<owner>/flight-log-generator.git
+
+# Register or import this folder in your agent runtime:
+skills/flight-log-agent
+
+# Optional helper script for agents that can run Node:
+node skills/flight-log-agent/scripts/fill-flight-log.mjs \\
+  --base-url http://localhost:3000 \\
+  --flight CA8565 \\
+  --date 2026-05-07`}</pre>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            If your OpenClaw installation requires a dedicated skill repository, mirror that
-            folder to a standalone repository and install it with{" "}
-            <code className="rounded bg-slate-100 px-1.5 py-0.5">
-              openclaw skills install github:&lt;owner&gt;/flight-log-agent
-            </code>
-            .
+            If an agent platform requires each skill to live in its own repository,
+            mirror only that folder to a standalone skill repo. Keep the folder structure
+            intact so <code className="rounded bg-slate-100 px-1.5 py-0.5">SKILL.md</code>,
+            <code className="rounded bg-slate-100 px-1.5 py-0.5">references/api.md</code>,
+            and the helper scripts stay together.
           </p>
         </section>
 
