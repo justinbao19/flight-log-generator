@@ -440,12 +440,14 @@ export default function Home() {
                   <h2 className="text-base font-semibold text-slate-900">
                     Flight Data
                   </h2>
-                  <p className="text-sm text-slate-500">
-                    Use AI recognition or fill in manually
-                    <span className="mx-1.5 text-slate-300">·</span>
+                  <div className="mt-1 flex h-6 flex-wrap items-center gap-x-1.5 gap-y-1 text-sm leading-none text-slate-500">
+                    <span className="inline-flex h-6 items-center">
+                      Use AI recognition or fill in manually
+                    </span>
+                    <span className="inline-flex h-6 items-center text-slate-300">·</span>
                     <button
                       onClick={handleLoadSample}
-                      className="inline-flex h-6 items-center gap-1 rounded-md px-1 font-medium leading-none text-sky-500 transition-colors hover:text-sky-700"
+                      className="inline-flex h-6 items-center gap-1 rounded-md px-1 font-medium text-sky-500 transition-colors hover:text-sky-700"
                     >
                       <svg
                         className="h-3.5 w-3.5"
@@ -462,14 +464,14 @@ export default function Home() {
                       </svg>
                       Try Sample
                     </button>
-                    <span className="mx-1.5 text-slate-300">·</span>
+                    <span className="inline-flex h-6 items-center text-slate-300">·</span>
                     <Link
                       href="/guide"
-                      className="inline-flex h-6 items-center rounded-md px-1 font-medium leading-none text-sky-500 transition-colors hover:text-sky-700"
+                      className="inline-flex h-6 items-center rounded-md px-1 font-medium text-sky-500 transition-colors hover:text-sky-700"
                     >
                       Agent Guide
                     </Link>
-                  </p>
+                  </div>
                 </div>
                 {airline && (
                   <div className="flex items-center gap-2">
