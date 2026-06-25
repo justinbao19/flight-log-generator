@@ -339,9 +339,9 @@ export default function Home() {
           <div className="flex items-center gap-3 shrink-0">
             <Link
               href="/guide"
-              className="hidden sm:inline-flex rounded-xl border border-slate-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition-colors hover:bg-white hover:text-sky-700"
+              className="hidden whitespace-nowrap rounded-xl border border-slate-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition-colors hover:bg-white hover:text-sky-700 sm:inline-flex"
             >
-              Guide
+              Agent Guide
             </Link>
             {/* Mode Toggle */}
             <div
@@ -464,13 +464,6 @@ export default function Home() {
                       </svg>
                       Try Sample
                     </button>
-                    <span className="inline-flex h-6 items-center text-slate-300">·</span>
-                    <Link
-                      href="/guide"
-                      className="inline-flex h-6 items-center rounded-md px-1 font-medium text-sky-500 transition-colors hover:text-sky-700"
-                    >
-                      Agent Guide
-                    </Link>
                   </div>
                 </div>
                 {airline && (
