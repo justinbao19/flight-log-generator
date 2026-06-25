@@ -21,23 +21,9 @@ import {
   ExportFormat,
 } from "@/lib/pdfGenerator";
 import { saveDraft, clearDraft, saveTrackData, clearTrackData, loadTrackData } from "@/lib/storage";
-import { mergeFlightData } from "@/lib/flightLogFields";
 
 type Step = "input" | "preview";
 type PreviewTab = "pdf" | "track";
-
-interface AgentDraftResponse {
-  hasDraft: boolean;
-  draft: {
-    data: FlightData;
-    trackData?: FlightTrackData;
-    metadata?: {
-      source?: string;
-      updatedAt?: string;
-      updateCount?: number;
-    };
-  } | null;
-}
 
 const A4_WIDTH_PX = 794;
 
@@ -87,8 +73,6 @@ export default function Home() {
   const [trackData, setTrackData] = useState<FlightTrackData | null>(null);
   const [trackError, setTrackError] = useState<{ message: string; availableDates?: string[] } | null>(null);
   const [flightLookupLoading, setFlightLookupLoading] = useState(false);
-  const [agentDraft, setAgentDraft] = useState<AgentDraftResponse["draft"]>(null);
-  const [agentDraftStatus, setAgentDraftStatus] = useState<string | null>(null);
   const [draftStatus, setDraftStatus] = useState<"saved" | "unsaved" | "idle">(
     "idle"
   );
@@ -98,21 +82,6 @@ export default function Home() {
   useEffect(() => {
     skipNextAutoSave.current = false;
   }, []);
-
-  const refreshAgentDraft = useCallback(async () => {
-    try {
-      const res = await fetch("/api/agent/flight-log/draft", { cache: "no-store" });
-      if (!res.ok) return;
-      const body = (await res.json()) as AgentDraftResponse;
-      setAgentDraft(body.hasDraft ? body.draft : null);
-    } catch {
-      setAgentDraft(null);
-    }
-  }, []);
-
-  useEffect(() => {
-    refreshAgentDraft();
-  }, [refreshAgentDraft]);
 
   useEffect(() => {
     if (flightData.flightNumber && flightData.date) {
@@ -217,32 +186,6 @@ export default function Home() {
     setPreviewTab("pdf");
     clearTrackData();
     setTrackData(null);
-  };
-
-  const handleImportAgentDraft = (mode: "merge" | "replace") => {
-    if (!agentDraft?.data) return;
-
-    const nextData =
-      mode === "replace"
-        ? agentDraft.data
-        : mergeFlightData(flightData, agentDraft.data, { overwrite: false });
-
-    setFlightData(nextData);
-    saveDraft(nextData);
-    setDraftStatus("saved");
-
-    if (agentDraft.trackData) {
-      setTrackData(agentDraft.trackData);
-      if (nextData.flightNumber && nextData.date) {
-        saveTrackData(agentDraft.trackData, nextData.flightNumber, nextData.date);
-      }
-    }
-
-    setAgentDraftStatus(
-      mode === "replace"
-        ? "Agent draft replaced the current form."
-        : "Agent draft merged into empty fields."
-    );
   };
 
   const fetchFlightTrack = useCallback(async (overrideDate?: string) => {
@@ -502,7 +445,7 @@ export default function Home() {
                     <span className="mx-1.5 text-slate-300">·</span>
                     <button
                       onClick={handleLoadSample}
-                      className="inline-flex items-center gap-1 text-sky-500 hover:text-sky-700 font-medium transition-colors"
+                      className="inline-flex h-6 items-center gap-1 rounded-md px-1 font-medium leading-none text-sky-500 transition-colors hover:text-sky-700"
                     >
                       <svg
                         className="h-3.5 w-3.5"
@@ -522,7 +465,7 @@ export default function Home() {
                     <span className="mx-1.5 text-slate-300">·</span>
                     <Link
                       href="/guide"
-                      className="inline-flex items-center gap-1 text-sky-500 hover:text-sky-700 font-medium transition-colors"
+                      className="inline-flex h-6 items-center rounded-md px-1 font-medium leading-none text-sky-500 transition-colors hover:text-sky-700"
                     >
                       Agent Guide
                     </Link>
@@ -542,41 +485,6 @@ export default function Home() {
                   </div>
                 )}
               </div>
-              {agentDraft && (
-                <div className="mb-4 rounded-xl border border-sky-100 bg-sky-50/70 p-3">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">
-                        Agent draft available
-                      </p>
-                      <p className="mt-0.5 text-xs text-slate-500">
-                        {agentDraft.data.flightNumber || "Untitled flight"}
-                        {agentDraft.data.date ? ` · ${agentDraft.data.date}` : ""}
-                        {agentDraft.metadata?.source ? ` · ${agentDraft.metadata.source}` : ""}
-                      </p>
-                      {agentDraftStatus && (
-                        <p className="mt-1 text-xs font-medium text-sky-700">
-                          {agentDraftStatus}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleImportAgentDraft("merge")}
-                        className="rounded-lg bg-sky-500 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-sky-400"
-                      >
-                        Import empty fields
-                      </button>
-                      <button
-                        onClick={() => handleImportAgentDraft("replace")}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-                      >
-                        Replace form
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
               <UploadArea
                 flightData={flightData}
                 onFlightDataChange={setFlightData}
