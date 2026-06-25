@@ -474,12 +474,12 @@ export default function Home() {
                   </div>
                 </div>
                 {airline && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-28 shrink-0 items-center justify-end overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={airline.logoUrl}
                       alt={airline.name}
-                      className="h-8 object-contain"
+                      className="h-auto max-h-6 max-w-full object-contain"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = "none";
                       }}
