@@ -17,24 +17,30 @@ export default function AirlineLogo({
   const [imgError, setImgError] = useState(false);
 
   const sizeClasses = {
-    sm: "h-6",
-    md: "h-10",
-    lg: "h-20",
+    sm: "h-6 w-24",
+    md: "h-10 w-40",
+    lg: "h-28 w-96",
   };
 
   if (!logoUrl || imgError) {
     return (
-      <span className="text-sm font-bold text-gray-700">{airlineName}</span>
+      <span
+        className={`${sizeClasses[size]} inline-flex items-center justify-center text-center text-sm font-bold text-gray-700`}
+      >
+        {airlineName}
+      </span>
     );
   }
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={logoUrl}
-      alt={airlineName}
-      className={`${sizeClasses[size]} object-contain`}
-      onError={() => setImgError(true)}
-    />
+    <span className={`${sizeClasses[size]} inline-flex items-center justify-center`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={logoUrl}
+        alt={airlineName}
+        className="h-full w-full object-contain"
+        onError={() => setImgError(true)}
+      />
+    </span>
   );
 }

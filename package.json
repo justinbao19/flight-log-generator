@@ -41,6 +41,7 @@
     "@types/react-simple-maps": "^3.0.6",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "playwright-core": "^1.60.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

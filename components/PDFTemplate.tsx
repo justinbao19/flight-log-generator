@@ -42,6 +42,9 @@ export default function PDFTemplate({
   displayMode,
 }: PDFTemplateProps) {
   const isPro = displayMode === "professional";
+  const hasAllianceMarkInLogo = airline?.iata?.toUpperCase() === "TK";
+  const shouldRenderAllianceLogo =
+    Boolean(airline?.allianceLogoUrl) && !hasAllianceMarkInLogo;
 
   const distanceDisplay = isPro
     ? data.distance
@@ -112,11 +115,11 @@ export default function PDFTemplate({
               size="lg"
             />
           )}
-          {airline?.allianceLogoUrl && (
+          {shouldRenderAllianceLogo && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={airline.allianceLogoUrl}
-              alt={airline.alliance || ""}
+              src={airline?.allianceLogoUrl}
+              alt={airline?.alliance || ""}
               className="h-12 object-contain"
             />
           )}
@@ -126,7 +129,7 @@ export default function PDFTemplate({
         </div>
       </div>
 
-      <hr className="border-gray-300 my-4" />
+      <div className="my-4" />
 
       {/* General Flight Info */}
       <section className="mb-5">
@@ -290,7 +293,7 @@ export default function PDFTemplate({
         </div>
       </section>
 
-      <hr className="border-gray-300 my-4" />
+      <div className="my-4" />
 
       {/* Photos / Remarks */}
       <section>

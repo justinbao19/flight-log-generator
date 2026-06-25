@@ -11,10 +11,42 @@ const ASSETS_DIR = join(
   "assets"
 );
 
+const PUBLIC_AIRLINE_LOGO_DIR = join(
+  process.cwd(),
+  "public",
+  "airline-logos"
+);
+
+const CUSTOM_AIRLINE_LOGOS: Record<string, string> = {
+  TK: "Turkish Airlines.svg",
+  OU: "Croatia Airlines.png",
+};
+
 function hasLocalSvg(slug: string): "logo" | "icon" | null {
   if (existsSync(join(ASSETS_DIR, slug, "logo.svg"))) return "logo";
   if (existsSync(join(ASSETS_DIR, slug, "icon.svg"))) return "icon";
   return null;
+}
+
+function getCustomLogoUrl(airlineCode: string): string | null {
+  const code = airlineCode.toUpperCase();
+  const candidates = [
+    CUSTOM_AIRLINE_LOGOS[code],
+    `${code}.svg`,
+    `${code}.png`,
+    `${code}.jpg`,
+    `${code}.jpeg`,
+  ].filter(Boolean) as string[];
+
+  const fileName = candidates.find((candidate) =>
+    existsSync(join(PUBLIC_AIRLINE_LOGO_DIR, candidate))
+  );
+
+  return fileName ? `/airline-logos/${encodeURIComponent(fileName)}` : null;
+}
+
+function shouldSuppressAllianceLogo(airlineCode: string): boolean {
+  return airlineCode.toUpperCase() === "TK";
 }
 
 export function extractAirlineCode(flightNumber: string): string {
@@ -25,16 +57,18 @@ export function extractAirlineCode(flightNumber: string): string {
 export async function getAirlineInfo(
   airlineCode: string
 ): Promise<AirlineInfo> {
-  const airline = getAirline(airlineCode);
+  const code = airlineCode.toUpperCase();
+  const airline = getAirline(code);
+  const customLogoUrl = getCustomLogoUrl(code);
 
   if (airline) {
     const variant = hasLocalSvg(airline.slug);
-    const logoUrl = variant
+    const logoUrl = customLogoUrl || (variant
       ? `/api/airline-logo?code=${airlineCode}&variant=${variant}`
-      : `https://pics.avs.io/800/280/${airlineCode}.png`;
+      : `https://pics.avs.io/800/280/${code}.png`);
 
     const alliance =
-      airline.alliance || ALLIANCE_MAP[airlineCode] || undefined;
+      airline.alliance || ALLIANCE_MAP[code] || undefined;
 
     return {
       name: airline.name,
@@ -42,20 +76,23 @@ export async function getAirlineInfo(
       icao: airline.icao,
       alliance,
       logoUrl,
-      allianceLogoUrl: alliance ? ALLIANCE_LOGO_MAP[alliance] : undefined,
+      allianceLogoUrl:
+        alliance && !shouldSuppressAllianceLogo(code)
+          ? ALLIANCE_LOGO_MAP[alliance]
+          : undefined,
       primaryColor: airline.branding?.primary_color,
     };
   }
 
-  const fallbackAlliance = ALLIANCE_MAP[airlineCode] || undefined;
+  const fallbackAlliance = ALLIANCE_MAP[code] || undefined;
   return {
-    name: getAirlineNameFallback(airlineCode),
-    iata: airlineCode,
+    name: getAirlineNameFallback(code),
+    iata: code,
     alliance: fallbackAlliance,
-    allianceLogoUrl: fallbackAlliance
+    allianceLogoUrl: fallbackAlliance && !shouldSuppressAllianceLogo(code)
       ? ALLIANCE_LOGO_MAP[fallbackAlliance]
       : undefined,
-    logoUrl: `https://pics.avs.io/800/280/${airlineCode}.png`,
+    logoUrl: customLogoUrl || `https://pics.avs.io/800/280/${code}.png`,
   };
 }
 
@@ -90,6 +127,7 @@ function getAirlineNameFallback(code: string): string {
     HO: "Juneyao Airlines",
     KY: "Kunming Airlines",
     GT: "Air Guilin",
+    OU: "Croatia Airlines",
   };
 
   return knownAirlines[code] || `Airline ${code}`;
@@ -101,6 +139,7 @@ const ALLIANCE_MAP: Record<string, string> = {
   CZ: "SkyTeam",
   HU: "Star Alliance",
   FM: "SkyTeam",
+  OU: "Star Alliance",
 };
 
 const ALLIANCE_LOGO_MAP: Record<string, string> = {
