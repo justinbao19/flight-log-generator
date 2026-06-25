@@ -484,6 +484,7 @@ export default function FieldEditor({
     () => (data.arrival?.metar ? decodeMetar(data.arrival.metar) : null),
     [data.arrival?.metar]
   );
+  const showProviderActions = false;
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -495,7 +496,7 @@ export default function FieldEditor({
             {isPro ? "General Flight Info" : "General Flight Information"}
           </h3>
           <div className="flex items-center gap-2">
-            {onFlightLookup && (
+            {showProviderActions && onFlightLookup && (
               <button
                 onClick={onFlightLookup}
                 disabled={!data.flightNumber || flightLookupLoading || isDateTooOld}
@@ -517,7 +518,7 @@ export default function FieldEditor({
                 )}
               </button>
             )}
-            {onFetchTrack && (
+            {showProviderActions && onFetchTrack && (
               <button
                 onClick={() => onFetchTrack()}
                 disabled={!data.flightNumber || !data.date || trackLoading || isDateTooOld}
@@ -539,7 +540,7 @@ export default function FieldEditor({
                 )}
               </button>
             )}
-            {(onFlightLookup || onFetchTrack) && (
+            {showProviderActions && (onFlightLookup || onFetchTrack) && (
               <div className="group relative">
                 <Info className="w-3.5 h-3.5 text-slate-400 hover:text-sky-500 cursor-help transition-colors" />
                 <div className="absolute bottom-full right-0 mb-1.5 hidden group-hover:block z-50">
@@ -553,7 +554,7 @@ export default function FieldEditor({
             )}
           </div>
 
-          {trackError && !trackLoading && (
+          {showProviderActions && trackError && !trackLoading && (
             <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50/60 p-3">
               <p className="text-xs text-amber-800 leading-relaxed">
                 {trackError.availableDates?.length

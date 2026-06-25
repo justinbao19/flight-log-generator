@@ -18,7 +18,7 @@ const PUBLIC_AIRLINE_LOGO_DIR = join(
 );
 
 const CUSTOM_AIRLINE_LOGOS: Record<string, string> = {
-  TK: "Turkish Airlines.svg",
+  TK: "Turkish_Airlines.svg",
   OU: "Croatia Airlines.png",
 };
 
@@ -43,10 +43,6 @@ function getCustomLogoUrl(airlineCode: string): string | null {
   );
 
   return fileName ? `/airline-logos/${encodeURIComponent(fileName)}` : null;
-}
-
-function shouldSuppressAllianceLogo(airlineCode: string): boolean {
-  return airlineCode.toUpperCase() === "TK";
 }
 
 export function extractAirlineCode(flightNumber: string): string {
@@ -76,10 +72,7 @@ export async function getAirlineInfo(
       icao: airline.icao,
       alliance,
       logoUrl,
-      allianceLogoUrl:
-        alliance && !shouldSuppressAllianceLogo(code)
-          ? ALLIANCE_LOGO_MAP[alliance]
-          : undefined,
+      allianceLogoUrl: alliance ? ALLIANCE_LOGO_MAP[alliance] : undefined,
       primaryColor: airline.branding?.primary_color,
     };
   }
@@ -89,7 +82,7 @@ export async function getAirlineInfo(
     name: getAirlineNameFallback(code),
     iata: code,
     alliance: fallbackAlliance,
-    allianceLogoUrl: fallbackAlliance && !shouldSuppressAllianceLogo(code)
+    allianceLogoUrl: fallbackAlliance
       ? ALLIANCE_LOGO_MAP[fallbackAlliance]
       : undefined,
     logoUrl: customLogoUrl || `https://pics.avs.io/800/280/${code}.png`,
@@ -143,7 +136,7 @@ const ALLIANCE_MAP: Record<string, string> = {
 };
 
 const ALLIANCE_LOGO_MAP: Record<string, string> = {
-  "Star Alliance": "/alliances/star-alliance.svg",
-  SkyTeam: "/alliances/skyteam.svg",
-  oneworld: "/alliances/oneworld.svg",
+  "Star Alliance": "/airline-logos/star_alliance.png",
+  SkyTeam: "/airline-logos/skyteam.svg",
+  oneworld: "/airline-logos/Oneworld.png",
 };

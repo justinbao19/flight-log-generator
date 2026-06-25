@@ -42,9 +42,7 @@ export default function PDFTemplate({
   displayMode,
 }: PDFTemplateProps) {
   const isPro = displayMode === "professional";
-  const hasAllianceMarkInLogo = airline?.iata?.toUpperCase() === "TK";
-  const shouldRenderAllianceLogo =
-    Boolean(airline?.allianceLogoUrl) && !hasAllianceMarkInLogo;
+  const shouldRenderAllianceLogo = Boolean(airline?.allianceLogoUrl);
 
   const distanceDisplay = isPro
     ? data.distance
@@ -106,24 +104,38 @@ export default function PDFTemplate({
 
       {/* Airline Logo Section */}
       <div className="flex flex-col items-center my-6">
-        <div className="flex items-center gap-3">
-          {airline && (
+        {airline && shouldRenderAllianceLogo ? (
+          <div className="flex items-center justify-center gap-5">
             <AirlineLogo
               airlineCode={airline.iata}
               airlineName={airline.name}
               logoUrl={airline.logoUrl}
               size="lg"
             />
-          )}
-          {shouldRenderAllianceLogo && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={airline?.allianceLogoUrl}
-              alt={airline?.alliance || ""}
-              className="h-12 object-contain"
-            />
-          )}
-        </div>
+            <div className="h-14 w-px bg-gray-300" />
+            <span className="flex h-16 w-16 shrink-0 items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={airline.allianceLogoUrl}
+                alt={airline.alliance || ""}
+                className="max-h-full max-w-full object-contain"
+              />
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center">
+            {airline ? (
+              <AirlineLogo
+                airlineCode={airline.iata}
+                airlineName={airline.name}
+                logoUrl={airline.logoUrl}
+                size="lg"
+              />
+            ) : (
+              <div className="h-20" />
+            )}
+          </div>
+        )}
         <div className="text-xs text-black mt-1.5 tracking-widest font-semibold" style={mono}>
           FLT-LOG
         </div>
