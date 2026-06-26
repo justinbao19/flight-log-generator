@@ -5,6 +5,13 @@ import { ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon } from "luci
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 
+const TIME_ITEM_HEIGHT = 36;
+const TIME_PICKER_VISIBLE_ITEMS = 5;
+const TIME_PICKER_HEIGHT = TIME_ITEM_HEIGHT * TIME_PICKER_VISIBLE_ITEMS;
+const TIME_PICKER_PADDING = TIME_ITEM_HEIGHT * Math.floor(TIME_PICKER_VISIBLE_ITEMS / 2);
+const HOURS_LIST = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
+const MINUTES_LIST = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0"));
+
 function useClickOutside(ref: React.RefObject<HTMLElement | null>, handler: () => void) {
   useEffect(() => {
     const listener = (event: MouseEvent | TouchEvent) => {
@@ -169,53 +176,101 @@ interface TimePickerProps {
 export function TimePicker({ label, value, onChange, readOnly, className, icon, suffix }: TimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   const [hours, setHours] = useState(() => value ? value.split(":")[0] : "");
   const [minutes, setMinutes] = useState(() => value ? value.split(":")[1] : "");
+  const scrollFrameRef = useRef<ReturnType<typeof requestAnimationFrame> | null>(null);
 
   useClickOutside(containerRef, () => setIsOpen(false));
 
-  const hoursList = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
-  const minutesList = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, "0"));
-
-  // Create refs for scrolling into view
   const hoursScrollRef = useRef<HTMLDivElement>(null);
   const minutesScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (value) {
-      const syncValue = window.setTimeout(() => {
-        const [h, m] = value.split(":");
-        if (h) setHours(h);
-        if (m) setMinutes(m);
-      }, 0);
-      return () => window.clearTimeout(syncValue);
+      const [h, m] = value.split(":");
+      if (h) setHours(h);
+      if (m) setMinutes(m);
+    } else {
+      setHours("");
+      setMinutes("");
     }
   }, [value]);
 
+  const scrollColumnToValue = (
+    ref: React.RefObject<HTMLDivElement | null>,
+    list: string[],
+    nextValue: string,
+    behavior: ScrollBehavior = "auto"
+  ) => {
+    const index = Math.max(0, list.indexOf(nextValue));
+    ref.current?.scrollTo({
+      top: index * TIME_ITEM_HEIGHT,
+      behavior,
+    });
+  };
+
+  const setTime = (h: string, m: string) => {
+    setHours(h);
+    setMinutes(m);
+    onChange(`${h}:${m}`);
+  };
+
+  const handleHourSelect = (nextHour: string, behavior: ScrollBehavior = "smooth") => {
+    const nextMinute = minutes || "00";
+    scrollColumnToValue(hoursScrollRef, HOURS_LIST, nextHour, behavior);
+    setTime(nextHour, nextMinute);
+  };
+
+  const handleMinuteSelect = (nextMinute: string, behavior: ScrollBehavior = "smooth") => {
+    const nextHour = hours || "00";
+    scrollColumnToValue(minutesScrollRef, MINUTES_LIST, nextMinute, behavior);
+    setTime(nextHour, nextMinute);
+  };
+
+  const handleColumnScroll = (
+    event: React.UIEvent<HTMLDivElement>,
+    list: string[],
+    currentValue: string,
+    updateValue: (value: string) => void
+  ) => {
+    const scrollTop = event.currentTarget.scrollTop;
+    if (scrollFrameRef.current) cancelAnimationFrame(scrollFrameRef.current);
+    scrollFrameRef.current = requestAnimationFrame(() => {
+      const index = Math.min(
+        list.length - 1,
+        Math.max(0, Math.round(scrollTop / TIME_ITEM_HEIGHT))
+      );
+      const nextValue = list[index];
+      if (nextValue && nextValue !== currentValue) {
+        updateValue(nextValue);
+      }
+    });
+  };
+
   useEffect(() => {
-    if (isOpen) {
-      // Scroll selected items into view when opened
-      const hEl = hoursScrollRef.current?.querySelector(`[data-value="${hours}"]`);
-      if (hEl) hEl.scrollIntoView({ block: "center" });
-      const mEl = minutesScrollRef.current?.querySelector(`[data-value="${minutes}"]`);
-      if (mEl) mEl.scrollIntoView({ block: "center" });
-    }
-  }, [isOpen, hours, minutes]); // added hours and minutes to dependencies
+    if (!isOpen) return;
 
-  const handleHourSelect = (h: string) => {
-    const m = minutes || "00";
-    setHours(h);
-    setMinutes(m);
-    onChange(`${h}:${m}`);
-  };
-
-  const handleMinuteSelect = (m: string) => {
     const h = hours || "00";
-    setMinutes(m);
-    setHours(h);
-    onChange(`${h}:${m}`);
-  };
+    const m = minutes || "00";
+    const frame = requestAnimationFrame(() => {
+      scrollColumnToValue(hoursScrollRef, HOURS_LIST, h);
+      scrollColumnToValue(minutesScrollRef, MINUTES_LIST, m);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (scrollFrameRef.current) cancelAnimationFrame(scrollFrameRef.current);
+    };
+  }, []);
+
+  const displayHours = hours || "--";
+  const displayMinutes = minutes || "--";
+  const activeHour = hours || "00";
+  const activeMinute = minutes || "00";
 
   return (
     <div className={className} ref={containerRef}>
@@ -250,45 +305,87 @@ export function TimePicker({ label, value, onChange, readOnly, className, icon, 
         <AnimatePresence>
           {isOpen && !readOnly && (
             <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              className="absolute z-50 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl w-48 flex overflow-hidden origin-top"
+              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+              transition={{ duration: 0.14, ease: "easeOut" }}
+              className="absolute z-50 mt-2 w-60 origin-top overflow-hidden rounded-2xl bg-white shadow-[0_0_0_1px_rgba(15,23,42,0.08),0_16px_40px_rgba(15,23,42,0.14)]"
             >
-              <div className="flex-1 flex flex-col items-center border-r border-slate-100">
-                <div className="text-xs font-semibold text-slate-400 py-2 w-full text-center bg-slate-50 border-b border-slate-100">Hour</div>
-                <div ref={hoursScrollRef} className="h-48 overflow-y-auto w-full scrollbar-hide py-2 px-1 custom-scrollbar">
-                  {hoursList.map((h) => (
+              <div className="border-b border-slate-100 bg-slate-50/70 px-3 py-2.5">
+                <div className="flex items-center justify-center gap-1 font-mono text-lg font-semibold tabular-nums text-slate-950">
+                  <span className="w-9 text-center">{displayHours}</span>
+                  <span className="text-slate-300">:</span>
+                  <span className="w-9 text-center">{displayMinutes}</span>
+                </div>
+                <div className="mt-1 flex items-center justify-center gap-8 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  <span>Hour</span>
+                  <span>Minute</span>
+                </div>
+              </div>
+
+              <div className="relative flex px-2 py-2">
+                <div className="pointer-events-none absolute left-2 right-2 top-1/2 z-0 h-9 -translate-y-1/2 rounded-xl bg-sky-50 ring-1 ring-sky-100" />
+                <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-6 w-px -translate-y-1/2 bg-slate-200" />
+
+                <div
+                  ref={hoursScrollRef}
+                  onScroll={(event) =>
+                    handleColumnScroll(event, HOURS_LIST, activeHour, (nextHour) =>
+                      setTime(nextHour, minutes || "00")
+                    )
+                  }
+                  className="relative z-10 flex-1 snap-y snap-mandatory overflow-y-auto overscroll-contain px-1 scrollbar-hide custom-scrollbar"
+                  style={{
+                    height: TIME_PICKER_HEIGHT,
+                    paddingTop: TIME_PICKER_PADDING,
+                    paddingBottom: TIME_PICKER_PADDING,
+                    scrollPaddingTop: TIME_PICKER_PADDING,
+                    scrollPaddingBottom: TIME_PICKER_PADDING,
+                  }}
+                >
+                  {HOURS_LIST.map((h) => (
                     <button
                       key={h}
                       data-value={h}
                       type="button"
                       onClick={() => handleHourSelect(h)}
-                      className={`w-full py-2 text-sm rounded-lg transition-colors ${
-                        h === hours
-                          ? "bg-sky-500 text-white font-semibold shadow-md"
-                          : "text-slate-600 hover:bg-slate-100"
+                      className={`flex h-9 w-full snap-center items-center justify-center rounded-lg font-mono text-sm tabular-nums transition-all ${
+                        h === activeHour
+                          ? "font-semibold text-sky-700"
+                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
                       {h}
                     </button>
                   ))}
                 </div>
-              </div>
-              <div className="flex-1 flex flex-col items-center">
-                <div className="text-xs font-semibold text-slate-400 py-2 w-full text-center bg-slate-50 border-b border-slate-100">Min</div>
-                <div ref={minutesScrollRef} className="h-48 overflow-y-auto w-full scrollbar-hide py-2 px-1 custom-scrollbar">
-                  {minutesList.map((m) => (
+
+                <div
+                  ref={minutesScrollRef}
+                  onScroll={(event) =>
+                    handleColumnScroll(event, MINUTES_LIST, activeMinute, (nextMinute) =>
+                      setTime(hours || "00", nextMinute)
+                    )
+                  }
+                  className="relative z-10 flex-1 snap-y snap-mandatory overflow-y-auto overscroll-contain px-1 scrollbar-hide custom-scrollbar"
+                  style={{
+                    height: TIME_PICKER_HEIGHT,
+                    paddingTop: TIME_PICKER_PADDING,
+                    paddingBottom: TIME_PICKER_PADDING,
+                    scrollPaddingTop: TIME_PICKER_PADDING,
+                    scrollPaddingBottom: TIME_PICKER_PADDING,
+                  }}
+                >
+                  {MINUTES_LIST.map((m) => (
                     <button
                       key={m}
                       data-value={m}
                       type="button"
                       onClick={() => handleMinuteSelect(m)}
-                      className={`w-full py-2 text-sm rounded-lg transition-colors ${
-                        m === minutes
-                          ? "bg-sky-500 text-white font-semibold shadow-md"
-                          : "text-slate-600 hover:bg-slate-100"
+                      className={`flex h-9 w-full snap-center items-center justify-center rounded-lg font-mono text-sm tabular-nums transition-all ${
+                        m === activeMinute
+                          ? "font-semibold text-sky-700"
+                          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
                       {m}

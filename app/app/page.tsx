@@ -20,7 +20,7 @@ import {
   generateFilename,
   ExportFormat,
 } from "@/lib/pdfGenerator";
-import { saveDraft, clearDraft, saveTrackData, clearTrackData, loadTrackData } from "@/lib/storage";
+import { saveDraft, loadDraft, clearDraft, saveTrackData, clearTrackData, loadTrackData } from "@/lib/storage";
 
 type Step = "input" | "preview";
 type PreviewTab = "pdf" | "track";
@@ -80,6 +80,11 @@ export default function Home() {
   const skipNextAutoSave = useRef(true);
 
   useEffect(() => {
+    const draft = loadDraft();
+    if (draft && (draft.flightNumber || draft.date)) {
+      setFlightData(draft);
+      setDraftStatus("saved");
+    }
     skipNextAutoSave.current = false;
   }, []);
 
@@ -142,6 +147,13 @@ export default function Home() {
   const handleSaveDraft = () => {
     saveDraft(flightData);
     setDraftStatus("saved");
+  };
+
+  const handleOpenFullPreview = () => {
+    if (flightData.flightNumber || flightData.date) {
+      saveDraft(flightData);
+      setDraftStatus("saved");
+    }
   };
 
   useEffect(() => {
@@ -627,6 +639,7 @@ export default function Home() {
                     href="/preview"
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={handleOpenFullPreview}
                     className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
                     title="Full View"
                   >

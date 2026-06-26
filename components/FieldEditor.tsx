@@ -1255,7 +1255,7 @@ export default function FieldEditor({
           <InputField
             label={isPro ? "P/Bay" : "Parking Bay"}
             value={data.departure?.parkingBay || ""}
-            onChange={(v) => update("departure.parkingBay", v)}
+            onChange={(v) => update("departure.parkingBay", v.toUpperCase())}
             icon={<CircleParking className="w-4 h-4" />}
           />
           <InputField
@@ -1347,7 +1347,7 @@ export default function FieldEditor({
           <InputField
             label={isPro ? "P/Bay" : "Parking Bay"}
             value={data.arrival?.parkingBay || ""}
-            onChange={(v) => update("arrival.parkingBay", v)}
+            onChange={(v) => update("arrival.parkingBay", v.toUpperCase())}
             icon={<CircleParking className="w-4 h-4" />}
           />
           <TimePicker
