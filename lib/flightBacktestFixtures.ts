@@ -25,6 +25,7 @@ export const CA8565_2026_05_07_BASELINE: Partial<FlightData> = {
     offChocks: "",
     metar: "",
     utcOffset: 8,
+    timeZone: "Asia/Shanghai",
   },
   arrival: {
     airport: {
@@ -39,6 +40,7 @@ export const CA8565_2026_05_07_BASELINE: Partial<FlightData> = {
     onChocks: "",
     metar: "",
     utcOffset: 8,
+    timeZone: "Asia/Shanghai",
   },
   seatNumber: "",
   cabinClass: "Economy",

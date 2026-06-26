@@ -7,18 +7,18 @@ import type { AirportResult } from "./airportLookup";
  */
 const overrides: AirportResult[] = [
   // IATA codes reassigned to new Chinese airports
-  { iata: "LIJ", icao: "ZSLI", name: "Lishui Jinyun Airport", utcOffset: 8 },
-  { iata: "JNH", icao: "ZSJX", name: "Jiaxing Nanhu Airport", utcOffset: 8 },
+  { iata: "LIJ", icao: "ZSLI", name: "Lishui Jinyun Airport", utcOffset: 8, timeZone: "Asia/Shanghai" },
+  { iata: "JNH", icao: "ZSJX", name: "Jiaxing Nanhu Airport", utcOffset: 8, timeZone: "Asia/Shanghai" },
 
   // Completely missing from upstream library
-  { iata: "BZJ", icao: "ZSBO", name: "Bozhou Airport", utcOffset: 8 },
-  { iata: "DHH", icao: "ZWLK", name: "Balikun Dahe Airport", utcOffset: 8 },
+  { iata: "BZJ", icao: "ZSBO", name: "Bozhou Airport", utcOffset: 8, timeZone: "Asia/Shanghai" },
+  { iata: "DHH", icao: "ZWLK", name: "Balikun Dahe Airport", utcOffset: 8, timeZone: "Asia/Shanghai" },
 
   // ICAO codes updated (old codes still in library)
-  { iata: "JSJ", icao: "ZYJS", name: "Jiansanjiang Shidi Airport", utcOffset: 8 },
-  { iata: "TVS", icao: "ZBSN", name: "Tangshan Sannvhe Airport", utcOffset: 8 },
-  { iata: "SHS", icao: "ZHJZ", name: "Jingzhou Shashi Airport", utcOffset: 8 },
-  { iata: "JNG", icao: "ZSJG", name: "Jining Daan Airport", utcOffset: 8 },
+  { iata: "JSJ", icao: "ZYJS", name: "Jiansanjiang Shidi Airport", utcOffset: 8, timeZone: "Asia/Shanghai" },
+  { iata: "TVS", icao: "ZBSN", name: "Tangshan Sannvhe Airport", utcOffset: 8, timeZone: "Asia/Shanghai" },
+  { iata: "SHS", icao: "ZHJZ", name: "Jingzhou Shashi Airport", utcOffset: 8, timeZone: "Asia/Shanghai" },
+  { iata: "JNG", icao: "ZSJG", name: "Jining Daan Airport", utcOffset: 8, timeZone: "Asia/Shanghai" },
 ];
 
 const byIata = new Map<string, AirportResult>();

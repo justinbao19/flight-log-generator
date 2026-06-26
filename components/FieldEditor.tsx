@@ -2,11 +2,14 @@
 
 import { FlightData, DisplayMode, AircraftPhoto } from "@/lib/types";
 import { parsePkpass } from "@/lib/pkpassParser";
-import { decodeMetar, DecodedMetar } from "@/lib/metarDecode";
+import { decodeMetar, DecodedMetar, normalizeMetarText } from "@/lib/metarDecode";
+import { formatUtcOffset, resolveUtcOffset } from "@/lib/timezone";
+import { lookupByIata, lookupByIcao } from "@/lib/airportLookup";
 import AirportInput from "./AirportInput";
 import { DatePicker, TimePicker } from "./DateTimePicker";
 import { useMemo, useEffect, useRef, useState, useCallback, ReactNode } from "react";
-import { Plane, Hash, CloudSun, PlaneTakeoff, PlaneLanding, Radio, Tag, Timer, Hourglass, Globe, CircleParking, AlarmClock, ClockArrowDown, UserRound, MapPin, Satellite, Search, Camera, ExternalLink, CloudDownload, ClipboardPaste, Ticket, Upload, Loader2, Info } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Plane, Hash, CloudSun, PlaneTakeoff, PlaneLanding, Radio, Tag, Timer, Hourglass, CircleParking, AlarmClock, ClockArrowDown, UserRound, MapPin, Satellite, Search, Camera, ExternalLink, CloudDownload, ClipboardPaste, Ticket, Upload, Loader2, Info, Check, ChevronDown } from "lucide-react";
 import { RunwayIcon } from "./icons/RunwayIcon";
 import { CabinClassIcon } from "./icons/CabinClassIcon";
 import { AltitudeIcon } from "./icons/AltitudeIcon";
@@ -70,6 +73,39 @@ function InputField({
   );
 }
 
+async function readClipboardImageFile(): Promise<File | null> {
+  if (!navigator.clipboard?.read) {
+    throw new Error("Clipboard image reading is not available in this browser.");
+  }
+
+  const items = await navigator.clipboard.read();
+  for (const item of items) {
+    const imageType = item.types.find((type) => type.startsWith("image/"));
+    if (!imageType) continue;
+
+    const blob = await item.getType(imageType);
+    const extension = imageType.split("/")[1] || "png";
+    return new File([blob], `pasted-image.${extension}`, { type: imageType });
+  }
+
+  return null;
+}
+
+async function readClipboardImageSource(): Promise<string | null> {
+  if (!navigator.clipboard?.read) return null;
+
+  const items = await navigator.clipboard.read();
+  for (const item of items) {
+    if (!item.types.includes("text/html")) continue;
+    const htmlBlob = await item.getType("text/html");
+    const html = await htmlBlob.text();
+    const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+    if (match?.[1]) return match[1];
+  }
+
+  return null;
+}
+
 function MetarDecodedCard({ decoded }: { decoded: DecodedMetar }) {
   const categoryColor =
     decoded.flightCategory === "VFR"
@@ -129,10 +165,285 @@ function MetarDecodedCard({ decoded }: { decoded: DecodedMetar }) {
   );
 }
 
-function formatUtcOffset(offset: number | undefined): string {
-  if (offset === undefined || offset === null) return "";
-  const sign = offset >= 0 ? "+" : "";
-  return `UTC${sign}${offset}`;
+function UtcOffsetControl({
+  offset,
+  auto,
+  onAdjust,
+}: {
+  offset: number;
+  auto: boolean;
+  onAdjust: (delta: number) => void;
+}) {
+  if (auto) {
+    return (
+      <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-400">
+        {formatUtcOffset(offset)}
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center overflow-hidden rounded-md border border-slate-200 bg-white text-[11px] font-semibold text-slate-500 shadow-sm">
+      <button
+        type="button"
+        onClick={() => onAdjust(-1)}
+        className="px-1.5 py-1 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
+        aria-label="Decrease UTC offset"
+      >
+        -
+      </button>
+      <span className="min-w-12 px-1 text-center text-slate-500">
+        {formatUtcOffset(offset)}
+      </span>
+      <button
+        type="button"
+        onClick={() => onAdjust(1)}
+        className="px-1.5 py-1 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-700"
+        aria-label="Increase UTC offset"
+      >
+        +
+      </button>
+    </span>
+  );
+}
+
+type UnitOption<T extends string> = {
+  value: T;
+  rawLabel: string;
+  decodedLabel: string;
+};
+
+function parseNumber(value: string | number | undefined): number | null {
+  if (value === undefined || value === null) return null;
+  const text = String(value).replace(/,/g, "");
+  const match = text.match(/-?\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const num = Number(match[0]);
+  return Number.isFinite(num) ? num : null;
+}
+
+function formatNumber(value: number | null | undefined, maxFractionDigits = 2): string {
+  if (value === undefined || value === null || !Number.isFinite(value)) return "";
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: maxFractionDigits,
+  }).format(value);
+}
+
+function unitLabel<T extends string>(
+  unit: T,
+  options: UnitOption<T>[],
+  decoded: boolean
+): string {
+  const option = options.find((item) => item.value === unit);
+  return decoded ? option?.decodedLabel ?? unit : option?.rawLabel ?? unit;
+}
+
+function UnitNumberField<T extends string>({
+  label,
+  value,
+  onValueChange,
+  unit,
+  units,
+  onUnitChange,
+  decoded,
+  icon,
+  maxFractionDigits = 2,
+}: {
+  label: string;
+  value: number | null;
+  onValueChange: (value: number | null) => void;
+  unit: T;
+  units: UnitOption<T>[];
+  onUnitChange: (unit: T) => void;
+  decoded: boolean;
+  icon?: ReactNode;
+  maxFractionDigits?: number;
+}) {
+  const currentIndex = Math.max(0, units.findIndex((item) => item.value === unit));
+  const currentLabel = unitLabel(unit, units, decoded);
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-600 mb-1.5 capitalize">
+        {label}
+      </label>
+      <div className="relative flex items-center">
+        {icon && (
+          <div className="absolute left-3 text-slate-400 pointer-events-none flex items-center justify-center">
+            {icon}
+          </div>
+        )}
+        <input
+          type="text"
+          inputMode="decimal"
+          value={formatNumber(value, maxFractionDigits)}
+          onChange={(e) => onValueChange(parseNumber(e.target.value))}
+          className={`w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 sm:py-2 text-base sm:text-sm text-slate-900 transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)] ${
+            icon ? "pl-10" : "pl-3"
+          } pr-28`}
+        />
+        <button
+          type="button"
+          onClick={() => onUnitChange(units[(currentIndex + 1) % units.length].value)}
+          className="absolute right-2 max-w-24 truncate rounded-md bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-700"
+          title="Click to switch unit"
+        >
+          {currentLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const CABIN_CLASS_OPTIONS = ["First", "Business", "Premium Economy", "Economy"];
+
+function CabinClassSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const displayValue = value || "Select...";
+
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <label className="block text-sm font-medium text-slate-600 mb-1.5 capitalize">
+        Cabin Class
+      </label>
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setOpen(false);
+          }
+        }}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`relative flex w-full items-center rounded-xl border border-slate-200 bg-slate-50/50 py-2 pl-10 pr-10 text-left text-base text-slate-900 transition-all sm:text-sm ${
+          open
+            ? "bg-white border-transparent shadow-[0_0_0_3px_rgba(14,165,233,0.15)]"
+            : "hover:bg-white hover:border-slate-300"
+        }`}
+      >
+        <span className="absolute left-3 flex items-center justify-center text-slate-400">
+          <CabinClassIcon className="w-4 h-4" />
+        </span>
+        <span className={value ? "truncate" : "truncate text-slate-500"}>
+          {displayValue}
+        </span>
+        <ChevronDown
+          className={`absolute right-3 h-4 w-4 text-slate-400 transition-transform duration-200 ${
+            open ? "rotate-180 text-slate-500" : ""
+          }`}
+        />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.14, ease: "easeOut" }}
+            className="absolute left-0 right-0 top-full z-40 mt-2 overflow-hidden rounded-xl bg-white p-1 shadow-[0_0_0_1px_rgba(15,23,42,0.08),0_12px_30px_rgba(15,23,42,0.12)]"
+            role="listbox"
+          >
+            <button
+              type="button"
+              role="option"
+              aria-selected={!value}
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+              }}
+              className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                !value
+                  ? "bg-sky-50 text-sky-700"
+                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+              }`}
+            >
+              <span>Select...</span>
+              {!value && <Check className="h-4 w-4" />}
+            </button>
+            {CABIN_CLASS_OPTIONS.map((option) => {
+              const selected = value === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  onClick={() => {
+                    onChange(option);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors ${
+                    selected
+                      ? "bg-sky-50 text-sky-700"
+                      : "text-slate-700 hover:bg-slate-50 hover:text-slate-950"
+                  }`}
+                >
+                  <span>{option}</span>
+                  {selected && <Check className="h-4 w-4" />}
+                </button>
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+type AgeUnit = "yrs" | "mon";
+type AltitudeUnit = "ft" | "m";
+type DistanceUnit = "nm" | "km" | "mi";
+
+const AGE_UNITS: UnitOption<AgeUnit>[] = [
+  { value: "yrs", rawLabel: "Yrs", decodedLabel: "Years" },
+  { value: "mon", rawLabel: "Mon", decodedLabel: "Months" },
+];
+
+const ALTITUDE_UNITS: UnitOption<AltitudeUnit>[] = [
+  { value: "ft", rawLabel: "ft", decodedLabel: "Feet" },
+  { value: "m", rawLabel: "m", decodedLabel: "Meters" },
+];
+
+const DISTANCE_UNITS: UnitOption<DistanceUnit>[] = [
+  { value: "nm", rawLabel: "nm", decodedLabel: "Nautical miles" },
+  { value: "km", rawLabel: "km", decodedLabel: "Kilometers" },
+  { value: "mi", rawLabel: "mi", decodedLabel: "Miles" },
+];
+
+function inferAgeUnit(value?: string): AgeUnit {
+  return /\bmon(?:ths?)?\b/i.test(value || "") ? "mon" : "yrs";
+}
+
+function inferAltitudeUnit(value?: string): AltitudeUnit {
+  return /\bm(?:eter|etre|eters|etres)?\b/i.test(value || "") ? "m" : "ft";
+}
+
+function altitudeToFeet(value?: string): number | null {
+  const text = value || "";
+  const fl = text.match(/\bFL\s*(\d{2,3})\b/i);
+  if (fl) return Number(fl[1]) * 100;
+  const num = parseNumber(text);
+  if (num === null) return null;
+  return inferAltitudeUnit(text) === "m" ? num / 0.3048 : num;
 }
 
 export default function FieldEditor({
@@ -146,6 +457,14 @@ export default function FieldEditor({
   flightLookupLoading,
 }: FieldEditorProps) {
   const isPro = displayMode === "professional";
+  const isDecoded = displayMode === "standard";
+  const [ageUnit, setAgeUnit] = useState<AgeUnit>(() => inferAgeUnit(data.aircraftAge));
+  const [altitudeUnit, setAltitudeUnit] = useState<AltitudeUnit>(() =>
+    inferAltitudeUnit(data.cruisingAltitude)
+  );
+  const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>(
+    () => data.distanceUnit ?? (isPro ? "nm" : "km")
+  );
 
   const [photoReg, setPhotoReg] = useState(data.registration || "");
   const [photoLoading, setPhotoLoading] = useState(false);
@@ -161,6 +480,18 @@ export default function FieldEditor({
     }
     prevRegRef.current = data.registration;
   }, [data.registration]);
+
+  useEffect(() => {
+    setAgeUnit(inferAgeUnit(data.aircraftAge));
+  }, [data.aircraftAge]);
+
+  useEffect(() => {
+    setAltitudeUnit(inferAltitudeUnit(data.cruisingAltitude));
+  }, [data.cruisingAltitude]);
+
+  useEffect(() => {
+    if (data.distanceUnit) setDistanceUnit(data.distanceUnit);
+  }, [data.distanceUnit]);
 
   const handlePhotoSearch = useCallback(async () => {
     const reg = photoReg.trim();
@@ -268,6 +599,39 @@ export default function FieldEditor({
     }
   }, [handleFileUpload, data, onChange]);
 
+  const handlePasteClick = useCallback(async () => {
+    try {
+      const file = await readClipboardImageFile();
+      if (file) {
+        handleFileUpload(file);
+        return;
+      }
+
+      const imageSrc = await readClipboardImageSource();
+      if (imageSrc) {
+        try {
+          const res = await fetch(imageSrc);
+          const blob = await res.blob();
+          if (blob.type.startsWith("image/")) {
+            handleFileUpload(new File([blob], "pasted-image.jpg", { type: blob.type }));
+            return;
+          }
+        } catch {
+          const res = await fetch(`/api/aircraft-photo?proxy=${encodeURIComponent(imageSrc)}`);
+          if (res.ok) {
+            const { dataUrl } = await res.json();
+            onChange({ ...data, selectedPhoto: { dataUrl, photographer: "", link: "" } });
+            return;
+          }
+        }
+      }
+
+      alert("No image was found in the clipboard.");
+    } catch {
+      alert("Clipboard access was blocked. Click the box and use Ctrl+V / Cmd+V instead.");
+    }
+  }, [handleFileUpload, data, onChange]);
+
   // --- Boarding Pass handlers ---
   const bpFileInputRef = useRef<HTMLInputElement>(null);
   const [bpLoading, setBpLoading] = useState(false);
@@ -318,6 +682,19 @@ export default function FieldEditor({
     }
   }, [handleBpFile]);
 
+  const handleBpPasteClick = useCallback(async () => {
+    try {
+      const file = await readClipboardImageFile();
+      if (file) {
+        await handleBpFile(file);
+        return;
+      }
+      alert("No image was found in the clipboard.");
+    } catch {
+      alert("Clipboard access was blocked. Click the box and use Ctrl+V / Cmd+V instead.");
+    }
+  }, [handleBpFile]);
+
   const [metarLoading, setMetarLoading] = useState<"departure" | "arrival" | null>(null);
 
   const handleFetchMetar = useCallback(async (which: "departure" | "arrival") => {
@@ -331,7 +708,8 @@ export default function FieldEditor({
       if (data.date) params.set("date", data.date);
       const time = info?.actualTime || info?.scheduledTime;
       if (time) params.set("time", time);
-      if (info?.utcOffset !== undefined) params.set("utcOffset", String(info.utcOffset));
+      const utcOffset = resolveUtcOffset(info?.timeZone, data.date, time, info?.utcOffset);
+      if (utcOffset !== undefined) params.set("utcOffset", String(utcOffset));
 
       const res = await fetch(`/api/metar?${params}`);
       if (!res.ok) {
@@ -342,7 +720,7 @@ export default function FieldEditor({
       if (metar) {
         onChange({
           ...JSON.parse(JSON.stringify(data)),
-          [which]: { ...JSON.parse(JSON.stringify(info)), metar },
+          [which]: { ...JSON.parse(JSON.stringify(info)), metar: normalizeMetarText(metar) },
         });
       }
     } catch (err) {
@@ -368,6 +746,8 @@ export default function FieldEditor({
     } else if (lastKey === "utcOffset") {
       const num = parseFloat(value);
       target[lastKey] = isNaN(num) ? undefined : num;
+    } else if (lastKey === "timeZone") {
+      target[lastKey] = value || undefined;
     } else {
       target[lastKey] = value;
     }
@@ -392,21 +772,101 @@ export default function FieldEditor({
     onChange(newData);
   }, [data, onChange, setNestedValue]);
 
-  const handleDistanceChange = (value: string) => {
-    const num = parseFloat(value) || 0;
-    if (isPro) {
-      const km = Math.round(num * 1.852);
-      updateMultiple([
-        ["distance.nm", String(num)],
-        ["distance.km", String(km)],
-      ]);
-    } else {
-      const nm = Math.round(num / 1.852);
-      updateMultiple([
-        ["distance.km", String(num)],
-        ["distance.nm", String(nm)],
-      ]);
+  const getAgeInYears = useCallback(() => {
+    const value = parseNumber(data.aircraftAge);
+    if (value === null) return null;
+    return inferAgeUnit(data.aircraftAge) === "mon" ? value / 12 : value;
+  }, [data.aircraftAge]);
+
+  const ageValue = useMemo(() => {
+    const years = getAgeInYears();
+    if (years === null) return null;
+    return ageUnit === "mon" ? years * 12 : years;
+  }, [ageUnit, getAgeInYears]);
+
+  const handleAgeChange = (value: number | null) => {
+    if (value === null) {
+      update("aircraftAge", "");
+      return;
     }
+    update("aircraftAge", `${formatNumber(value, ageUnit === "mon" ? 0 : 1)} ${unitLabel(ageUnit, AGE_UNITS, false)}`);
+  };
+
+  const handleAgeUnitChange = (nextUnit: AgeUnit) => {
+    const years = getAgeInYears();
+    setAgeUnit(nextUnit);
+    if (years === null) return;
+    const nextValue = nextUnit === "mon" ? Math.round(years * 12) : years;
+    update("aircraftAge", `${formatNumber(nextValue, nextUnit === "mon" ? 0 : 1)} ${unitLabel(nextUnit, AGE_UNITS, false)}`);
+  };
+
+  const getAltitudeInFeet = useCallback(
+    () => altitudeToFeet(data.cruisingAltitude),
+    [data.cruisingAltitude]
+  );
+
+  const altitudeValue = useMemo(() => {
+    const feet = getAltitudeInFeet();
+    if (feet === null) return null;
+    return altitudeUnit === "m" ? feet * 0.3048 : feet;
+  }, [altitudeUnit, getAltitudeInFeet]);
+
+  const handleAltitudeChange = (value: number | null) => {
+    if (value === null) {
+      update("cruisingAltitude", "");
+      return;
+    }
+    update("cruisingAltitude", `${formatNumber(value, 0)} ${altitudeUnit}`);
+  };
+
+  const handleAltitudeUnitChange = (nextUnit: AltitudeUnit) => {
+    const feet = getAltitudeInFeet();
+    setAltitudeUnit(nextUnit);
+    if (feet === null) return;
+    const nextValue = nextUnit === "m" ? feet * 0.3048 : feet;
+    update("cruisingAltitude", `${formatNumber(nextValue, 0)} ${nextUnit}`);
+  };
+
+  const distanceValue = useMemo(() => {
+    const km = data.distance?.km || 0;
+    const nm = data.distance?.nm || km / 1.852;
+    if (distanceUnit === "km") return km || nm * 1.852 || null;
+    if (distanceUnit === "mi") return (km || nm * 1.852) * 0.621371;
+    return nm || km / 1.852 || null;
+  }, [data.distance?.km, data.distance?.nm, distanceUnit]);
+
+  const updateDistanceFromUnit = (value: number | null, unit: DistanceUnit) => {
+    if (value === null) {
+      updateMultiple([
+        ["distance.km", ""],
+        ["distance.nm", ""],
+        ["distanceUnit", unit],
+      ]);
+      return;
+    }
+
+    const km =
+      unit === "km" ? value : unit === "mi" ? value / 0.621371 : value * 1.852;
+    const nm = km / 1.852;
+    updateMultiple([
+      ["distance.km", String(km)],
+      ["distance.nm", String(nm)],
+      ["distanceUnit", unit],
+    ]);
+  };
+
+  const handleDistanceChange = (value: number | null) => {
+    updateDistanceFromUnit(value, distanceUnit);
+  };
+
+  const handleDistanceUnitChange = (nextUnit: DistanceUnit) => {
+    const km = data.distance?.km || (data.distance?.nm || 0) * 1.852;
+    setDistanceUnit(nextUnit);
+    update("distanceUnit", nextUnit);
+    if (!km) return;
+    const nextValue =
+      nextUnit === "km" ? km : nextUnit === "mi" ? km * 0.621371 : km / 1.852;
+    updateDistanceFromUnit(nextValue, nextUnit);
   };
 
   const handleAirportChange = (
@@ -416,26 +876,141 @@ export default function FieldEditor({
       iata: string;
       icao: string;
       utcOffset?: number;
+      timeZone?: string;
     }
   ) => {
+    const info = data[prefix];
+    const time = info?.actualTime || info?.scheduledTime;
+    const utcOffset = resolveUtcOffset(
+      airport.timeZone,
+      data.date,
+      time,
+      airport.utcOffset
+    );
     const updates: [string, string][] = [
       [`${prefix}.airport.name`, airport.name],
       [`${prefix}.airport.iata`, airport.iata],
       [`${prefix}.airport.icao`, airport.icao],
+      [`${prefix}.timeZone`, airport.timeZone || ""],
     ];
-    if (airport.utcOffset !== undefined) {
-      updates.push([`${prefix}.utcOffset`, String(airport.utcOffset)]);
+    if (utcOffset !== undefined) {
+      updates.push([`${prefix}.utcOffset`, String(utcOffset)]);
     }
     updateMultiple(updates);
   };
+
+  const getUtcOffset = useCallback(
+    (prefix: "departure" | "arrival", time?: string): number | undefined => {
+      const info = data[prefix];
+      return (
+        resolveUtcOffset(info?.timeZone, data.date, time, info?.utcOffset) ??
+        (info?.timeZone ? undefined : info?.utcOffset ?? 0)
+      );
+    },
+    [data]
+  );
+
+  const adjustManualUtcOffset = useCallback(
+    (prefix: "departure" | "arrival", delta: number) => {
+      const current = data[prefix]?.utcOffset ?? 0;
+      const next = Math.max(-12, Math.min(14, current + delta));
+      update(`${prefix}.utcOffset`, String(next));
+    },
+    [data, update]
+  );
+
+  const renderUtcSuffix = (
+    prefix: "departure" | "arrival",
+    time?: string
+  ) => (
+    <UtcOffsetControl
+      offset={getUtcOffset(prefix, time) ?? 0}
+      auto={Boolean(data[prefix]?.timeZone)}
+      onAdjust={(delta) => adjustManualUtcOffset(prefix, delta)}
+    />
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function resolveMissingAirportTimeZone(prefix: "departure" | "arrival") {
+      const info = data[prefix];
+      if (info?.timeZone || (!info?.airport?.iata && !info?.airport?.icao)) return;
+
+      const airport =
+        (info.airport.iata ? await lookupByIata(info.airport.iata) : null) ||
+        (info.airport.icao ? await lookupByIcao(info.airport.icao) : null);
+
+      if (cancelled || !airport?.timeZone) return;
+
+      const offset = resolveUtcOffset(
+        airport.timeZone,
+        data.date,
+        info.actualTime || info.scheduledTime,
+        airport.utcOffset ?? info.utcOffset
+      );
+      const updates: [string, string][] = [[`${prefix}.timeZone`, airport.timeZone]];
+      if (offset !== undefined) updates.push([`${prefix}.utcOffset`, String(offset)]);
+      updateMultiple(updates);
+    }
+
+    void resolveMissingAirportTimeZone("departure");
+    void resolveMissingAirportTimeZone("arrival");
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    data.departure?.airport?.iata,
+    data.departure?.airport?.icao,
+    data.departure?.timeZone,
+    data.arrival?.airport?.iata,
+    data.arrival?.airport?.icao,
+    data.arrival?.timeZone,
+    data.date,
+    data.departure?.actualTime,
+    data.departure?.scheduledTime,
+    data.arrival?.actualTime,
+    data.arrival?.scheduledTime,
+    updateMultiple,
+  ]);
+
+  useEffect(() => {
+    const updates: [string, string][] = [];
+    (["departure", "arrival"] as const).forEach((prefix) => {
+      const info = data[prefix];
+      if (!info?.timeZone) return;
+      const offset = resolveUtcOffset(
+        info.timeZone,
+        data.date,
+        info.actualTime || info.scheduledTime,
+        info.utcOffset
+      );
+      if (offset !== undefined && offset !== info.utcOffset) {
+        updates.push([`${prefix}.utcOffset`, String(offset)]);
+      }
+    });
+    if (updates.length > 0) updateMultiple(updates);
+  }, [
+    data.date,
+    data.departure?.scheduledTime,
+    data.departure?.actualTime,
+    data.departure?.timeZone,
+    data.departure?.utcOffset,
+    data.arrival?.scheduledTime,
+    data.arrival?.actualTime,
+    data.arrival?.timeZone,
+    data.arrival?.utcOffset,
+    updateMultiple,
+  ]);
 
   const computedDuration = useMemo(() => {
     const depTime = data.departure?.actualTime;
     const arrTime = data.arrival?.actualTime;
     if (!depTime || !arrTime) return null;
 
-    const depOffset = data.departure?.utcOffset;
-    const arrOffset = data.arrival?.utcOffset;
+    const depOffset = getUtcOffset("departure", depTime);
+    const arrOffset = getUtcOffset("arrival", arrTime);
     if (depOffset === undefined || arrOffset === undefined) return null;
 
     const [dh, dm] = depTime.split(":").map(Number);
@@ -458,6 +1033,10 @@ export default function FieldEditor({
     data.arrival?.actualTime,
     data.departure?.utcOffset,
     data.arrival?.utcOffset,
+    data.departure?.timeZone,
+    data.arrival?.timeZone,
+    data.date,
+    getUtcOffset,
   ]);
 
   const prevDurationRef = useRef(computedDuration);
@@ -614,24 +1193,36 @@ export default function FieldEditor({
             readOnly={!!computedDuration}
             icon={<Timer className="w-4 h-4" />}
           />
-          <InputField
+          <UnitNumberField
             label={isPro ? "Age" : "Aircraft Age"}
-            value={data.aircraftAge || ""}
-            onChange={(v) => update("aircraftAge", v)}
+            value={ageValue}
+            onValueChange={handleAgeChange}
+            unit={ageUnit}
+            units={AGE_UNITS}
+            onUnitChange={handleAgeUnitChange}
+            decoded={isDecoded}
             icon={<Hourglass className="w-4 h-4" />}
+            maxFractionDigits={ageUnit === "mon" ? 0 : 1}
           />
-          <InputField
+          <UnitNumberField
             label={isPro ? "CRZ ALT" : "Cruising Altitude"}
-            value={data.cruisingAltitude}
-            onChange={(v) => update("cruisingAltitude", v)}
+            value={altitudeValue}
+            onValueChange={handleAltitudeChange}
+            unit={altitudeUnit}
+            units={ALTITUDE_UNITS}
+            onUnitChange={handleAltitudeUnitChange}
+            decoded={isDecoded}
             icon={<AltitudeIcon className="w-4 h-4" />}
+            maxFractionDigits={0}
           />
-          <InputField
-            label={isPro ? "Distance (nm)" : "Distance (km)"}
-            value={String(
-              isPro ? data.distance?.nm || "" : data.distance?.km || ""
-            )}
-            onChange={handleDistanceChange}
+          <UnitNumberField
+            label={isPro ? "Distance" : "Distance"}
+            value={distanceValue}
+            onValueChange={handleDistanceChange}
+            unit={distanceUnit}
+            units={DISTANCE_UNITS}
+            onUnitChange={handleDistanceUnitChange}
+            decoded={isDecoded}
             icon={<DistanceIcon className="w-4 h-4" />}
           />
           <div className="col-span-1 sm:col-span-2">
@@ -661,15 +1252,6 @@ export default function FieldEditor({
             }
             labelPrefix={isPro ? "Airport" : "Departure Airport"}
           />
-          {data.departure?.utcOffset !== undefined && (
-            <InputField
-              label={isPro ? "UTC" : "UTC Timezone"}
-              value={formatUtcOffset(data.departure.utcOffset)}
-              onChange={() => {}}
-              readOnly
-              icon={<Globe className="w-4 h-4" />}
-            />
-          )}
           <InputField
             label={isPro ? "P/Bay" : "Parking Bay"}
             value={data.departure?.parkingBay || ""}
@@ -679,7 +1261,7 @@ export default function FieldEditor({
           <InputField
             label={isPro ? "T/O RWY" : "Takeoff Runway"}
             value={data.departure?.runway || ""}
-            onChange={(v) => update("departure.runway", v)}
+            onChange={(v) => update("departure.runway", v.toUpperCase())}
             icon={<RunwayIcon className="w-4 h-4" />}
           />
           <TimePicker
@@ -687,12 +1269,14 @@ export default function FieldEditor({
             value={data.departure?.scheduledTime || ""}
             onChange={(v) => update("departure.scheduledTime", v)}
             icon={<AlarmClock className="w-4 h-4" />}
+            suffix={renderUtcSuffix("departure", data.departure?.scheduledTime)}
           />
           <TimePicker
             label={isPro ? "ACT DEP" : "Actual Departure"}
             value={data.departure?.actualTime || ""}
             onChange={(v) => update("departure.actualTime", v)}
             icon={<ClockArrowDown className="w-4 h-4" />}
+            suffix={renderUtcSuffix("departure", data.departure?.actualTime)}
           />
           <TimePicker
             label={isPro ? "OFF-CHK" : "Off-Chocks Time"}
@@ -707,7 +1291,7 @@ export default function FieldEditor({
                 <InputField
                   label={isPro ? "METAR" : "Weather (paste METAR)"}
                   value={data.departure?.metar || ""}
-                  onChange={(v) => update("departure.metar", v)}
+                  onChange={(v) => update("departure.metar", normalizeMetarText(v))}
                   icon={<CloudSun className="w-4 h-4" />}
                 />
               </div>
@@ -754,19 +1338,10 @@ export default function FieldEditor({
             }
             labelPrefix={isPro ? "Airport" : "Arrival Airport"}
           />
-          {data.arrival?.utcOffset !== undefined && (
-            <InputField
-              label={isPro ? "UTC" : "UTC Timezone"}
-              value={formatUtcOffset(data.arrival.utcOffset)}
-              onChange={() => {}}
-              readOnly
-              icon={<Globe className="w-4 h-4" />}
-            />
-          )}
           <InputField
             label={isPro ? "LDG RWY" : "Landing Runway"}
             value={data.arrival?.runway || ""}
-            onChange={(v) => update("arrival.runway", v)}
+            onChange={(v) => update("arrival.runway", v.toUpperCase())}
             icon={<RunwayIcon className="w-4 h-4" />}
           />
           <InputField
@@ -780,12 +1355,14 @@ export default function FieldEditor({
             value={data.arrival?.scheduledTime || ""}
             onChange={(v) => update("arrival.scheduledTime", v)}
             icon={<AlarmClock className="w-4 h-4" />}
+            suffix={renderUtcSuffix("arrival", data.arrival?.scheduledTime)}
           />
           <TimePicker
             label={isPro ? "ACT ARR" : "Actual Arrival"}
             value={data.arrival?.actualTime || ""}
             onChange={(v) => update("arrival.actualTime", v)}
             icon={<ClockArrowDown className="w-4 h-4" />}
+            suffix={renderUtcSuffix("arrival", data.arrival?.actualTime)}
           />
           <TimePicker
             label={isPro ? "ON-CHK" : "On-Chocks Time"}
@@ -800,7 +1377,7 @@ export default function FieldEditor({
                 <InputField
                   label={isPro ? "METAR" : "Weather (paste METAR)"}
                   value={data.arrival?.metar || ""}
-                  onChange={(v) => update("arrival.metar", v)}
+                  onChange={(v) => update("arrival.metar", normalizeMetarText(v))}
                   icon={<CloudSun className="w-4 h-4" />}
                 />
               </div>
@@ -841,35 +1418,13 @@ export default function FieldEditor({
           <InputField
             label={isPro ? "Seat No." : "Seat Number"}
             value={data.seatNumber || ""}
-            onChange={(v) => update("seatNumber", v)}
+            onChange={(v) => update("seatNumber", v.toUpperCase())}
             icon={<Hash className="w-4 h-4" />}
           />
-          <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1.5 capitalize">
-              Cabin Class
-            </label>
-            <div className="relative flex items-center">
-              <div className="absolute left-3 text-slate-400 pointer-events-none flex items-center justify-center">
-                <CabinClassIcon className="w-4 h-4" />
-              </div>
-              <select
-                value={data.cabinClass || ""}
-                onChange={(e) => update("cabinClass", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3 py-2 sm:py-2 text-base sm:text-sm text-slate-900 appearance-none transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)]"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 0.75rem center",
-                }}
-              >
-                <option value="">Select...</option>
-                <option value="First">First</option>
-                <option value="Business">Business</option>
-                <option value="Premium Economy">Premium Economy</option>
-                <option value="Economy">Economy</option>
-              </select>
-            </div>
-          </div>
+          <CabinClassSelect
+            value={data.cabinClass || ""}
+            onChange={(value) => update("cabinClass", value)}
+          />
         </div>
       </section>
 
@@ -1022,15 +1577,38 @@ export default function FieldEditor({
           ) : (
             <div
               tabIndex={0}
-              className="rounded-xl border-2 border-dashed border-slate-200 hover:border-sky-300 focus:border-sky-300 focus:ring-2 focus:ring-sky-100 bg-slate-50/50 hover:bg-sky-50/30 transition-all cursor-pointer p-4 text-center outline-none"
-              onClick={() => fileInputRef.current?.click()}
+              className="rounded-xl border-2 border-dashed border-slate-200 hover:border-sky-300 focus:border-sky-300 focus:ring-2 focus:ring-sky-100 bg-slate-50/50 hover:bg-sky-50/30 transition-all p-4 text-center outline-none"
+              onClick={(e) => e.currentTarget.focus()}
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
               onPaste={handlePaste}
             >
               <Camera className="w-5 h-5 text-slate-400 mx-auto mb-1.5" />
               <p className="text-xs text-slate-500">
-                Drop, <span className="text-sky-500 font-medium">browse</span>, or <span className="inline-flex items-center gap-0.5 align-text-bottom text-sky-500 font-medium"><ClipboardPaste className="w-3 h-3" />paste</span> an image
+                Drop,{" "}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
+                  className="font-medium text-sky-500 underline-offset-2 hover:text-sky-600 hover:underline"
+                >
+                  browse
+                </button>
+                , or{" "}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void handlePasteClick();
+                  }}
+                  className="inline-flex items-center gap-0.5 align-text-bottom font-medium text-sky-500 underline-offset-2 hover:text-sky-600 hover:underline"
+                >
+                  <ClipboardPaste className="w-3 h-3" />
+                  paste
+                </button>{" "}
+                an image
               </p>
               <p className="text-[10px] text-slate-400 mt-0.5">Supports pasting photos copied from websites</p>
               <input
@@ -1102,8 +1680,8 @@ export default function FieldEditor({
         ) : (
           <div
             tabIndex={0}
-            className="rounded-xl border-2 border-dashed border-slate-200 hover:border-sky-300 focus:border-sky-300 focus:ring-2 focus:ring-sky-100 bg-slate-50/50 hover:bg-sky-50/30 transition-all cursor-pointer p-4 text-center outline-none"
-            onClick={() => bpFileInputRef.current?.click()}
+            className="rounded-xl border-2 border-dashed border-slate-200 hover:border-sky-300 focus:border-sky-300 focus:ring-2 focus:ring-sky-100 bg-slate-50/50 hover:bg-sky-50/30 transition-all p-4 text-center outline-none"
+            onClick={(e) => e.currentTarget.focus()}
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleBpDrop}
             onPaste={handleBpPaste}
@@ -1117,7 +1695,29 @@ export default function FieldEditor({
               <>
                 <Upload className="w-5 h-5 text-slate-400 mx-auto mb-1.5" />
                 <p className="text-xs text-slate-500">
-                  Drop, <span className="text-sky-500 font-medium">browse</span>, or <span className="inline-flex items-center gap-0.5 align-text-bottom text-sky-500 font-medium"><ClipboardPaste className="w-3 h-3" />paste</span>
+                  Drop,{" "}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      bpFileInputRef.current?.click();
+                    }}
+                    className="font-medium text-sky-500 underline-offset-2 hover:text-sky-600 hover:underline"
+                  >
+                    browse
+                  </button>
+                  , or{" "}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void handleBpPasteClick();
+                    }}
+                    className="inline-flex items-center gap-0.5 align-text-bottom font-medium text-sky-500 underline-offset-2 hover:text-sky-600 hover:underline"
+                  >
+                    <ClipboardPaste className="w-3 h-3" />
+                    paste
+                  </button>
                 </p>
                 <p className="text-[10px] text-slate-400 mt-0.5">
                   Supports images, screenshots, and Apple Wallet .pkpass files

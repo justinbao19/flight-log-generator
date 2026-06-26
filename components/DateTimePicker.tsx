@@ -163,9 +163,10 @@ interface TimePickerProps {
   readOnly?: boolean;
   className?: string;
   icon?: ReactNode;
+  suffix?: ReactNode;
 }
 
-export function TimePicker({ label, value, onChange, readOnly, className, icon }: TimePickerProps) {
+export function TimePicker({ label, value, onChange, readOnly, className, icon, suffix }: TimePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -222,24 +223,28 @@ export function TimePicker({ label, value, onChange, readOnly, className, icon }
         {label}
       </label>
       <div className="relative">
-        <div
-          onClick={() => !readOnly && setIsOpen(!isOpen)}
-          className="cursor-pointer"
-        >
-          <div className="relative flex items-center pointer-events-none">
-            <div className="absolute left-3 text-slate-400 flex items-center justify-center">
-              {icon || <Clock className="w-4 h-4" />}
-            </div>
-            <input
-              type="text"
-              readOnly
-              value={value || ""}
-              placeholder="Select time"
-              className={`w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 sm:py-2 text-base sm:text-sm text-slate-900 transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)] pl-10 pr-3 ${
-                readOnly ? "bg-slate-100 text-slate-500 cursor-not-allowed" : "cursor-pointer"
-              }`}
-            />
+        <div className="relative flex items-center">
+          <div className="pointer-events-none absolute left-3 flex items-center justify-center text-slate-400">
+            {icon || <Clock className="w-4 h-4" />}
           </div>
+          <input
+            type="text"
+            readOnly
+            value={value || ""}
+            placeholder="Select time"
+            onClick={() => !readOnly && setIsOpen(!isOpen)}
+            className={`w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2 sm:py-2 text-base sm:text-sm text-slate-900 transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)] pl-10 ${
+              suffix ? "pr-28" : "pr-3"
+            } ${readOnly ? "bg-slate-100 text-slate-500 cursor-not-allowed" : "cursor-pointer"}`}
+          />
+          {suffix && (
+            <div
+              className="absolute right-2 flex items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {suffix}
+            </div>
+          )}
         </div>
 
         <AnimatePresence>

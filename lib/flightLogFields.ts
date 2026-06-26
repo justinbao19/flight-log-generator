@@ -108,6 +108,15 @@ export const FLIGHT_LOG_FIELDS: FlightLogFieldDefinition[] = [
     description: "Great-circle or flown distance in nautical miles.",
   },
   {
+    path: "distanceUnit",
+    label: "Distance Display Unit",
+    section: "General Flight Info",
+    type: "enum",
+    enumValues: ["nm", "km", "mi"],
+    example: "km",
+    description: "Preferred display unit for distance.",
+  },
+  {
     path: "cruisingAltitude",
     label: "Cruising Altitude",
     section: "General Flight Info",

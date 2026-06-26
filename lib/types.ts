@@ -14,6 +14,7 @@ export interface AirportInfo {
   onChocks?: string;
   metar?: string;
   utcOffset?: number;
+  timeZone?: string;
 }
 
 export interface SelectedPhoto {
@@ -48,6 +49,7 @@ export interface FlightData {
     km: number;
     nm: number;
   };
+  distanceUnit?: "nm" | "km" | "mi";
   cruisingAltitude: string;
   majorWaypoints?: string;
   departure: AirportInfo;
@@ -98,6 +100,7 @@ function createEmptyAirportInfo(): AirportInfo {
     onChocks: "",
     metar: "",
     utcOffset: undefined,
+    timeZone: undefined,
   };
 }
 
@@ -111,6 +114,7 @@ export function createEmptyFlightData(): FlightData {
     flightDuration: "",
     aircraftAge: "",
     distance: { km: 0, nm: 0 },
+    distanceUnit: undefined,
     cruisingAltitude: "",
     majorWaypoints: "",
     departure: createEmptyAirportInfo(),
@@ -130,6 +134,7 @@ export function createSampleFlightData(): FlightData {
     registration: "B-1615",
     flightDuration: "2h 02min",
     distance: { km: 1075, nm: 580 },
+    distanceUnit: "nm",
     cruisingAltitude: "FL276",
     majorWaypoints: "POMOK - PIMOL - UDINO - GOLAL",
     departure: {
@@ -145,6 +150,7 @@ export function createSampleFlightData(): FlightData {
       offChocks: "09:25",
       metar: "METAR ZSSS 280100Z 36004KT 9999 FEW040 10/03 Q1026 NOSIG",
       utcOffset: 8,
+      timeZone: "Asia/Shanghai",
     },
     arrival: {
       airport: {
@@ -159,6 +165,7 @@ export function createSampleFlightData(): FlightData {
       onChocks: "11:40",
       metar: "METAR ZBAD 280300Z 02008KT CAVOK 05/M06 Q1029 NOSIG",
       utcOffset: 8,
+      timeZone: "Asia/Shanghai",
     },
     seatNumber: "31A",
     cabinClass: "Economy",

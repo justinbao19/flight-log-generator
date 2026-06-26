@@ -252,6 +252,7 @@ async function enrichAirport(
       name: airport.name || info.airport.name,
     },
     utcOffset: airport.utcOffset ?? info.utcOffset,
+    timeZone: airport.timeZone ?? info.timeZone,
   };
   status[`${which}Airport`] = {
     ok: true,

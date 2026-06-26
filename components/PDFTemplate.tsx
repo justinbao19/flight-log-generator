@@ -2,6 +2,7 @@
 
 import { FlightData, AirlineInfo, DisplayMode } from "@/lib/types";
 import { decodeMetarSummary } from "@/lib/metarDecode";
+import { formatUtcOffset, resolveUtcOffset } from "@/lib/timezone";
 import AirlineLogo from "./AirlineLogo";
 import {
   Camera,
@@ -34,15 +35,48 @@ function formatDate(dateStr: string): string {
   }
 }
 
-function formatUtc(offset: number | undefined): string {
-  if (offset === undefined || offset === null) return "";
-  const sign = offset >= 0 ? "+" : "";
-  return `UTC ( ${sign}${offset} )`;
-}
-
 const mono: React.CSSProperties = {
   fontFamily: "var(--font-b612-mono), 'B612 Mono', 'Courier New', monospace",
 };
+
+function formatNumber(value: number | undefined, maxFractionDigits = 2): string {
+  if (value === undefined || value === null || !Number.isFinite(value)) return "N/A";
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: maxFractionDigits,
+  }).format(value);
+}
+
+function formatTimeWithUtc(
+  time: string | undefined,
+  date: string,
+  timeZone: string | undefined,
+  fallbackOffset: number | undefined
+): string {
+  if (!time) return "N/A";
+  const offset = resolveUtcOffset(timeZone, date, time, fallbackOffset);
+  const utc = formatUtcOffset(offset);
+  return utc ? `${time} (${utc})` : time;
+}
+
+function formatDistance(
+  data: FlightData,
+  isPro: boolean
+): string {
+  const unit = data.distanceUnit ?? (isPro ? "nm" : "km");
+  const km = data.distance?.km || 0;
+  const nm = data.distance?.nm || km / 1.852;
+
+  if (unit === "mi") {
+    const miles = (km || nm * 1.852) * 0.621371;
+    return `${formatNumber(miles)} ${isPro ? "mi" : "miles"}`;
+  }
+  if (unit === "km") {
+    const value = km || nm * 1.852;
+    return `${formatNumber(value)} ${isPro ? "km" : "kilometers"}`;
+  }
+  const value = nm || km / 1.852;
+  return `${formatNumber(value)} ${isPro ? "nm" : "nautical miles"}`;
+}
 
 export default function PDFTemplate({
   data,
@@ -52,13 +86,7 @@ export default function PDFTemplate({
   const isPro = displayMode === "professional";
   const shouldRenderAllianceLogo = Boolean(airline?.allianceLogoUrl);
 
-  const distanceDisplay = isPro
-    ? data.distance
-      ? `${data.distance.nm} nm`
-      : "N/A"
-    : data.distance
-      ? `${data.distance.km} km`
-      : "N/A";
+  const distanceDisplay = data.distance ? formatDistance(data, isPro) : "N/A";
 
   const depMetarDisplay = data.departure?.metar
     ? isPro
@@ -237,21 +265,32 @@ export default function PDFTemplate({
             </span>
             <span>
               <strong>{isPro ? "SKED DEP:" : "SCHEDULED DEP:"}</strong>{" "}
-              <span style={mono}>{data.departure?.scheduledTime || "N/A"}</span>
+              <span style={mono}>
+                {formatTimeWithUtc(
+                  data.departure?.scheduledTime,
+                  data.date,
+                  data.departure?.timeZone,
+                  data.departure?.utcOffset
+                )}
+              </span>
             </span>
           </div>
           <div className="flex gap-8">
             <span>
               <strong>{isPro ? "ACT DEP:" : "ACTUAL DEP:"}</strong>{" "}
-              <span style={mono}>{data.departure?.actualTime || "N/A"}</span>
+              <span style={mono}>
+                {formatTimeWithUtc(
+                  data.departure?.actualTime,
+                  data.date,
+                  data.departure?.timeZone,
+                  data.departure?.utcOffset
+                )}
+              </span>
             </span>
             <span>
               <strong>{isPro ? "OFF-CHK:" : "OFF-CHOCKS:"}</strong>{" "}
               <span style={mono}>{data.departure?.offChocks || "N/A"}</span>
             </span>
-            {data.departure?.utcOffset !== undefined && (
-              <span style={mono}>{formatUtc(data.departure.utcOffset)}</span>
-            )}
           </div>
           {depMetarDisplay && (
             <div className="text-[8.5pt] mt-1">
@@ -288,11 +327,25 @@ export default function PDFTemplate({
             </span>
             <span>
               <strong>{isPro ? "SKED ARR:" : "SCHEDULED ARR:"}</strong>{" "}
-              <span style={mono}>{data.arrival?.scheduledTime || "N/A"}</span>
+              <span style={mono}>
+                {formatTimeWithUtc(
+                  data.arrival?.scheduledTime,
+                  data.date,
+                  data.arrival?.timeZone,
+                  data.arrival?.utcOffset
+                )}
+              </span>
             </span>
             <span>
               <strong>{isPro ? "ACT ARR:" : "ACTUAL ARR:"}</strong>{" "}
-              <span style={mono}>{data.arrival?.actualTime || "N/A"}</span>
+              <span style={mono}>
+                {formatTimeWithUtc(
+                  data.arrival?.actualTime,
+                  data.date,
+                  data.arrival?.timeZone,
+                  data.arrival?.utcOffset
+                )}
+              </span>
             </span>
           </div>
           <div className="flex gap-8">
@@ -300,9 +353,6 @@ export default function PDFTemplate({
               <strong>{isPro ? "ON-CHK:" : "ON-CHOCKS:"}</strong>{" "}
               <span style={mono}>{data.arrival?.onChocks || "N/A"}</span>
             </span>
-            {data.arrival?.utcOffset !== undefined && (
-              <span style={mono}>{formatUtc(data.arrival.utcOffset)}</span>
-            )}
             <span>
               <strong>{isPro ? "P/BAY:" : "PARKING BAY:"}</strong>{" "}
               <span style={mono}>{data.arrival?.parkingBay || "N/A"}</span>

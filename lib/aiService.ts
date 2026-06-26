@@ -93,6 +93,7 @@ function getSystemPrompt(): string {
     "km": 2042,
     "nm": 1102.6
   },
+  "distanceUnit": "km",
   "cruisingAltitude": "39,100 ft",
   "departure": {
     "airport": {
@@ -132,7 +133,8 @@ function getSystemPrompt(): string {
 4. 航班号自动识别航空公司（前两位字母/数字）
 5. 机场代码优先使用 IATA，同时提取 ICAO
 6. 数字字段去掉逗号分隔符（例如 "39,100" → 39100）
-7. 机场全称请用英文
+7. distanceUnit 表示原始资料里的距离单位，可用 "km"、"nm" 或 "mi"；如果原文写的是 km，优先输出 "km"
+8. 机场全称请用英文
 
 仅返回 JSON，不要任何解释文字。`;
 }

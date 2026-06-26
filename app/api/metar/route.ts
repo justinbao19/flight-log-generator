@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { lookupByIcao } from "@/lib/airportLookup";
+import { normalizeMetarText } from "@/lib/metarDecode";
 
 const AWC_BASE = "https://aviationweather.gov/api/data/metar";
 const IEM_BASE = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py";
@@ -206,7 +207,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({ metar, source });
+    return NextResponse.json({ metar: normalizeMetarText(metar), source });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to fetch METAR";
     return NextResponse.json({ error: message }, { status: 500 });

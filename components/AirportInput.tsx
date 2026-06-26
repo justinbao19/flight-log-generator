@@ -18,6 +18,7 @@ interface AirportInputProps {
     iata: string;
     icao: string;
     utcOffset?: number;
+    timeZone?: string;
   }) => void;
   labelPrefix?: string;
 }
@@ -60,6 +61,7 @@ export default function AirportInput({
         iata: airport.iata,
         icao: airport.icao,
         utcOffset: airport.utcOffset,
+        timeZone: airport.timeZone,
       });
       setSuggestions([]);
       setShowSuggestions(false);
@@ -118,6 +120,7 @@ export default function AirportInput({
           iata: upper,
           icao: result.icao,
           utcOffset: result.utcOffset,
+          timeZone: result.timeZone,
         });
       }
     }
@@ -135,6 +138,7 @@ export default function AirportInput({
           iata: result.iata,
           icao: upper,
           utcOffset: result.utcOffset,
+          timeZone: result.timeZone,
         });
       }
     }

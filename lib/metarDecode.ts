@@ -59,6 +59,10 @@ export interface DecodedMetar {
   flightCategory: string;
 }
 
+export function normalizeMetarText(raw: string): string {
+  return raw.replace(/^\s*METAR\s+/i, "").trim();
+}
+
 function decodeConditions(
   conditions: { code: string }[]
 ): string {
@@ -78,11 +82,12 @@ function decodeConditions(
 }
 
 export function decodeMetar(raw: string): DecodedMetar | null {
-  if (!raw || raw.trim().length < 10) return null;
+  const normalizedRaw = normalizeMetarText(raw);
+  if (!normalizedRaw || normalizedRaw.length < 10) return null;
 
   try {
-    const m = metarParser(raw);
-    const hasCavok = raw.toUpperCase().includes("CAVOK");
+    const m = metarParser(normalizedRaw);
+    const hasCavok = normalizedRaw.toUpperCase().includes("CAVOK");
 
     let wind = "Calm";
     if (m.wind && m.wind.speed_kts > 0) {

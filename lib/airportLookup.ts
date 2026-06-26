@@ -9,6 +9,7 @@ export interface AirportResult {
   icao: string;
   name: string;
   utcOffset?: number;
+  timeZone?: string;
 }
 
 type AirportDataModule = typeof import("airport-data-js");
@@ -37,6 +38,7 @@ export async function lookupByIata(
         icao: a.icao || "",
         name: a.airport || "",
         utcOffset: typeof a.utc === "number" ? a.utc : undefined,
+        timeZone: typeof a.time === "string" ? a.time : undefined,
       };
     }
   } catch {
@@ -61,6 +63,7 @@ export async function lookupByIcao(
         icao: a.icao || "",
         name: a.airport || "",
         utcOffset: typeof a.utc === "number" ? a.utc : undefined,
+        timeZone: typeof a.time === "string" ? a.time : undefined,
       };
     }
   } catch {
@@ -88,6 +91,7 @@ export async function searchByName(
           icao: a.icao || "",
           name: a.airport || "",
           utcOffset: typeof a.utc === "number" ? a.utc : undefined,
+          timeZone: typeof a.time === "string" ? a.time : undefined,
         }));
     }
   } catch {
