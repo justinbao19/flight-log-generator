@@ -38,7 +38,7 @@ function DisplayModeSwitch({
 }) {
   return (
     <div
-      className="grid grid-cols-2 rounded-xl border border-gray-200 bg-gray-100 p-0.5 text-xs font-semibold shadow-inner"
+      className="grid grid-cols-2 rounded-xl border border-gray-200 bg-gray-100 p-1 text-xs font-semibold shadow-inner"
       role="group"
       aria-label="Display mode"
     >
@@ -241,9 +241,9 @@ export default function PreviewPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col touch-none">
       {/* Toolbar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/85 shadow-[0_-8px_30px_-4px_rgba(0,0,0,0.05)] backdrop-blur-xl pb-safe sm:sticky sm:top-0 sm:bottom-auto sm:left-auto sm:right-auto sm:border-t-0 sm:border-b sm:shadow-sm">
-        <div className="flex flex-wrap justify-center gap-2 px-4 pt-3 pb-1 sm:hidden">
+        <div className="flex flex-wrap justify-center gap-2 px-4 py-2 sm:hidden">
           {hasTrackView && (
-            <div className="flex items-center rounded-xl bg-gray-100 p-0.5 text-xs font-semibold shadow-inner">
+            <div className="flex items-center rounded-xl bg-gray-100 p-1 text-xs font-semibold shadow-inner">
               <button
                 onClick={() => setActiveTab("pdf")}
                 className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-3 transition-all ${
@@ -285,7 +285,7 @@ export default function PreviewPage() {
 
           <div className="hidden min-w-0 items-center justify-center gap-2 sm:flex">
             {hasTrackView && (
-              <div className="flex items-center rounded-xl bg-gray-100 p-0.5 text-xs font-semibold shadow-inner">
+              <div className="flex items-center rounded-xl bg-gray-100 p-1 text-xs font-semibold shadow-inner">
                 <button
                   onClick={() => setActiveTab("pdf")}
                   className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-4 transition-all ${

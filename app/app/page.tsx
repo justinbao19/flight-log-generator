@@ -80,7 +80,7 @@ function DisplayModeSwitch({
 }) {
   return (
     <div
-      className="grid grid-cols-2 rounded-xl border border-slate-200 bg-slate-100 p-0.5 text-xs font-semibold shadow-inner"
+      className="grid grid-cols-2 rounded-xl border border-slate-200 bg-slate-100 p-1 text-xs font-semibold shadow-inner"
       role="group"
       aria-label="Display mode"
     >
@@ -620,12 +620,8 @@ export default function Home() {
                     onClick={handleLoadSample}
                     className="text-sm font-semibold text-sky-600 underline decoration-sky-300 underline-offset-4 transition-colors hover:text-sky-700"
                   >
-                    Try Sample
+                    See Sample
                   </button>
-                  <DisplayModeSwitch
-                    displayMode={displayMode}
-                    onChange={setDisplayMode}
-                  />
                   {airline && (
                     <div className="hidden h-8 w-36 items-center justify-end overflow-hidden lg:flex">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -650,6 +646,7 @@ export default function Home() {
                 draftStatus={draftStatus}
                 onSaveDraft={handleSaveDraft}
                 displayMode={displayMode}
+                onDisplayModeChange={setDisplayMode}
                 onFetchTrack={fetchFlightTrack}
                 trackLoading={trackLoading}
                 trackError={trackError}
