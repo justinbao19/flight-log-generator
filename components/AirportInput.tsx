@@ -39,6 +39,7 @@ export default function AirportInput({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [highlightIdx, setHighlightIdx] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lookupRequestRef = useRef(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,6 +57,7 @@ export default function AirportInput({
 
   const selectSuggestion = useCallback(
     (airport: AirportResult) => {
+      lookupRequestRef.current += 1;
       onAirportChange({
         name: airport.name,
         iata: airport.iata,
@@ -70,19 +72,59 @@ export default function AirportInput({
     [onAirportChange]
   );
 
+  const resetSuggestions = () => {
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setHighlightIdx(-1);
+  };
+
+  const findExactNameMatch = (value: string, results: AirportResult[]) => {
+    const normalized = value.trim().toLocaleLowerCase();
+    return results.find(
+      (airport) => airport.name.trim().toLocaleLowerCase() === normalized
+    );
+  };
+
   const handleNameChange = (value: string) => {
-    onAirportChange({ name: value, iata, icao });
+    const query = value.trim();
+    const upper = query.toUpperCase();
+    const requestId = lookupRequestRef.current + 1;
+    lookupRequestRef.current = requestId;
+    onAirportChange({ name: value, iata: "", icao: "" });
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
-    if (value.length < 2) {
-      setSuggestions([]);
-      setShowSuggestions(false);
+    if (query.length < 2) {
+      resetSuggestions();
       return;
     }
 
     debounceRef.current = setTimeout(async () => {
-      const results = await searchByName(value);
+      const codeMatch =
+        /^[A-Z0-9]{3}$/.test(upper)
+          ? await lookupByIata(upper)
+          : /^[A-Z0-9]{4}$/.test(upper)
+            ? await lookupByIcao(upper)
+            : null;
+
+      if (requestId !== lookupRequestRef.current) return;
+
+      if (codeMatch) {
+        selectSuggestion(codeMatch);
+        return;
+      }
+
+      const results = await searchByName(query);
+      if (requestId !== lookupRequestRef.current) return;
+
+      const exactMatch = findExactNameMatch(query, results);
+      const onlyMatch = results.length === 1 ? results[0] : null;
+      const selectedMatch = exactMatch ?? onlyMatch;
+      if (selectedMatch) {
+        selectSuggestion(selectedMatch);
+        return;
+      }
+
       setSuggestions(results);
       setShowSuggestions(results.length > 0);
       setHighlightIdx(-1);
@@ -110,37 +152,27 @@ export default function AirportInput({
 
   const handleIataChange = async (value: string) => {
     const upper = value.toUpperCase();
-    onAirportChange({ name, iata: upper, icao });
+    const requestId = lookupRequestRef.current + 1;
+    lookupRequestRef.current = requestId;
+    onAirportChange({ name: "", iata: upper, icao: "" });
+    resetSuggestions();
 
     if (upper.length === 3) {
       const result = await lookupByIata(upper);
-      if (result) {
-        onAirportChange({
-          name: result.name,
-          iata: upper,
-          icao: result.icao,
-          utcOffset: result.utcOffset,
-          timeZone: result.timeZone,
-        });
-      }
+      if (requestId === lookupRequestRef.current && result) selectSuggestion(result);
     }
   };
 
   const handleIcaoChange = async (value: string) => {
     const upper = value.toUpperCase();
-    onAirportChange({ name, iata, icao: upper });
+    const requestId = lookupRequestRef.current + 1;
+    lookupRequestRef.current = requestId;
+    onAirportChange({ name: "", iata: "", icao: upper });
+    resetSuggestions();
 
     if (upper.length === 4) {
       const result = await lookupByIcao(upper);
-      if (result) {
-        onAirportChange({
-          name: result.name,
-          iata: result.iata,
-          icao: upper,
-          utcOffset: result.utcOffset,
-          timeZone: result.timeZone,
-        });
-      }
+      if (requestId === lookupRequestRef.current && result) selectSuggestion(result);
     }
   };
 

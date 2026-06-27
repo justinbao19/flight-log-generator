@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import { Maximize2 } from "lucide-react";
 import UploadArea from "@/components/UploadArea";
 import PDFTemplate from "@/components/PDFTemplate";
 import FlightTrackView from "@/components/FlightTrackView";
@@ -76,16 +77,22 @@ export default function Home() {
   const [draftStatus, setDraftStatus] = useState<"saved" | "unsaved" | "idle">(
     "idle"
   );
+  const [savedDraft, setSavedDraft] = useState<FlightData | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextAutoSave = useRef(true);
 
   useEffect(() => {
     const draft = loadDraft();
+    let resumeDraftTimer: ReturnType<typeof setTimeout> | null = null;
+
     if (draft && (draft.flightNumber || draft.date)) {
-      setFlightData(draft);
-      setDraftStatus("saved");
+      resumeDraftTimer = setTimeout(() => setSavedDraft(draft), 0);
     }
     skipNextAutoSave.current = false;
+
+    return () => {
+      if (resumeDraftTimer) clearTimeout(resumeDraftTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -108,6 +115,7 @@ export default function Home() {
     debounceRef.current = setTimeout(() => {
       if (flightData.flightNumber || flightData.date) {
         saveDraft(flightData);
+        setSavedDraft(flightData);
         setDraftStatus("saved");
       }
     }, 1000);
@@ -146,6 +154,14 @@ export default function Home() {
 
   const handleSaveDraft = () => {
     saveDraft(flightData);
+    setSavedDraft(flightData);
+    setDraftStatus("saved");
+  };
+
+  const handleResumeDraft = () => {
+    if (!savedDraft) return;
+    skipNextAutoSave.current = true;
+    setFlightData(savedDraft);
     setDraftStatus("saved");
   };
 
@@ -190,9 +206,11 @@ export default function Home() {
   };
 
   const handleNewFlight = () => {
+    skipNextAutoSave.current = true;
     setFlightData(createEmptyFlightData());
     setAirline(null);
     clearDraft();
+    setSavedDraft(null);
     setDraftStatus("idle");
     setStep("input");
     setPreviewTab("pdf");
@@ -476,6 +494,17 @@ export default function Home() {
                       </svg>
                       Try Sample
                     </button>
+                    {savedDraft && !flightData.flightNumber && !flightData.date && (
+                      <>
+                        <span className="inline-flex h-6 items-center text-slate-300">·</span>
+                        <button
+                          onClick={handleResumeDraft}
+                          className="inline-flex h-6 items-center gap-1 rounded-md px-1 font-medium text-sky-500 transition-colors hover:text-sky-700"
+                        >
+                          Resume Draft
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
                 {airline && (
@@ -635,18 +664,20 @@ export default function Home() {
 
                 {/* Right: actions */}
                 <div className="flex items-center gap-2">
-                  <a
-                    href="/preview"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleOpenFullPreview}
-                    className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
-                    title="Full View"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                    </svg>
-                  </a>
+	                  <a
+	                    href="/preview"
+	                    target="_blank"
+	                    rel="noopener noreferrer"
+	                    onClick={handleOpenFullPreview}
+	                    className="group relative rounded-xl border border-slate-200 bg-white p-2.5 text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50"
+	                    title="Full Preview"
+	                    aria-label="Open full preview"
+	                  >
+	                    <Maximize2 className="h-4 w-4" />
+	                    <span className="pointer-events-none absolute right-0 top-full z-50 mt-2 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-lg group-hover:block">
+	                      Full Preview
+	                    </span>
+	                  </a>
                   <div className="relative" ref={exportMenuRef}>
                     <button
                       onClick={() => setShowExportMenu((v) => !v)}

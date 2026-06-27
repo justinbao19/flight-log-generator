@@ -13,11 +13,13 @@ export interface AirportResult {
 }
 
 type AirportDataModule = typeof import("airport-data-js");
+type AirportDataImport = AirportDataModule & { default?: AirportDataModule };
 let airportDataModule: AirportDataModule | null = null;
 
 async function getModule(): Promise<AirportDataModule> {
   if (!airportDataModule) {
-    airportDataModule = (await import("airport-data-js")) as AirportDataModule;
+    const imported = (await import("airport-data-js")) as AirportDataImport;
+    airportDataModule = imported.default ?? imported;
   }
   return airportDataModule;
 }

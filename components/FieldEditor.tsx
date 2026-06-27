@@ -6,7 +6,7 @@ import { decodeMetar, DecodedMetar, normalizeMetarText } from "@/lib/metarDecode
 import { formatUtcOffset, resolveUtcOffset } from "@/lib/timezone";
 import { lookupByIata, lookupByIcao } from "@/lib/airportLookup";
 import AirportInput from "./AirportInput";
-import { DatePicker, TimePicker } from "./DateTimePicker";
+import { DatePicker, DurationPicker, TimePicker } from "./DateTimePicker";
 import { useMemo, useEffect, useRef, useState, useCallback, ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Plane, Hash, CloudSun, PlaneTakeoff, PlaneLanding, Radio, Tag, Timer, Hourglass, CircleParking, AlarmClock, ClockArrowDown, UserRound, MapPin, Satellite, Search, Camera, ExternalLink, CloudDownload, ClipboardPaste, Ticket, Upload, Loader2, Info, Check, ChevronDown } from "lucide-react";
@@ -466,7 +466,7 @@ export default function FieldEditor({
     () => data.distanceUnit ?? (isPro ? "nm" : "km")
   );
 
-  const [photoReg, setPhotoReg] = useState(data.registration || "");
+  const [photoReg, setPhotoReg] = useState((data.registration || "").toUpperCase());
   const [photoLoading, setPhotoLoading] = useState(false);
   const [photoResults, setPhotoResults] = useState<AircraftPhoto[]>([]);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -474,7 +474,7 @@ export default function FieldEditor({
 
   useEffect(() => {
     if (data.registration && data.registration !== prevRegRef.current) {
-      setPhotoReg(data.registration);
+      setPhotoReg(data.registration.toUpperCase());
       setPhotoResults([]);
       setPhotoError(null);
     }
@@ -494,8 +494,9 @@ export default function FieldEditor({
   }, [data.distanceUnit]);
 
   const handlePhotoSearch = useCallback(async () => {
-    const reg = photoReg.trim();
+    const reg = photoReg.trim().toUpperCase();
     if (!reg) return;
+    setPhotoReg(reg);
     setPhotoLoading(true);
     setPhotoError(null);
     setPhotoResults([]);
@@ -1160,13 +1161,13 @@ export default function FieldEditor({
           <InputField
             label={isPro ? "Flight No." : "Flight Number"}
             value={data.flightNumber}
-            onChange={(v) => update("flightNumber", v)}
+            onChange={(v) => update("flightNumber", v.toUpperCase())}
             icon={<Hash className="w-4 h-4" />}
           />
           <InputField
             label="Call Sign"
             value={data.callSign || ""}
-            onChange={(v) => update("callSign", v)}
+            onChange={(v) => update("callSign", v.toUpperCase())}
             icon={<Radio className="w-4 h-4" />}
           />
           <DatePicker
@@ -1177,16 +1178,16 @@ export default function FieldEditor({
           <InputField
             label={isPro ? "A/C Type" : "Aircraft Type"}
             value={data.aircraftType}
-            onChange={(v) => update("aircraftType", v)}
+            onChange={(v) => update("aircraftType", v.toUpperCase())}
             icon={<Plane className="w-4 h-4" />}
           />
           <InputField
             label={isPro ? "Reg. No." : "Registration"}
             value={data.registration}
-            onChange={(v) => update("registration", v)}
+            onChange={(v) => update("registration", v.toUpperCase())}
             icon={<Tag className="w-4 h-4" />}
           />
-          <InputField
+          <DurationPicker
             label="Flight Duration"
             value={data.flightDuration}
             onChange={(v) => update("flightDuration", v)}
@@ -1443,7 +1444,7 @@ export default function FieldEditor({
               <input
                 type="text"
                 value={photoReg}
-                onChange={(e) => setPhotoReg(e.target.value)}
+                onChange={(e) => setPhotoReg(e.target.value.toUpperCase())}
                 onKeyDown={(e) => { if (e.key === "Enter") handlePhotoSearch(); }}
                 placeholder="Enter registration (e.g. B-8579)"
                 className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-3 py-2 text-base sm:text-sm text-slate-900 transition-all focus:bg-white focus:border-transparent focus:outline-none focus:ring-0 focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)]"
