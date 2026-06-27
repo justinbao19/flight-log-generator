@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { FlightData, DisplayMode } from "@/lib/types";
 import FieldEditor from "./FieldEditor";
 import { motion } from "framer-motion";
@@ -22,6 +22,24 @@ interface UploadAreaProps {
 
 type InputMode = "screenshot" | "text" | "manual";
 
+function hasFlightContent(data: FlightData) {
+  return Boolean(
+    data.flightNumber ||
+      data.date ||
+      data.callSign ||
+      data.aircraftType ||
+      data.registration ||
+      data.flightDuration ||
+      data.majorWaypoints ||
+      data.departure.airport.name ||
+      data.departure.airport.iata ||
+      data.arrival.airport.name ||
+      data.arrival.airport.iata ||
+      data.selectedPhoto ||
+      data.boardingPass
+  );
+}
+
 export default function UploadArea({
   flightData,
   onFlightDataChange,
@@ -36,7 +54,10 @@ export default function UploadArea({
   onFlightLookup,
   flightLookupLoading,
 }: UploadAreaProps) {
-  const [mode, setMode] = useState<InputMode>("manual");
+  const [mode, setMode] = useState<InputMode>("text");
+  const [intakeComplete, setIntakeComplete] = useState(() =>
+    hasFlightContent(flightData)
+  );
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -44,6 +65,12 @@ export default function UploadArea({
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!hasFlightContent(flightData)) return;
+    const restoreTimer = setTimeout(() => setIntakeComplete(true), 0);
+    return () => clearTimeout(restoreTimer);
+  }, [flightData]);
 
   const handleFile = useCallback((file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -112,6 +139,7 @@ export default function UploadArea({
 
       const data = await response.json();
       onFlightDataChange(data as FlightData);
+      setIntakeComplete(true);
       setMode("manual");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Recognition failed");
@@ -123,41 +151,50 @@ export default function UploadArea({
   const hasRequiredFields =
     flightData.flightNumber.trim() !== "" && flightData.date.trim() !== "";
 
+  const handleProceedManual = () => {
+    setError(null);
+    setMode("manual");
+    setIntakeComplete(true);
+  };
+
   return (
     <div className="w-full space-y-3 sm:space-y-4">
-      {/* Three-tab Switcher */}
-      <div className="relative flex rounded-xl bg-slate-100/80 p-1 backdrop-blur-sm">
-        {(
-          [
-            { key: "screenshot", label: "Screenshot" },
-            { key: "text", label: "Paste Text" },
-            { key: "manual", label: "Manual" },
-          ] as { key: InputMode; label: string }[]
-        ).map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setMode(tab.key)}
-            className={`relative flex-1 rounded-lg py-2 sm:py-2.5 text-xs sm:text-sm font-medium transition-colors z-10 ${
-              mode === tab.key ? "text-slate-900" : "text-slate-500 hover:text-slate-700"
-            }`}
-          >
-            {mode === tab.key && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute inset-0 rounded-lg bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
-                initial={false}
-                transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                style={{ zIndex: -1 }}
-              />
-            )}
-            <span className="relative z-10">{tab.label}</span>
-          </button>
-        ))}
-      </div>
+      {!intakeComplete && (
+        <>
+          <div className="relative flex rounded-xl bg-slate-100/80 p-1 backdrop-blur-sm">
+            {(
+              [
+                { key: "text", label: "Paste Text" },
+                { key: "screenshot", label: "Screenshot" },
+                { key: "manual", label: "Manual" },
+              ] as { key: InputMode; label: string }[]
+            ).map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setMode(tab.key);
+                  setError(null);
+                }}
+                className={`relative z-10 flex-1 rounded-lg py-2 text-xs font-medium transition-colors sm:py-2.5 sm:text-sm ${
+                  mode === tab.key ? "text-slate-900" : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                {mode === tab.key && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute inset-0 rounded-lg bg-white shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+                    initial={false}
+                    transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                    style={{ zIndex: -1 }}
+                  />
+                )}
+                <span className="relative z-10">{tab.label}</span>
+              </button>
+            ))}
+          </div>
 
-      {/* Screenshot / Text panels — stacked in same grid cell for stable height */}
-      {(mode === "screenshot" || mode === "text") && (
-        <div className="grid">
+          {(mode === "screenshot" || mode === "text") && (
+            <div className="grid">
           {/* Screenshot Upload */}
           <div className={`col-start-1 row-start-1 flex flex-col gap-3 sm:gap-4 transition-opacity duration-300 ${mode !== "screenshot" ? "opacity-0 pointer-events-none z-0" : "opacity-100 z-10"}`}>
             <div
@@ -289,11 +326,31 @@ export default function UploadArea({
               )}
             </button>
           </div>
-        </div>
+            </div>
+          )}
+
+          {mode === "manual" && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 sm:p-5">
+              <h3 className="text-sm font-semibold text-slate-900">
+                Start with a blank flight log
+              </h3>
+              <p className="mt-1 text-sm leading-6 text-slate-500">
+                Continue to the manual editor when you want full control over every field.
+                You can still fetch flight details, METAR, track data, and aircraft photos from the form.
+              </p>
+              <button
+                onClick={handleProceedManual}
+                className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-sky-500 px-4 text-sm font-semibold text-white shadow-[0_4px_14px_0_rgba(14,165,233,0.25)] transition-colors hover:bg-sky-400"
+              >
+                Proceed to blank log
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Manual Form */}
-      {mode === "manual" && (
+      {intakeComplete && (
         <>
           {/* Draft status bar */}
           <div className="flex items-center justify-between">

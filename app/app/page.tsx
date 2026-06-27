@@ -129,6 +129,7 @@ export default function Home() {
     "idle"
   );
   const [savedDraft, setSavedDraft] = useState<FlightData | null>(null);
+  const [inputSessionId, setInputSessionId] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextAutoSave = useRef(true);
 
@@ -260,6 +261,7 @@ export default function Home() {
     if (!savedDraft) return;
     skipNextAutoSave.current = true;
     setFlightData(savedDraft);
+    setInputSessionId((id) => id + 1);
     setDraftStatus("saved");
   };
 
@@ -313,6 +315,7 @@ export default function Home() {
     setDraftStatus("idle");
     setStep("input");
     setPreviewTab("pdf");
+    setInputSessionId((id) => id + 1);
     clearTrackData();
     setTrackData(null);
   };
@@ -612,7 +615,17 @@ export default function Home() {
                     )}
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:justify-end">
+                  <button
+                    onClick={handleLoadSample}
+                    className="text-sm font-semibold text-sky-600 underline decoration-sky-300 underline-offset-4 transition-colors hover:text-sky-700"
+                  >
+                    Try Sample
+                  </button>
+                  <DisplayModeSwitch
+                    displayMode={displayMode}
+                    onChange={setDisplayMode}
+                  />
                   {airline && (
                     <div className="hidden h-8 w-36 items-center justify-end overflow-hidden lg:flex">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -626,20 +639,10 @@ export default function Home() {
                       />
                     </div>
                   )}
-                  <button
-                    onClick={handleLoadSample}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-sky-600 shadow-sm transition-colors hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Try Sample
-                  </button>
-                  <DisplayModeSwitch
-                    displayMode={displayMode}
-                    onChange={setDisplayMode}
-                  />
                 </div>
               </div>
               <UploadArea
+                key={inputSessionId}
                 flightData={flightData}
                 onFlightDataChange={setFlightData}
                 onPreview={() => setStep("preview")}
