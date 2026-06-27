@@ -2,8 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowLeft, FileText, Map, Maximize2, Minus, Plus } from "lucide-react";
 import PDFTemplate from "@/components/PDFTemplate";
 import FlightTrackView from "@/components/FlightTrackView";
+import WaypointsPreview from "@/components/WaypointsPreview";
 import {
   FlightData,
   FlightTrackData,
@@ -11,7 +13,14 @@ import {
   DisplayMode,
   createEmptyFlightData,
 } from "@/lib/types";
-import { loadDraft, loadTrackData } from "@/lib/storage";
+import {
+  clearActiveDraft,
+  hasDraftContent,
+  loadActiveDraft,
+  loadDraft,
+  loadTrackData,
+  saveActiveDraft,
+} from "@/lib/storage";
 
 const A4_WIDTH_PX = 794;
 const MIN_SCALE = 0.2;
@@ -19,6 +28,45 @@ const MAX_SCALE = 3;
 const SCALE_STEP = 0.15;
 
 type PreviewTab = "pdf" | "track";
+
+function DisplayModeSwitch({
+  displayMode,
+  onChange,
+}: {
+  displayMode: DisplayMode;
+  onChange: (mode: DisplayMode) => void;
+}) {
+  return (
+    <div
+      className="grid grid-cols-2 rounded-xl border border-gray-200 bg-gray-100 p-0.5 text-xs font-semibold shadow-inner"
+      role="group"
+      aria-label="Display mode"
+    >
+      <button
+        type="button"
+        onClick={() => onChange("standard")}
+        className={`h-8 w-20 rounded-lg px-2 transition-colors ${
+          displayMode === "standard"
+            ? "bg-white text-sky-700 shadow-sm"
+            : "text-gray-500 hover:text-gray-700"
+        }`}
+      >
+        Decoded
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("professional")}
+        className={`h-8 w-20 rounded-lg px-2 transition-colors ${
+          displayMode === "professional"
+            ? "bg-white text-sky-700 shadow-sm"
+            : "text-gray-500 hover:text-gray-700"
+        }`}
+      >
+        Raw
+      </button>
+    </div>
+  );
+}
 
 export default function PreviewPage() {
   const router = useRouter();
@@ -45,9 +93,17 @@ export default function PreviewPage() {
 
   useEffect(() => {
     const loadSavedState = window.setTimeout(() => {
-      const draft = loadDraft();
-      if (draft && draft.flightNumber) {
-        setFlightData(draft);
+      const navigationEntry = performance.getEntriesByType("navigation")[0] as
+        | PerformanceNavigationTiming
+        | undefined;
+      const isReload = navigationEntry?.type === "reload";
+      if (isReload) clearActiveDraft();
+
+      const draft = isReload ? null : loadActiveDraft();
+      const fallbackDraft = isReload ? null : loadDraft();
+      const nextDraft = hasDraftContent(draft) ? draft : fallbackDraft;
+      if (hasDraftContent(nextDraft)) {
+        setFlightData(nextDraft);
       }
 
       const savedMode = localStorage.getItem("flight-log-display-mode");
@@ -55,7 +111,10 @@ export default function PreviewPage() {
         setDisplayMode(savedMode);
       }
 
-      const savedTrack = loadTrackData();
+      const savedTrack =
+        nextDraft?.flightNumber && nextDraft?.date
+          ? loadTrackData(nextDraft.flightNumber, nextDraft.date)
+          : null;
       if (savedTrack) setTrackData(savedTrack);
 
       fitToScreen();
@@ -143,6 +202,11 @@ export default function PreviewPage() {
     []
   );
 
+  const handleBackToEditor = () => {
+    saveActiveDraft(flightData);
+    router.push("/app");
+  };
+
   if (!loaded) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -158,7 +222,7 @@ export default function PreviewPage() {
           No flight data found. Please create a flight log first.
         </p>
         <button
-          onClick={() => router.push("/app")}
+          onClick={handleBackToEditor}
           className="rounded-xl bg-sky-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-sky-400 transition-colors"
         >
           Go to Editor
@@ -168,66 +232,106 @@ export default function PreviewPage() {
   }
 
   const scalePercent = Math.round(scale * 100);
+  const hasWaypointText = Boolean(flightData.majorWaypoints?.trim());
+  const hasTrackView = Boolean(trackData) || hasWaypointText;
+  const effectiveActiveTab: PreviewTab = hasTrackView ? activeTab : "pdf";
+  const trackTabLabel = trackData ? "Flight Track" : "Waypoints";
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col touch-none">
       {/* Toolbar */}
-      <div className="fixed bottom-0 left-0 right-0 sm:sticky sm:top-0 z-50 bg-white/80 backdrop-blur-xl border-t sm:border-t-0 sm:border-b border-gray-200 shadow-[0_-8px_30px_-4px_rgba(0,0,0,0.05)] sm:shadow-sm pb-safe">
-        <div className="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/85 shadow-[0_-8px_30px_-4px_rgba(0,0,0,0.05)] backdrop-blur-xl pb-safe sm:sticky sm:top-0 sm:bottom-auto sm:left-auto sm:right-auto sm:border-t-0 sm:border-b sm:shadow-sm">
+        <div className="flex flex-wrap justify-center gap-2 px-4 pt-3 pb-1 sm:hidden">
+          {hasTrackView && (
+            <div className="flex items-center rounded-xl bg-gray-100 p-0.5 text-xs font-semibold shadow-inner">
+              <button
+                onClick={() => setActiveTab("pdf")}
+                className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-3 transition-all ${
+                  effectiveActiveTab === "pdf"
+                    ? "bg-white text-slate-950 shadow-sm"
+                    : "text-slate-500"
+                }`}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                PDF Preview
+              </button>
+              <button
+                onClick={() => setActiveTab("track")}
+                className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-3 transition-all ${
+                  effectiveActiveTab === "track"
+                    ? "bg-white text-slate-950 shadow-sm"
+                    : "text-slate-500"
+                }`}
+              >
+                <Map className="h-3.5 w-3.5" />
+                {trackTabLabel}
+                {trackData && <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />}
+              </button>
+            </div>
+          )}
+          <DisplayModeSwitch
+            displayMode={displayMode}
+            onChange={setDisplayMode}
+          />
+        </div>
+        <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 py-2.5">
           <button
-            onClick={() => router.push("/app")}
-            className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+            onClick={handleBackToEditor}
+            className="inline-flex h-9 w-fit items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 sm:px-3"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
+            <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Back to Editor</span>
           </button>
 
-          {/* Tab switcher */}
-          <div className="flex items-center bg-slate-100 rounded-xl p-0.5">
-            <button
-              onClick={() => setActiveTab("pdf")}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                activeTab === "pdf"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              PDF Preview
-            </button>
-            <button
-              onClick={() => setActiveTab("track")}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-                activeTab === "track"
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
-            >
-              Flight Track
-              {trackData && (
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
-              )}
-            </button>
+          <div className="hidden min-w-0 items-center justify-center gap-2 sm:flex">
+            {hasTrackView && (
+              <div className="flex items-center rounded-xl bg-gray-100 p-0.5 text-xs font-semibold shadow-inner">
+                <button
+                  onClick={() => setActiveTab("pdf")}
+                  className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-4 transition-all ${
+                    effectiveActiveTab === "pdf"
+                      ? "bg-white text-slate-950 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  PDF Preview
+                </button>
+                <button
+                  onClick={() => setActiveTab("track")}
+                  className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-4 transition-all ${
+                    effectiveActiveTab === "track"
+                      ? "bg-white text-slate-950 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  <Map className="h-3.5 w-3.5" />
+                  {trackTabLabel}
+                  {trackData && <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />}
+                </button>
+              </div>
+            )}
+            <DisplayModeSwitch
+              displayMode={displayMode}
+              onChange={setDisplayMode}
+            />
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {activeTab === "pdf" && (
+          <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-1.5">
+            {effectiveActiveTab === "pdf" && (
               <>
                 <button
                   onClick={handleZoomOut}
                   disabled={scale <= MIN_SCALE}
-                  className="p-2.5 rounded-xl hover:bg-gray-100/80 text-gray-700 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
+                  className="rounded-xl p-2 text-gray-700 transition-colors hover:bg-gray-100/80 disabled:text-gray-300 disabled:hover:bg-transparent"
                   aria-label="Zoom out"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-                  </svg>
+                  <Minus className="h-[18px] w-[18px]" />
                 </button>
 
                 <button
                   onClick={handleFit}
-                  className="min-w-[4rem] px-2 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100/80 rounded-xl transition-colors tabular-nums"
+                  className="min-w-12 rounded-xl px-2 py-1.5 text-sm font-semibold tabular-nums text-gray-700 transition-colors hover:bg-gray-100/80 sm:min-w-14"
                 >
                   {scalePercent}%
                 </button>
@@ -235,45 +339,31 @@ export default function PreviewPage() {
                 <button
                   onClick={handleZoomIn}
                   disabled={scale >= MAX_SCALE}
-                  className="p-2.5 rounded-xl hover:bg-gray-100/80 text-gray-700 disabled:text-gray-300 disabled:hover:bg-transparent transition-colors"
+                  className="rounded-xl p-2 text-gray-700 transition-colors hover:bg-gray-100/80 disabled:text-gray-300 disabled:hover:bg-transparent"
                   aria-label="Zoom in"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
+                  <Plus className="h-[18px] w-[18px]" />
                 </button>
 
                 <div className="w-px h-6 bg-gray-200 mx-1 hidden sm:block" />
 
                 <button
                   onClick={handleFit}
-                  className="p-2.5 rounded-xl hover:bg-gray-100/80 text-gray-700 transition-colors hidden sm:block"
+                  className="hidden rounded-xl p-2 text-gray-700 transition-colors hover:bg-gray-100/80 sm:block"
                   aria-label="Fit to screen"
                   title="Fit to screen"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-                  </svg>
+                  <Maximize2 className="h-[18px] w-[18px]" />
                 </button>
               </>
             )}
 
-            <button
-              onClick={() =>
-                setDisplayMode((m) =>
-                  m === "professional" ? "standard" : "professional"
-                )
-              }
-              className="px-3 py-2 text-xs font-bold rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors shadow-sm"
-            >
-              {displayMode === "professional" ? "Raw" : "Decoded"}
-            </button>
           </div>
         </div>
       </div>
 
       {/* Content area */}
-      {activeTab === "pdf" ? (
+      {effectiveActiveTab === "pdf" ? (
         <div
           ref={containerRef}
           className="flex-1 overflow-auto"
@@ -306,27 +396,7 @@ export default function PreviewPage() {
             {trackData ? (
               <FlightTrackView trackData={trackData} />
             ) : (
-              <div className="max-w-lg mx-auto text-center py-20">
-                <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-slate-100 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-base font-semibold text-slate-900 mb-2">
-                  No Flight Track Data
-                </h3>
-                <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-                  Go back to the editor and click &quot;Fetch Track&quot; to load
-                  flight track data. Track data is available for flights within
-                  the past 30 days.
-                </p>
-                <button
-                  onClick={() => router.push("/app")}
-                  className="rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-400 transition-colors shadow-[0_4px_14px_0_rgba(14,165,233,0.25)]"
-                >
-                  Go to Editor
-                </button>
-              </div>
+              <WaypointsPreview waypoints={flightData.majorWaypoints} />
             )}
           </div>
         </div>

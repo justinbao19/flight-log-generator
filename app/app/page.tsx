@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { Maximize2 } from "lucide-react";
+import { ChevronDown, Download, Edit3, FileText, Map, Maximize2, Plus } from "lucide-react";
 import UploadArea from "@/components/UploadArea";
 import PDFTemplate from "@/components/PDFTemplate";
 import FlightTrackView from "@/components/FlightTrackView";
+import WaypointsPreview from "@/components/WaypointsPreview";
 import {
   FlightData,
   FlightTrackData,
@@ -21,7 +22,18 @@ import {
   generateFilename,
   ExportFormat,
 } from "@/lib/pdfGenerator";
-import { saveDraft, loadDraft, clearDraft, saveTrackData, clearTrackData, loadTrackData } from "@/lib/storage";
+import {
+  clearActiveDraft,
+  clearDraft,
+  clearTrackData,
+  hasDraftContent,
+  loadActiveDraft,
+  loadDraft,
+  loadTrackData,
+  saveActiveDraft,
+  saveDraft,
+  saveTrackData,
+} from "@/lib/storage";
 
 type Step = "input" | "preview";
 type PreviewTab = "pdf" | "track";
@@ -45,7 +57,7 @@ function PDFPreviewWrapper({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div ref={wrapperRef} className="flex justify-center pb-24 sm:pb-8 px-2 sm:px-0">
+    <div ref={wrapperRef} className="flex justify-center pb-8 px-2 sm:px-0">
       <div
         style={{
           transform: `scale(${pdfScale})`,
@@ -55,6 +67,45 @@ function PDFPreviewWrapper({ children }: { children: React.ReactNode }) {
       >
         {children}
       </div>
+    </div>
+  );
+}
+
+function DisplayModeSwitch({
+  displayMode,
+  onChange,
+}: {
+  displayMode: DisplayMode;
+  onChange: (mode: DisplayMode) => void;
+}) {
+  return (
+    <div
+      className="grid grid-cols-2 rounded-xl border border-slate-200 bg-slate-100 p-0.5 text-xs font-semibold shadow-inner"
+      role="group"
+      aria-label="Display mode"
+    >
+      <button
+        type="button"
+        onClick={() => onChange("standard")}
+        className={`h-8 w-20 rounded-lg px-2 transition-colors ${
+          displayMode === "standard"
+            ? "bg-white text-sky-700 shadow-sm"
+            : "text-slate-500 hover:text-slate-700"
+        }`}
+      >
+        Decoded
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("professional")}
+        className={`h-8 w-20 rounded-lg px-2 transition-colors ${
+          displayMode === "professional"
+            ? "bg-white text-sky-700 shadow-sm"
+            : "text-slate-500 hover:text-slate-700"
+        }`}
+      >
+        Raw
+      </button>
     </div>
   );
 }
@@ -82,13 +133,29 @@ export default function Home() {
   const skipNextAutoSave = useRef(true);
 
   useEffect(() => {
-    const draft = loadDraft();
+    const navigationEntry = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    const isReload = navigationEntry?.type === "reload";
+    if (isReload) clearActiveDraft();
+
+    const activeDraft = isReload ? null : loadActiveDraft();
+    const savedManualDraft = loadDraft();
     let resumeDraftTimer: ReturnType<typeof setTimeout> | null = null;
 
-    if (draft && (draft.flightNumber || draft.date)) {
-      resumeDraftTimer = setTimeout(() => setSavedDraft(draft), 0);
+    if (hasDraftContent(activeDraft)) {
+      resumeDraftTimer = setTimeout(() => {
+        skipNextAutoSave.current = true;
+        setFlightData(activeDraft);
+        setSavedDraft(savedManualDraft ?? activeDraft);
+        setDraftStatus("saved");
+      }, 0);
+    } else {
+      if (hasDraftContent(savedManualDraft)) {
+        resumeDraftTimer = setTimeout(() => setSavedDraft(savedManualDraft), 0);
+      }
+      skipNextAutoSave.current = false;
     }
-    skipNextAutoSave.current = false;
 
     return () => {
       if (resumeDraftTimer) clearTimeout(resumeDraftTimer);
@@ -96,11 +163,20 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    let trackTimer: ReturnType<typeof setTimeout> | null = null;
+
     if (flightData.flightNumber && flightData.date) {
-      const saved = loadTrackData(flightData.flightNumber, flightData.date);
-      if (saved) setTrackData(saved);
-      else setTrackData(null);
+      trackTimer = setTimeout(() => {
+        const saved = loadTrackData(flightData.flightNumber, flightData.date);
+        setTrackData(saved ?? null);
+      }, 0);
+    } else {
+      trackTimer = setTimeout(() => setTrackData(null), 0);
     }
+
+    return () => {
+      if (trackTimer) clearTimeout(trackTimer);
+    };
   }, [flightData.flightNumber, flightData.date]);
 
   useEffect(() => {
@@ -110,18 +186,35 @@ export default function Home() {
     }
 
     setDraftStatus("unsaved");
+    saveActiveDraft(flightData);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      if (flightData.flightNumber || flightData.date) {
-        saveDraft(flightData);
+      if (hasDraftContent(flightData)) {
         setSavedDraft(flightData);
         setDraftStatus("saved");
+      } else {
+        setSavedDraft(null);
+        setDraftStatus("idle");
       }
     }, 1000);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [flightData]);
+
+  useEffect(() => {
+    const persistActiveDraft = () => saveActiveDraft(flightData);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") persistActiveDraft();
+    };
+
+    window.addEventListener("pagehide", persistActiveDraft);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("pagehide", persistActiveDraft);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [flightData]);
 
@@ -145,14 +238,19 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (flightData?.flightNumber) {
-      fetchAirlineInfo(flightData.flightNumber);
-    } else {
-      setAirline(null);
-    }
+    const airlineTimer = setTimeout(() => {
+      if (flightData?.flightNumber) {
+        fetchAirlineInfo(flightData.flightNumber);
+      } else {
+        setAirline(null);
+      }
+    }, 0);
+
+    return () => clearTimeout(airlineTimer);
   }, [flightData?.flightNumber, fetchAirlineInfo]);
 
   const handleSaveDraft = () => {
+    saveActiveDraft(flightData);
     saveDraft(flightData);
     setSavedDraft(flightData);
     setDraftStatus("saved");
@@ -166,8 +264,8 @@ export default function Home() {
   };
 
   const handleOpenFullPreview = () => {
-    if (flightData.flightNumber || flightData.date) {
-      saveDraft(flightData);
+    if (hasDraftContent(flightData)) {
+      saveActiveDraft(flightData);
       setDraftStatus("saved");
     }
   };
@@ -209,6 +307,7 @@ export default function Home() {
     skipNextAutoSave.current = true;
     setFlightData(createEmptyFlightData());
     setAirline(null);
+    clearActiveDraft();
     clearDraft();
     setSavedDraft(null);
     setDraftStatus("idle");
@@ -348,11 +447,18 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showExportMenu]);
 
+  const hasFlightDataContent = hasDraftContent(flightData);
+  const hasWaypointText = Boolean(flightData.majorWaypoints?.trim());
+  const hasTrackView = Boolean(trackData) || hasWaypointText;
+  const effectivePreviewTab: PreviewTab = hasTrackView ? previewTab : "pdf";
+  const trackTabLabel = trackData ? "Flight Track" : "Waypoints";
+  const downloadDisabled = generating || effectivePreviewTab !== "pdf";
+
   return (
     <div className="min-h-screen bg-sky-50 text-slate-900">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/70 backdrop-blur-xl">
-        <div className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-4 flex items-center justify-between gap-2">
+      <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/75 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 py-2.5 sm:px-4">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <svg
               className="h-6 w-6 sm:h-7 sm:w-7 text-sky-500 shrink-0"
@@ -366,140 +472,139 @@ export default function Home() {
             </h1>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <Link
-              href="/guide"
-              className="hidden whitespace-nowrap rounded-xl border border-slate-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm transition-colors hover:bg-white hover:text-sky-700 sm:inline-flex"
-            >
-              Agent Guide
-            </Link>
-            {/* Mode Toggle */}
-            <div
-              className="grid grid-cols-2 rounded-xl border border-slate-200 bg-slate-100 p-0.5 text-xs font-semibold shadow-inner"
-              role="group"
-              aria-label="Display mode"
-            >
+          {step === "preview" && (
+            <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
               <button
-                type="button"
-                onClick={() => setDisplayMode("standard")}
-                className={`w-20 rounded-lg px-2 py-1.5 transition-colors ${
-                  displayMode === "standard"
-                    ? "bg-white text-sky-700 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
-                }`}
+                onClick={() => setStep("input")}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 sm:px-3"
               >
-                Decoded
+                <Edit3 className="h-4 w-4" />
+                <span className="hidden sm:inline">Edit</span>
               </button>
               <button
-                type="button"
-                onClick={() => setDisplayMode("professional")}
-                className={`w-20 rounded-lg px-2 py-1.5 transition-colors ${
-                  displayMode === "professional"
-                    ? "bg-white text-sky-700 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
-                }`}
+                onClick={handleNewFlight}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 sm:px-3"
+                title="New Flight"
               >
-                Raw
+                <Plus className="h-4 w-4" />
+                <span className="hidden lg:inline">New Flight</span>
               </button>
+              <a
+                href="/preview"
+                onClick={handleOpenFullPreview}
+                className="group relative hidden h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-2.5 text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 sm:inline-flex"
+                title="Full Preview"
+                aria-label="Open full preview"
+              >
+                <Maximize2 className="h-4 w-4" />
+                <span className="pointer-events-none absolute right-0 top-full z-50 mt-2 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-lg group-hover:block">
+                  Full Preview
+                </span>
+              </a>
+              <div className="relative" ref={exportMenuRef}>
+                <button
+                  onClick={() => setShowExportMenu((v) => !v)}
+                  disabled={downloadDisabled}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl bg-sky-500 px-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_0_rgba(14,165,233,0.25)] transition-all hover:bg-sky-400 hover:shadow-[0_6px_20px_rgba(14,165,233,0.3)] disabled:cursor-not-allowed disabled:opacity-45 sm:px-3"
+                >
+                  {generating ? (
+                    <>
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      <span className="hidden sm:inline">Exporting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-4 w-4" />
+                      <span className="hidden md:inline">Download</span>
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </>
+                  )}
+                </button>
+                {showExportMenu && (
+                  <div className="absolute right-0 top-full z-50 mt-2 w-40 rounded-2xl border border-slate-100 bg-white/95 py-1.5 shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] backdrop-blur-xl">
+                    <button onClick={() => handleExport("pdf")} className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50">
+                      <FileText className="h-4 w-4 text-red-500" />
+                      Export PDF
+                    </button>
+                    <button onClick={() => handleExport("png")} className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50">
+                      <Download className="h-4 w-4 text-emerald-500" />
+                      Export PNG
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </header>
 
       {/* Step Indicator */}
-      <div className="mx-auto max-w-7xl px-3 pt-4 sm:px-4 sm:pt-6">
-        <div className="flex flex-wrap items-center gap-2 text-sm mb-4 sm:mb-6">
-          {(["input", "preview"] as Step[]).map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
-              {i > 0 && (
-                <svg
-                  className="h-4 w-4 text-slate-300"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              )}
-              <button
-                onClick={() => {
-                  if (s === "input") setStep("input");
-                  else if (
-                    s === "preview" &&
-                    flightData.flightNumber &&
-                    flightData.date
-                  )
-                    setStep("preview");
-                }}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1 transition-colors ${
-                  step === s
-                    ? "bg-sky-100 text-sky-700 font-medium"
-                    : flightData.flightNumber || s === "input"
-                      ? "text-slate-500 hover:text-slate-700 cursor-pointer"
-                      : "text-slate-300 cursor-not-allowed"
-                }`}
-              >
-                <span
-                  className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${
-                    step === s
-                      ? "bg-sky-500 text-white"
-                      : "bg-slate-200 text-slate-500"
-                  }`}
-                >
-                  {i + 1}
-                </span>
-                {s === "input" ? "Input" : "Preview"}
-              </button>
-            </div>
-          ))}
+      {step === "input" && (
+        <div className="mx-auto max-w-7xl px-3 pt-4 sm:px-4 sm:pt-6">
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-sm sm:mb-6">
+            <button className="flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 font-medium text-sky-700">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 text-xs text-white">
+                1
+              </span>
+              Input
+            </button>
+            <svg
+              className="h-4 w-4 text-slate-300"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+            <button
+              onClick={() => {
+                if (flightData.flightNumber && flightData.date) setStep("preview");
+              }}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1 transition-colors ${
+                flightData.flightNumber && flightData.date
+                  ? "text-slate-500 hover:text-slate-700"
+                  : "cursor-not-allowed text-slate-300"
+              }`}
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 text-xs text-slate-500">
+                2
+              </span>
+              Preview
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <main className="mx-auto max-w-7xl px-3 pb-8 sm:px-4 sm:pb-12">
         {/* Step 1: Input */}
         {step === "input" && (
           <div className="mx-auto max-w-2xl">
             <div className="rounded-2xl bg-white p-4 sm:p-6 shadow-sm border border-slate-200/80">
-              <div className="flex items-center justify-between mb-4">
-                <div>
+              <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="min-w-0">
                   <h2 className="text-base font-semibold text-slate-900">
                     Flight Data
                   </h2>
-                  <div className="mt-1 flex h-6 flex-wrap items-center gap-x-1.5 gap-y-1 text-sm leading-none text-slate-500">
-                    <span className="inline-flex h-6 items-center">
-                      Use AI recognition or fill in manually
+                  <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-5 text-slate-500">
+                    <span>
+                      {hasFlightDataContent
+                        ? "Review and refine the recognized flight details."
+                        : "Import with AI or fill in the details manually."}
                     </span>
-                    <span className="inline-flex h-6 items-center text-slate-300">·</span>
-                    <button
-                      onClick={handleLoadSample}
-                      className="inline-flex h-6 items-center gap-1 rounded-md px-1 font-medium text-sky-500 transition-colors hover:text-sky-700"
-                    >
-                      <svg
-                        className="h-3.5 w-3.5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                      </svg>
-                      Try Sample
-                    </button>
                     {savedDraft && !flightData.flightNumber && !flightData.date && (
                       <>
-                        <span className="inline-flex h-6 items-center text-slate-300">·</span>
+                        <span className="text-slate-300">·</span>
                         <button
                           onClick={handleResumeDraft}
-                          className="inline-flex h-6 items-center gap-1 rounded-md px-1 font-medium text-sky-500 transition-colors hover:text-sky-700"
+                          className="font-medium text-sky-600 transition-colors hover:text-sky-700"
                         >
                           Resume Draft
                         </button>
@@ -507,19 +612,32 @@ export default function Home() {
                     )}
                   </div>
                 </div>
-                {airline && (
-                  <div className="flex h-7 w-28 shrink-0 items-center justify-end overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={airline.logoUrl}
-                      alt={airline.name}
-                      className="h-auto max-h-6 max-w-full object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  </div>
-                )}
+                <div className="flex flex-wrap items-center gap-2 md:justify-end">
+                  {airline && (
+                    <div className="hidden h-8 w-36 items-center justify-end overflow-hidden lg:flex">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={airline.logoUrl}
+                        alt={airline.name}
+                        className="h-auto max-h-6 max-w-full object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    </div>
+                  )}
+                  <button
+                    onClick={handleLoadSample}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-sky-600 shadow-sm transition-colors hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Try Sample
+                  </button>
+                  <DisplayModeSwitch
+                    displayMode={displayMode}
+                    onChange={setDisplayMode}
+                  />
+                </div>
               </div>
               <UploadArea
                 flightData={flightData}
@@ -542,187 +660,42 @@ export default function Home() {
         {/* Step 2: Preview */}
         {step === "preview" && flightData && (
           <div>
-            {/* Toolbar */}
-            <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-t border-slate-200/80 sm:static sm:bg-transparent sm:backdrop-blur-none sm:border-none shadow-[0_-8px_30px_-4px_rgba(0,0,0,0.05)] sm:shadow-none pb-safe sm:pb-0 sm:mb-6">
-              {/* Mobile: Tab switcher row */}
-              <div className="flex justify-center px-4 pt-3 pb-2 sm:hidden">
-                <div className="flex items-center bg-slate-100 rounded-xl p-0.5">
+            <div className="mb-5 flex flex-wrap items-center justify-center gap-2 sm:mb-6">
+              {hasTrackView && (
+                <div className="flex items-center rounded-xl bg-slate-100 p-0.5 text-xs font-semibold shadow-inner">
                   <button
                     onClick={() => setPreviewTab("pdf")}
-                    className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                      previewTab === "pdf"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-500"
+                    className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-3 transition-all sm:px-4 ${
+                      effectivePreviewTab === "pdf"
+                        ? "bg-white text-slate-950 shadow-sm"
+                        : "text-slate-500 hover:text-slate-700"
                     }`}
                   >
+                    <FileText className="h-3.5 w-3.5" />
                     PDF Preview
                   </button>
                   <button
                     onClick={() => setPreviewTab("track")}
-                    className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-                      previewTab === "track"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-500"
-                    }`}
-                  >
-                    Flight Track
-                    {trackData && <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />}
-                  </button>
-                </div>
-              </div>
-              {/* Mobile: action buttons */}
-              <div className="flex gap-2 px-4 pb-3 sm:hidden">
-                <button
-                  onClick={() => setStep("input")}
-                  className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
-                >
-                  Edit
-                </button>
-                <div className="relative flex-1" ref={exportMenuRef}>
-                  <button
-                    onClick={() => setShowExportMenu((v) => !v)}
-                    disabled={generating || previewTab !== "pdf"}
-                    className="w-full rounded-xl bg-sky-500 px-4 py-3 text-sm font-semibold text-white hover:bg-sky-400 disabled:opacity-50 transition-all shadow-[0_4px_14px_0_rgba(14,165,233,0.25)] flex items-center justify-center gap-2"
-                  >
-                    {generating ? (
-                      <>
-                        <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        Exporting...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        Download
-                        <svg className="h-3 w-3 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </>
-                    )}
-                  </button>
-                  {showExportMenu && (
-                    <div className="absolute bottom-full right-0 mb-2 w-40 rounded-2xl bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] border border-slate-100 py-1.5 z-50">
-                      <button onClick={() => handleExport("pdf")} className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-                        <svg className="h-4 w-4 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM8.5 13h1c.55 0 1 .45 1 1v.5c0 .55-.45 1-1 1h-.5v1H8v-3.5h.5zm3 0h1c.55 0 1 .45 1 1v1.5c0 .55-.45 1-1 1h-1V13zm3 0H16v.75h-1v.75h.75v.75H15V17h-.75v-4h.25z" /></svg>
-                        Export PDF
-                      </button>
-                      <button onClick={() => handleExport("png")} className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-                        <svg className="h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" /></svg>
-                        Export PNG
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Desktop: single row toolbar */}
-              <div className="hidden sm:flex items-center justify-between gap-3">
-                {/* Left: navigation */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setStep("input")}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={handleNewFlight}
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
-                  >
-                    New Flight
-                  </button>
-                </div>
-
-                {/* Center: tab switcher */}
-                <div className="flex items-center bg-slate-100 rounded-xl p-0.5">
-                  <button
-                    onClick={() => setPreviewTab("pdf")}
-                    className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                      previewTab === "pdf"
-                        ? "bg-white text-slate-900 shadow-sm"
+                    className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-3 transition-all sm:px-4 ${
+                      effectivePreviewTab === "track"
+                        ? "bg-white text-slate-950 shadow-sm"
                         : "text-slate-500 hover:text-slate-700"
                     }`}
                   >
-                    PDF Preview
-                  </button>
-                  <button
-                    onClick={() => setPreviewTab("track")}
-                    className={`px-4 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 ${
-                      previewTab === "track"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-500 hover:text-slate-700"
-                    }`}
-                  >
-                    Flight Track
-                    {trackData && <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />}
+                    <Map className="h-3.5 w-3.5" />
+                    {trackTabLabel}
+                    {trackData && <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />}
                   </button>
                 </div>
-
-                {/* Right: actions */}
-                <div className="flex items-center gap-2">
-	                  <a
-	                    href="/preview"
-	                    target="_blank"
-	                    rel="noopener noreferrer"
-	                    onClick={handleOpenFullPreview}
-	                    className="group relative rounded-xl border border-slate-200 bg-white p-2.5 text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50"
-	                    title="Full Preview"
-	                    aria-label="Open full preview"
-	                  >
-	                    <Maximize2 className="h-4 w-4" />
-	                    <span className="pointer-events-none absolute right-0 top-full z-50 mt-2 hidden whitespace-nowrap rounded-lg bg-slate-900 px-2.5 py-1.5 text-[11px] font-semibold text-white shadow-lg group-hover:block">
-	                      Full Preview
-	                    </span>
-	                  </a>
-                  <div className="relative" ref={exportMenuRef}>
-                    <button
-                      onClick={() => setShowExportMenu((v) => !v)}
-                      disabled={generating || previewTab !== "pdf"}
-                      className="rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-400 disabled:opacity-50 transition-all shadow-[0_4px_14px_0_rgba(14,165,233,0.25)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.3)] flex items-center gap-2"
-                    >
-                      {generating ? (
-                        <>
-                          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
-                          Exporting...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                          </svg>
-                          Download
-                          <svg className="h-3 w-3 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </>
-                      )}
-                    </button>
-                    {showExportMenu && (
-                      <div className="absolute top-full right-0 mt-1.5 w-40 rounded-2xl bg-white/90 backdrop-blur-xl shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] border border-slate-100 py-1.5 z-50">
-                        <button onClick={() => handleExport("pdf")} className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-                          <svg className="h-4 w-4 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm-1 2l5 5h-5V4zM8.5 13h1c.55 0 1 .45 1 1v.5c0 .55-.45 1-1 1h-.5v1H8v-3.5h.5zm3 0h1c.55 0 1 .45 1 1v1.5c0 .55-.45 1-1 1h-1V13zm3 0H16v.75h-1v.75h.75v.75H15V17h-.75v-4h.25z" /></svg>
-                          Export PDF
-                        </button>
-                        <button onClick={() => handleExport("png")} className="flex w-full items-center gap-2.5 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-                          <svg className="h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 24 24"><path d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" /></svg>
-                          Export PNG
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              )}
+              <DisplayModeSwitch
+                displayMode={displayMode}
+                onChange={setDisplayMode}
+              />
             </div>
 
             {/* Content area */}
-            {previewTab === "pdf" ? (
+            {effectivePreviewTab === "pdf" ? (
               <PDFPreviewWrapper>
                 <div className="shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] border border-slate-200/80 bg-white overflow-hidden max-w-full mb-2 rounded-xl">
                   <PDFTemplate
@@ -737,27 +710,7 @@ export default function Home() {
                 {trackData ? (
                   <FlightTrackView trackData={trackData} />
                 ) : (
-                  <div className="max-w-lg mx-auto text-center py-16">
-                    <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-slate-100 flex items-center justify-center">
-                      <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-base font-semibold text-slate-900 mb-2">
-                      No Flight Track Data
-                    </h3>
-                    <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-                      Go back to the editor and click &quot;Fetch Track&quot; to load
-                      flight track data. Track data is available for flights within
-                      the past 30 days.
-                    </p>
-                    <button
-                      onClick={() => setStep("input")}
-                      className="rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-400 transition-colors shadow-[0_4px_14px_0_rgba(14,165,233,0.25)]"
-                    >
-                      Go to Editor
-                    </button>
-                  </div>
+                  <WaypointsPreview waypoints={flightData.majorWaypoints} />
                 )}
               </div>
             )}
@@ -768,6 +721,10 @@ export default function Home() {
       <footer className="mx-auto max-w-7xl px-3 pb-4 sm:px-4 text-center text-xs text-slate-400">
         Built with ❤️ by{" "}
         <a href="https://x.com/JustinBao_" target="_blank" rel="noreferrer" className="text-slate-500 hover:text-slate-700 font-medium transition-colors">Justin</a>
+        <span className="mx-1.5 text-slate-300">·</span>
+        <Link href="/guide" className="font-medium text-slate-500 transition-colors hover:text-slate-700">
+          Agent Guide
+        </Link>
       </footer>
     </div>
   );

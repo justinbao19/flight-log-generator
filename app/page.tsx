@@ -132,6 +132,9 @@ export default function LandingPage() {
             <Github className="w-4 h-4" />
             <span className="hidden sm:inline">Star on GitHub</span>
           </a>
+          <Link href="/guide" className="hidden text-sm font-medium text-slate-500 transition-colors hover:text-slate-900 sm:inline-flex">
+            Agent Guide
+          </Link>
           <Link href="/app" className="text-sm font-medium text-sky-700 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 rounded-full px-4 py-2 backdrop-blur-md transition-all">
             Enter App
           </Link>
