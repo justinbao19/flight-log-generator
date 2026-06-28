@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { ChevronDown, Download, Edit3, FileText, Map, Maximize2, Plus } from "lucide-react";
+import { ArrowLeft, ChevronDown, Download, Edit3, FileText, Map, Maximize2, Plus } from "lucide-react";
 import UploadArea from "@/components/UploadArea";
 import PDFTemplate from "@/components/PDFTemplate";
 import FlightTrackView from "@/components/FlightTrackView";
@@ -37,6 +37,13 @@ import {
 
 type Step = "input" | "preview";
 type PreviewTab = "pdf" | "track";
+type SampleReturnState = {
+  step: Step;
+  previewTab: PreviewTab;
+  flightData: FlightData;
+  trackData: FlightTrackData | null;
+  draftStatus: "saved" | "unsaved" | "idle";
+};
 
 const A4_WIDTH_PX = 794;
 
@@ -80,16 +87,16 @@ function DisplayModeSwitch({
 }) {
   return (
     <div
-      className="grid grid-cols-2 rounded-xl border border-slate-200 bg-slate-100 p-1 text-xs font-semibold shadow-inner"
+      className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 bg-white/60 p-0.5 text-xs font-semibold shadow-sm"
       role="group"
       aria-label="Display mode"
     >
       <button
         type="button"
         onClick={() => onChange("standard")}
-        className={`h-8 w-20 rounded-lg px-2 transition-colors ${
+        className={`h-7 rounded-full px-3 transition-colors ${
           displayMode === "standard"
-            ? "bg-white text-sky-700 shadow-sm"
+            ? "bg-sky-50 text-sky-700"
             : "text-slate-500 hover:text-slate-700"
         }`}
       >
@@ -98,9 +105,9 @@ function DisplayModeSwitch({
       <button
         type="button"
         onClick={() => onChange("professional")}
-        className={`h-8 w-20 rounded-lg px-2 transition-colors ${
+        className={`h-7 rounded-full px-3 transition-colors ${
           displayMode === "professional"
-            ? "bg-white text-sky-700 shadow-sm"
+            ? "bg-sky-50 text-sky-700"
             : "text-slate-500 hover:text-slate-700"
         }`}
       >
@@ -129,6 +136,8 @@ export default function Home() {
     "idle"
   );
   const [savedDraft, setSavedDraft] = useState<FlightData | null>(null);
+  const [samplePreview, setSamplePreview] = useState(false);
+  const [sampleReturnState, setSampleReturnState] = useState<SampleReturnState | null>(null);
   const [inputSessionId, setInputSessionId] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextAutoSave = useRef(true);
@@ -186,7 +195,12 @@ export default function Home() {
       return;
     }
 
-    setDraftStatus("unsaved");
+    if (samplePreview) {
+      const sampleStatusTimer = setTimeout(() => setDraftStatus("idle"), 0);
+      return () => clearTimeout(sampleStatusTimer);
+    }
+
+    const unsavedStatusTimer = setTimeout(() => setDraftStatus("unsaved"), 0);
     saveActiveDraft(flightData);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -201,12 +215,15 @@ export default function Home() {
     }, 1000);
 
     return () => {
+      clearTimeout(unsavedStatusTimer);
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [flightData]);
+  }, [flightData, samplePreview]);
 
   useEffect(() => {
-    const persistActiveDraft = () => saveActiveDraft(flightData);
+    const persistActiveDraft = () => {
+      if (!samplePreview) saveActiveDraft(flightData);
+    };
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") persistActiveDraft();
     };
@@ -217,7 +234,7 @@ export default function Home() {
       window.removeEventListener("pagehide", persistActiveDraft);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [flightData]);
+  }, [flightData, samplePreview]);
 
   const fetchAirlineInfo = useCallback(async (flightNumber: string) => {
     const code = flightNumber.match(/^([A-Z0-9]{2})/i)?.[1]?.toUpperCase();
@@ -251,6 +268,7 @@ export default function Home() {
   }, [flightData?.flightNumber, fetchAirlineInfo]);
 
   const handleSaveDraft = () => {
+    setSamplePreview(false);
     saveActiveDraft(flightData);
     saveDraft(flightData);
     setSavedDraft(flightData);
@@ -260,16 +278,23 @@ export default function Home() {
   const handleResumeDraft = () => {
     if (!savedDraft) return;
     skipNextAutoSave.current = true;
+    setSamplePreview(false);
     setFlightData(savedDraft);
     setInputSessionId((id) => id + 1);
     setDraftStatus("saved");
   };
 
   const handleOpenFullPreview = () => {
-    if (hasDraftContent(flightData)) {
+    if (!samplePreview && hasDraftContent(flightData)) {
       saveActiveDraft(flightData);
       setDraftStatus("saved");
     }
+  };
+
+  const handleUserFlightDataChange = (data: FlightData) => {
+    setSamplePreview(false);
+    setSampleReturnState(null);
+    setFlightData(data);
   };
 
   useEffect(() => {
@@ -277,6 +302,13 @@ export default function Home() {
   }, [displayMode]);
 
   const handleLoadSample = async () => {
+    const returnState: SampleReturnState = {
+      step,
+      previewTab,
+      flightData,
+      trackData,
+      draftStatus,
+    };
     const sampleData = createSampleFlightData();
 
     try {
@@ -295,18 +327,37 @@ export default function Home() {
 
       if (trackRes) {
         setTrackData(trackRes as FlightTrackData);
-        saveTrackData(trackRes as FlightTrackData, sampleData.flightNumber, sampleData.date);
       }
     } catch {
       // proceed without supplementary data
     }
 
+    skipNextAutoSave.current = true;
+    setSamplePreview(true);
+    setSampleReturnState(returnState);
     setFlightData(sampleData);
+    setDraftStatus("idle");
     setStep("preview");
+    setPreviewTab("pdf");
+  };
+
+  const handleExitSamplePreview = () => {
+    const previous = sampleReturnState;
+    skipNextAutoSave.current = true;
+    setSamplePreview(false);
+    setSampleReturnState(null);
+    setFlightData(previous?.flightData ?? createEmptyFlightData());
+    setTrackData(previous?.trackData ?? null);
+    setDraftStatus(previous?.draftStatus ?? "idle");
+    setPreviewTab(previous?.previewTab ?? "pdf");
+    setStep(previous?.step ?? "input");
+    setInputSessionId((id) => id + 1);
   };
 
   const handleNewFlight = () => {
     skipNextAutoSave.current = true;
+    setSamplePreview(false);
+    setSampleReturnState(null);
     setFlightData(createEmptyFlightData());
     setAirline(null);
     clearActiveDraft();
@@ -322,6 +373,7 @@ export default function Home() {
 
   const fetchFlightTrack = useCallback(async (overrideDate?: string) => {
     if (!flightData.flightNumber || (!flightData.date && !overrideDate)) return;
+    setSamplePreview(false);
     const dateToUse = overrideDate || flightData.date;
     setTrackLoading(true);
     setTrackError(null);
@@ -358,6 +410,7 @@ export default function Home() {
 
   const fetchFlightLookup = useCallback(async () => {
     if (!flightData.flightNumber) return;
+    setSamplePreview(false);
     setFlightLookupLoading(true);
     try {
       let url = `/api/flight-lookup?flight=${encodeURIComponent(flightData.flightNumber)}`;
@@ -475,7 +528,17 @@ export default function Home() {
             </h1>
           </div>
 
-          {step === "preview" && (
+          {step === "preview" && samplePreview && (
+            <button
+              onClick={handleExitSamplePreview}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </button>
+          )}
+
+          {step === "preview" && !samplePreview && (
             <div className="flex min-w-0 shrink-0 items-center gap-1.5 sm:gap-2">
               <button
                 onClick={() => setStep("input")}
@@ -622,6 +685,12 @@ export default function Home() {
                   >
                     See Sample
                   </button>
+                  {hasFlightDataContent && (
+                    <DisplayModeSwitch
+                      displayMode={displayMode}
+                      onChange={setDisplayMode}
+                    />
+                  )}
                   {airline && (
                     <div className="hidden h-8 w-36 items-center justify-end overflow-hidden lg:flex">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -640,13 +709,12 @@ export default function Home() {
               <UploadArea
                 key={inputSessionId}
                 flightData={flightData}
-                onFlightDataChange={setFlightData}
+                onFlightDataChange={handleUserFlightDataChange}
                 onPreview={() => setStep("preview")}
                 apiKey=""
                 draftStatus={draftStatus}
                 onSaveDraft={handleSaveDraft}
                 displayMode={displayMode}
-                onDisplayModeChange={setDisplayMode}
                 onFetchTrack={fetchFlightTrack}
                 trackLoading={trackLoading}
                 trackError={trackError}
@@ -659,43 +727,50 @@ export default function Home() {
 
         {/* Step 2: Preview */}
         {step === "preview" && flightData && (
-          <div>
-            <div className="mb-5 flex flex-wrap items-center justify-center gap-2 sm:mb-6">
-              {hasTrackView && (
-                <div className="flex items-center rounded-xl bg-slate-100 p-0.5 text-xs font-semibold shadow-inner">
-                  <button
-                    onClick={() => setPreviewTab("pdf")}
-                    className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-3 transition-all sm:px-4 ${
-                      effectivePreviewTab === "pdf"
-                        ? "bg-white text-slate-950 shadow-sm"
-                        : "text-slate-500 hover:text-slate-700"
-                    }`}
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                    PDF Preview
-                  </button>
-                  <button
-                    onClick={() => setPreviewTab("track")}
-                    className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-3 transition-all sm:px-4 ${
-                      effectivePreviewTab === "track"
-                        ? "bg-white text-slate-950 shadow-sm"
-                        : "text-slate-500 hover:text-slate-700"
-                    }`}
-                  >
-                    <Map className="h-3.5 w-3.5" />
-                    {trackTabLabel}
-                    {trackData && <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />}
-                  </button>
+          <div className="pt-5 sm:pt-7">
+            {!samplePreview && (
+              <div className="mb-6 grid items-center gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+                <div className="hidden sm:block" />
+                <div className="flex justify-center">
+                  {hasTrackView && (
+                    <div className="flex items-center rounded-xl bg-slate-100 p-1 text-xs font-semibold shadow-inner">
+                      <button
+                        onClick={() => setPreviewTab("pdf")}
+                        className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition-all sm:px-4 ${
+                          effectivePreviewTab === "pdf"
+                            ? "bg-white text-slate-950 shadow-sm"
+                            : "text-slate-500 hover:text-slate-700"
+                        }`}
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        PDF Preview
+                      </button>
+                      <button
+                        onClick={() => setPreviewTab("track")}
+                        className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition-all sm:px-4 ${
+                          effectivePreviewTab === "track"
+                            ? "bg-white text-slate-950 shadow-sm"
+                            : "text-slate-500 hover:text-slate-700"
+                        }`}
+                      >
+                        <Map className="h-3.5 w-3.5" />
+                        {trackTabLabel}
+                        {trackData && <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />}
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-              <DisplayModeSwitch
-                displayMode={displayMode}
-                onChange={setDisplayMode}
-              />
-            </div>
+                <div className="flex justify-center sm:justify-end">
+                  <DisplayModeSwitch
+                    displayMode={displayMode}
+                    onChange={setDisplayMode}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Content area */}
-            {effectivePreviewTab === "pdf" ? (
+            {samplePreview || effectivePreviewTab === "pdf" ? (
               <PDFPreviewWrapper>
                 <div className="shadow-[0_8px_30px_-4px_rgba(0,0,0,0.08)] border border-slate-200/80 bg-white overflow-hidden max-w-full mb-2 rounded-xl">
                   <PDFTemplate

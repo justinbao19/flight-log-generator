@@ -38,16 +38,16 @@ function DisplayModeSwitch({
 }) {
   return (
     <div
-      className="grid grid-cols-2 rounded-xl border border-gray-200 bg-gray-100 p-1 text-xs font-semibold shadow-inner"
+      className="inline-flex items-center gap-1 rounded-full border border-gray-200/80 bg-white/60 p-0.5 text-xs font-semibold shadow-sm"
       role="group"
       aria-label="Display mode"
     >
       <button
         type="button"
         onClick={() => onChange("standard")}
-        className={`h-8 w-20 rounded-lg px-2 transition-colors ${
+        className={`h-7 rounded-full px-3 transition-colors ${
           displayMode === "standard"
-            ? "bg-white text-sky-700 shadow-sm"
+            ? "bg-sky-50 text-sky-700"
             : "text-gray-500 hover:text-gray-700"
         }`}
       >
@@ -56,9 +56,9 @@ function DisplayModeSwitch({
       <button
         type="button"
         onClick={() => onChange("professional")}
-        className={`h-8 w-20 rounded-lg px-2 transition-colors ${
+        className={`h-7 rounded-full px-3 transition-colors ${
           displayMode === "professional"
-            ? "bg-white text-sky-700 shadow-sm"
+            ? "bg-sky-50 text-sky-700"
             : "text-gray-500 hover:text-gray-700"
         }`}
       >
@@ -241,12 +241,12 @@ export default function PreviewPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col touch-none">
       {/* Toolbar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/85 shadow-[0_-8px_30px_-4px_rgba(0,0,0,0.05)] backdrop-blur-xl pb-safe sm:sticky sm:top-0 sm:bottom-auto sm:left-auto sm:right-auto sm:border-t-0 sm:border-b sm:shadow-sm">
-        <div className="flex flex-wrap justify-center gap-2 px-4 py-2 sm:hidden">
+        <div className="flex flex-wrap justify-center gap-3 px-4 py-3 sm:hidden">
           {hasTrackView && (
             <div className="flex items-center rounded-xl bg-gray-100 p-1 text-xs font-semibold shadow-inner">
               <button
                 onClick={() => setActiveTab("pdf")}
-                className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-3 transition-all ${
+                className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition-all ${
                   effectiveActiveTab === "pdf"
                     ? "bg-white text-slate-950 shadow-sm"
                     : "text-slate-500"
@@ -257,7 +257,7 @@ export default function PreviewPage() {
               </button>
               <button
                 onClick={() => setActiveTab("track")}
-                className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-3 transition-all ${
+                className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition-all ${
                   effectiveActiveTab === "track"
                     ? "bg-white text-slate-950 shadow-sm"
                     : "text-slate-500"
@@ -274,7 +274,7 @@ export default function PreviewPage() {
             onChange={setDisplayMode}
           />
         </div>
-        <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 py-2.5">
+        <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 px-4 py-3">
           <button
             onClick={handleBackToEditor}
             className="inline-flex h-9 w-fit items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 hover:text-gray-900 sm:px-3"
@@ -283,12 +283,12 @@ export default function PreviewPage() {
             <span className="hidden sm:inline">Back to Editor</span>
           </button>
 
-          <div className="hidden min-w-0 items-center justify-center gap-2 sm:flex">
+          <div className="hidden min-w-0 items-center justify-center sm:flex">
             {hasTrackView && (
               <div className="flex items-center rounded-xl bg-gray-100 p-1 text-xs font-semibold shadow-inner">
                 <button
                   onClick={() => setActiveTab("pdf")}
-                  className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-4 transition-all ${
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-4 transition-all ${
                     effectiveActiveTab === "pdf"
                       ? "bg-white text-slate-950 shadow-sm"
                       : "text-slate-500 hover:text-slate-700"
@@ -299,7 +299,7 @@ export default function PreviewPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab("track")}
-                  className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-4 transition-all ${
+                  className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-4 transition-all ${
                     effectiveActiveTab === "track"
                       ? "bg-white text-slate-950 shadow-sm"
                       : "text-slate-500 hover:text-slate-700"
@@ -311,13 +311,15 @@ export default function PreviewPage() {
                 </button>
               </div>
             )}
-            <DisplayModeSwitch
-              displayMode={displayMode}
-              onChange={setDisplayMode}
-            />
           </div>
 
           <div className="flex min-w-0 items-center justify-end gap-1 sm:gap-1.5">
+            <div className="mr-1 hidden sm:block">
+              <DisplayModeSwitch
+                displayMode={displayMode}
+                onChange={setDisplayMode}
+              />
+            </div>
             {effectiveActiveTab === "pdf" && (
               <>
                 <button

@@ -13,7 +13,6 @@ interface UploadAreaProps {
   draftStatus: "saved" | "unsaved" | "idle";
   onSaveDraft: () => void;
   displayMode: DisplayMode;
-  onDisplayModeChange: (mode: DisplayMode) => void;
   onFetchTrack?: (overrideDate?: string) => void;
   trackLoading?: boolean;
   trackError?: { message: string; availableDates?: string[] } | null;
@@ -22,45 +21,6 @@ interface UploadAreaProps {
 }
 
 type InputMode = "screenshot" | "text" | "manual";
-
-function DisplayModeSwitch({
-  displayMode,
-  onChange,
-}: {
-  displayMode: DisplayMode;
-  onChange: (mode: DisplayMode) => void;
-}) {
-  return (
-    <div
-      className="grid grid-cols-2 rounded-xl border border-slate-200 bg-slate-100 p-1 text-xs font-semibold shadow-inner"
-      role="group"
-      aria-label="Display mode"
-    >
-      <button
-        type="button"
-        onClick={() => onChange("standard")}
-        className={`h-8 w-20 rounded-lg px-2 transition-colors ${
-          displayMode === "standard"
-            ? "bg-white text-sky-700 shadow-sm"
-            : "text-slate-500 hover:text-slate-700"
-        }`}
-      >
-        Decoded
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange("professional")}
-        className={`h-8 w-20 rounded-lg px-2 transition-colors ${
-          displayMode === "professional"
-            ? "bg-white text-sky-700 shadow-sm"
-            : "text-slate-500 hover:text-slate-700"
-        }`}
-      >
-        Raw
-      </button>
-    </div>
-  );
-}
 
 function hasFlightContent(data: FlightData) {
   return Boolean(
@@ -88,7 +48,6 @@ export default function UploadArea({
   draftStatus,
   onSaveDraft,
   displayMode,
-  onDisplayModeChange,
   onFetchTrack,
   trackLoading,
   trackError,
@@ -379,12 +338,14 @@ export default function UploadArea({
                 Continue to the manual editor when you want full control over every field.
                 You can still fetch flight details, METAR, track data, and aircraft photos from the form.
               </p>
-              <button
-                onClick={handleProceedManual}
-                className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-sky-500 px-4 text-sm font-semibold text-white shadow-[0_4px_14px_0_rgba(14,165,233,0.25)] transition-colors hover:bg-sky-400"
-              >
-                Proceed to blank log
-              </button>
+              <div className="mt-4 flex justify-center">
+                <button
+                  onClick={handleProceedManual}
+                  className="inline-flex h-10 items-center justify-center rounded-xl bg-sky-500 px-4 text-sm font-semibold text-white shadow-[0_4px_14px_0_rgba(14,165,233,0.25)] transition-colors hover:bg-sky-400"
+                >
+                  Proceed to blank log
+                </button>
+              </div>
             </div>
           )}
         </>
@@ -393,13 +354,6 @@ export default function UploadArea({
       {/* Manual Form */}
       {intakeComplete && (
         <>
-          <div className="flex justify-center">
-            <DisplayModeSwitch
-              displayMode={displayMode}
-              onChange={onDisplayModeChange}
-            />
-          </div>
-
           {/* Draft status bar */}
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-400">
